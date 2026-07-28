@@ -381,6 +381,7 @@
   },
   "paywall": {
     "pitch": "Tieni traccia di quando hai fatto l'ultima volta tutto ciò che conta. Uno sblocco, tutte le funzioni.",
+    "requiredNotice": "Per usare lastGLANCE è necessario un abbonamento o uno sblocco a vita con pagamento unico.",
     "featureWidgets": "Widget della schermata Home e riquadri rapidi",
     "featureReminders": "Promemoria per attività in ritardo",
     "featureSync": "Sincronizzazione crittografata tra dispositivi",

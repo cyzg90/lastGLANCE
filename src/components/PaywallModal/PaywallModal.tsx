@@ -1,9 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { App as CapacitorApp } from '@capacitor/app'
 import { X, Check, Loader, BadgeCheck, KeyRound } from 'lucide-react'
 import type { UseBillingResult } from '@glance-apps/billing/react'
 import { PRODUCT_IDS, MANAGE_SUBSCRIPTION_URL, STORE_NAME } from '@/billing/billing'
 import { useTranslation } from 'react-i18next'
+
+// Dismissing the hard gate means leaving the app — there is nothing behind it
+// to show. That is exactly what the Android back button already did (Capacitor's
+// native default: no WebView history on the gate, so back left the app). The
+// visible X (Play Subscriptions policy: no unclear/invisible dismiss buttons)
+// and the back button both route through this one handler so they can never
+// diverge. No-op off native, where exitApp is unimplemented.
+function exitGate(): void {
+  CapacitorApp.exitApp().catch(() => {})
+}
 
 interface Props {
   billing: UseBillingResult
@@ -20,6 +31,16 @@ export function PaywallModal({ billing, mode, onClose }: Props) {
   const [showCode, setShowCode] = useState(false)
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState(false)
+
+  // While the gate is mounted, own the hardware back button/gesture explicitly.
+  // Registering a listener replaces Capacitor's native default, and the handler
+  // reimplements exactly what that default did here (leave the app) — through
+  // the same function the X calls, keeping the two behaviors identical.
+  useEffect(() => {
+    if (mode !== 'gate') return
+    const handle = CapacitorApp.addListener('backButton', exitGate)
+    return () => { void handle.then(h => h.remove()).catch(() => {}) }
+  }, [mode])
 
   async function submitCode() {
     if (!code.trim()) return
@@ -75,9 +96,22 @@ export function PaywallModal({ billing, mode, onClose }: Props) {
           <h2 className="text-2xl font-black tracking-tight text-slate-900 dark:text-slate-100">
             last<span className="italic text-green-400">GLANCE</span>
           </h2>
-          {mode === 'status' && (
+          {mode === 'status' ? (
             <button onClick={onClose} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <X size={16} />
+            </button>
+          ) : (
+            /* Gate dismiss control (Play Subscriptions policy). Deliberately the
+               body-copy color, not the muted footer token — it must be obvious
+               against the card. 22px glyph; the 12px padding makes a 46px hit
+               target; negative margins keep the glyph aligned with the wordmark
+               and the card's padding edge. Same handler as the back button. */
+            <button
+              onClick={exitGate}
+              aria-label="Close"
+              className="p-3 -mt-2 -mr-3 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
+            >
+              <X size={22} strokeWidth={2} aria-hidden="true" />
             </button>
           )}
         </div>
@@ -116,6 +150,11 @@ export function PaywallModal({ billing, mode, onClose }: Props) {
         ) : (
           <>
             <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">{t('paywall.pitch')}</p>
+
+            {/* Play policy: the purchase requirement must be stated plainly on
+                the gate. Body size and the body-copy color on purpose — this is
+                not fine print. */}
+            <p className="text-sm text-slate-600 dark:text-slate-300 mt-2">{t('paywall.requiredNotice')}</p>
 
             {/* Named benefits, not just scope: App Store review rejects paywalls
                 that don't describe what the price buys (Guideline 3.1.2 —

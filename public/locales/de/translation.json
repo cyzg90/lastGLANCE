@@ -381,6 +381,7 @@
   },
   "paywall": {
     "pitch": "Behalte im Blick, wann du alles Wichtige zuletzt erledigt hast. Einmal freischalten, alle Funktionen.",
+    "requiredNotice": "Für die Nutzung von lastGLANCE ist ein Abonnement oder eine einmalige Lifetime-Freischaltung erforderlich.",
     "featureWidgets": "Startbildschirm-Widgets & Schnellkacheln",
     "featureReminders": "Erinnerungen bei überfälligen Aufgaben",
     "featureSync": "Verschlüsselte Synchronisierung zwischen Geräten",

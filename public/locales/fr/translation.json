@@ -381,6 +381,7 @@
   },
   "paywall": {
     "pitch": "Suivez quand vous avez fait tout ce qui compte pour la dernière fois. Un déblocage, toutes les fonctions.",
+    "requiredNotice": "Un abonnement ou un déblocage à vie en un seul paiement est requis pour utiliser lastGLANCE.",
     "featureWidgets": "Widgets d'écran d'accueil et tuiles rapides",
     "featureReminders": "Rappels de tâches en retard",
     "featureSync": "Synchronisation chiffrée entre appareils",
