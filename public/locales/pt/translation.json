@@ -381,6 +381,7 @@
   },
   "paywall": {
     "pitch": "Acompanhe quando fez pela última vez tudo o que importa. Um desbloqueio, todas as funções.",
+    "requiredNotice": "Para usar o lastGLANCE, é necessária uma assinatura ou um desbloqueio vitalício de pagamento único.",
     "featureWidgets": "Widgets do ecrã inicial e mosaicos rápidos",
     "featureReminders": "Lembretes de tarefas atrasadas",
     "featureSync": "Sincronização encriptada entre dispositivos",

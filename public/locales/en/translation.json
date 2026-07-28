@@ -407,6 +407,7 @@
   },
   "paywall": {
     "pitch": "Track when you last did everything that matters. One unlock, every feature.",
+    "requiredNotice": "A subscription or one-time lifetime unlock is required to use lastGLANCE.",
     "featureWidgets": "Home-screen widgets & quick tiles",
     "featureReminders": "Overdue reminders",
     "featureSync": "Encrypted sync across devices",

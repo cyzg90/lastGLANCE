@@ -381,6 +381,7 @@
   },
   "paywall": {
     "pitch": "Controla cuándo hiciste por última vez todo lo que importa. Un desbloqueo, todas las funciones.",
+    "requiredNotice": "Para usar lastGLANCE se requiere una suscripción o un desbloqueo vitalicio de pago único.",
     "featureWidgets": "Widgets de pantalla de inicio y mosaicos rápidos",
     "featureReminders": "Recordatorios de tareas atrasadas",
     "featureSync": "Sincronización cifrada entre dispositivos",
