@@ -28,7 +28,7 @@
     "@capacitor/local-notifications": "^8.2.0",
     "@capacitor/share": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
-    "@glance-apps/billing": "0.1.1",
+    "@glance-apps/billing": "0.2.0",
     "@glance-apps/intents": "1.4.0",
     "@glance-apps/sync": "1.6.1",
     "dayjs": "^1.11.13",
