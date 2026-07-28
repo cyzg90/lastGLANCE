@@ -5,6 +5,7 @@ import './index.css'
 import './i18n'
 import App from './App'
 import { hydrateSecureConfig, installSecureConfigShim } from './sync/secureConfigShim'
+import { initHardwareBackButton } from './native/backButton'
 
 // crypto.randomUUID() is only available in secure contexts (HTTPS / localhost).
 // This polyfill covers HTTP access over a LAN IP (e.g. self-hosted Docker).
@@ -47,6 +48,10 @@ const render = () =>
 // mount. Both calls are no-ops off Android, and a hydration failure still
 // renders — the app degrades to "sync not configured", never a blank screen.
 installSecureConfigShim()
+// The @capacitor/app plugin (added for the paywall dismiss control) swallows
+// the hardware back button unless a JS listener owns it — this restores the
+// stock behavior app-wide. No-op off Android.
+initHardwareBackButton()
 hydrateSecureConfig()
   .catch(() => {})
   .then(render)

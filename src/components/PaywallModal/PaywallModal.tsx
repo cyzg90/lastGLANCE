@@ -1,20 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { App as CapacitorApp } from '@capacitor/app'
 import { X, Check, Loader, BadgeCheck, KeyRound } from 'lucide-react'
 import type { UseBillingResult } from '@glance-apps/billing/react'
 import { PRODUCT_IDS, MANAGE_SUBSCRIPTION_URL, STORE_NAME } from '@/billing/billing'
+import { leaveApp } from '@/native/backButton'
 import { useTranslation } from 'react-i18next'
-
-// Dismissing the hard gate means leaving the app — there is nothing behind it
-// to show. That is exactly what the Android back button already did (Capacitor's
-// native default: no WebView history on the gate, so back left the app). The
-// visible X (Play Subscriptions policy: no unclear/invisible dismiss buttons)
-// and the back button both route through this one handler so they can never
-// diverge. No-op off native, where exitApp is unimplemented.
-function exitGate(): void {
-  CapacitorApp.exitApp().catch(() => {})
-}
 
 interface Props {
   billing: UseBillingResult
@@ -31,16 +21,6 @@ export function PaywallModal({ billing, mode, onClose }: Props) {
   const [showCode, setShowCode] = useState(false)
   const [code, setCode] = useState('')
   const [codeError, setCodeError] = useState(false)
-
-  // While the gate is mounted, own the hardware back button/gesture explicitly.
-  // Registering a listener replaces Capacitor's native default, and the handler
-  // reimplements exactly what that default did here (leave the app) — through
-  // the same function the X calls, keeping the two behaviors identical.
-  useEffect(() => {
-    if (mode !== 'gate') return
-    const handle = CapacitorApp.addListener('backButton', exitGate)
-    return () => { void handle.then(h => h.remove()).catch(() => {}) }
-  }, [mode])
 
   async function submitCode() {
     if (!code.trim()) return
@@ -105,9 +85,11 @@ export function PaywallModal({ billing, mode, onClose }: Props) {
                body-copy color, not the muted footer token — it must be obvious
                against the card. 22px glyph; the 12px padding makes a 46px hit
                target; negative margins keep the glyph aligned with the wordmark
-               and the card's padding edge. Same handler as the back button. */
+               and the card's padding edge. leaveApp is the same function the
+               app-wide backButton listener lands on here (the gate has no
+               WebView history), so X and back are identical by construction. */
             <button
-              onClick={exitGate}
+              onClick={leaveApp}
               aria-label="Close"
               className="p-3 -mt-2 -mr-3 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400"
             >
