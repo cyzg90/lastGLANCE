@@ -12,10 +12,17 @@ import { db } from '@/db/client'
 import type { Category, Chore, CompletionEvent, User } from '@/types'
 import { buildAuthHeader, ensureFolder, forgetEnsuredFolders } from '@/intents/webdav'
 import { browserDirectFetch, isNativePlatform, nativeHttpFetch, webdavDirect } from './nativeHttp'
+import { DB_ROOT_KEY_HOOKS, FILE_SYNC_KEY_HOOKS } from './nativeKeyHooks'
 import type { SyncPayload, SyncSettings } from './types'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 
-export const CRYPTO_CONFIG = { cryptoDBName: 'lastglance-crypto' }
+// On Android the spread hooks route key storage to the Keystore-backed
+// SecureStore instead of IndexedDB (issue #210); elsewhere they spread to
+// nothing and the package keeps its IndexedDB path. The two configs must stay
+// separate: the package uses the same hook names for the file-tier session
+// key and the vault root key, so sharing one pair would cross the tiers.
+export const CRYPTO_CONFIG = { cryptoDBName: 'lastglance-crypto', ...FILE_SYNC_KEY_HOOKS }
+export const DB_CRYPTO_CONFIG = { cryptoDBName: 'lastglance-crypto', ...DB_ROOT_KEY_HOOKS }
 export const DEFAULT_SYNC_FOLDER = 'GLANCE/lastglance'
 export const SYNC_FOLDER_KEY = 'lastglance-cloud-sync-folder'
 
@@ -485,6 +492,7 @@ export function createEngine(proxyUrl: string | undefined, callbacks: EngineCall
   const engine = createSyncEngine({
     storageKeyPrefix: 'lastglance',
     cryptoDBName: 'lastglance-crypto',
+    ...FILE_SYNC_KEY_HOOKS,
     autoBackupDBName: 'lastglance-auto-backups',
     syncFilename: 'lastglance-sync.json',
     appFolderName,
