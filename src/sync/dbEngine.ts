@@ -19,6 +19,7 @@ import type { Category, Chore, CompletionEvent, User } from '@/types'
 import type { SyncCategory, SyncChore, SyncCompletionEvent, SyncUser } from './types'
 import { getVaultConfig, isVaultEnabled } from './vaultConfig'
 import { getDeviceId } from './deviceId'
+import { DB_ROOT_KEY_HOOKS } from './nativeKeyHooks'
 import { addDeferredChore, removeDeferredChore, getDeferredChores } from './deferredChores'
 import {
   addDeferredCompletion,
@@ -488,6 +489,9 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
     appId: APP_ID,
     vaultApp: APP_ID,
     cryptoDBName: CRYPTO_DB_NAME,
+    // Keystore-backed root-key storage on Android (issue #210) — must be the
+    // DB-tier pair; see the note on CRYPTO_CONFIG / DB_CRYPTO_CONFIG.
+    ...DB_ROOT_KEY_HOOKS,
     vaultUrl: cfg.vaultUrl,
     vaultToken: cfg.vaultToken,
     accountId: cfg.accountId,

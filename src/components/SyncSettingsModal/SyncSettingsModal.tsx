@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert } from 'lucide-react'
 import type { SyncEngine, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
+import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
 import { getVaultConfig, setVaultConfig } from '@/sync/vaultConfig'
 import { testVaultConnection } from '@/sync/testVaultConnection'
@@ -139,9 +140,12 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
       resetEnsuredFolder()
     }
     // A folder change or any vault change requires a reload so the engines are
-    // reconstructed with the new transport config on next mount.
+    // reconstructed with the new transport config on next mount. On Android the
+    // credential writes above are an async write-through to the SecureStore
+    // (issue #210) — wait for them, or the reload could tear the page down with
+    // the new credentials not yet persisted. Off Android this resolves at once.
     if (folderPath !== originalFolder.current || vaultChanged) {
-      window.location.reload()
+      flushSecureWrites().finally(() => window.location.reload())
     }
   }
 

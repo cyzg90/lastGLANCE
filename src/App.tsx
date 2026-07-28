@@ -28,7 +28,7 @@ import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
 import { getAllCompletionCounts } from '@/db/queries'
-import { createEngine, initSessionKey, setupEncryptionKey, runAutoBackups, ensureSyncFolder, CRYPTO_CONFIG, getSyncWebdavConfig } from '@/sync/engine'
+import { createEngine, initSessionKey, setupEncryptionKey, runAutoBackups, ensureSyncFolder, CRYPTO_CONFIG, DB_CRYPTO_CONFIG, getSyncWebdavConfig } from '@/sync/engine'
 import { createDbEngine } from '@/sync/dbEngine'
 import { registerDbEngine } from '@/sync/dirtyTracker'
 import { isVaultEnabled } from '@/sync/vaultConfig'
@@ -221,7 +221,7 @@ function AppInner() {
         // via initDbRootKey, so the prompt is skipped. The in-memory hasDbRootKey
         // is always false at mount, so we attempt the restore before deciding.
         if (!isVaultEnabled()) return
-        const hasRoot = hasDbRootKey() || await initDbRootKey(CRYPTO_CONFIG)
+        const hasRoot = hasDbRootKey() || await initDbRootKey(DB_CRYPTO_CONFIG)
         if (!hasRoot && getSyncPassphrase() === null) setShowPassphrase(true)
       })
       .catch(() => {/* non-fatal */})

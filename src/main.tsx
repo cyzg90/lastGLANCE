@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core'
 import './index.css'
 import './i18n'
 import App from './App'
+import { hydrateSecureConfig, installSecureConfigShim } from './sync/secureConfigShim'
 
 // crypto.randomUUID() is only available in secure contexts (HTTPS / localhost).
 // This polyfill covers HTTP access over a LAN IP (e.g. self-hosted Docker).
@@ -31,10 +32,21 @@ if (saved === 'dark' || (!saved && prefersDark)) {
   document.documentElement.classList.add('dark')
 }
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Suspense fallback={null}>
-      <App />
-    </Suspense>
-  </StrictMode>,
-)
+const render = () =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <Suspense fallback={null}>
+        <App />
+      </Suspense>
+    </StrictMode>,
+  )
+
+// On Android, route credential-bearing config through the Keystore-backed
+// SecureStore (issue #210). Hydration must finish before the first render:
+// IntentsContext and the sync engines read these keys synchronously during
+// mount. Both calls are no-ops off Android, and a hydration failure still
+// renders — the app degrades to "sync not configured", never a blank screen.
+installSecureConfigShim()
+hydrateSecureConfig()
+  .catch(() => {})
+  .then(render)
