@@ -94,15 +94,26 @@ function makeHooks(
   if (!isSecureStoreAvailable) return {}
   return {
     nativeGetSyncKey: async () => {
-      const existing = await secureGet(storeKey)
-      if (existing !== null) return existing
+      try {
+        const existing = await secureGet(storeKey)
+        if (existing !== null) return existing
+      } catch {
+        // SecureStore read failed — fall through to the legacy record so a
+        // native fault degrades to pre-migration behavior, not a re-prompt.
+      }
       const record = await readLegacyRecord(legacy.dbName, legacy.storeName, legacy.id)
       if (!record) return null
       const blob = recordToBlob(record)
       if (!blob) return null
       const b64 = btoa(JSON.stringify(blob))
-      await secureSet(storeKey, b64)
-      await deleteLegacyRecord(legacy.dbName, legacy.storeName, legacy.id)
+      try {
+        await secureSet(storeKey, b64)
+        await deleteLegacyRecord(legacy.dbName, legacy.storeName, legacy.id)
+      } catch {
+        // Secure write failed: keep the legacy record and still return the
+        // key so this session works; the migration retries next boot. Never
+        // let a broken native layer present as a lost encryption key.
+      }
       return b64
     },
     nativeStoreSyncKey: (b64: string | null) => {

@@ -13,7 +13,6 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import java.security.KeyStore;
-import java.security.SecureRandom;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -36,9 +35,8 @@ public class SecureStorePlugin extends Plugin {
     private static final String PREFS = "lastglance_secure_store";
     private static final String KEY_ALIAS = "lastglance_secure_store";
     private static final String ANDROID_KEYSTORE = "AndroidKeyStore";
-    // GCM: 12-byte IV, 128-bit tag. Stored value format is
+    // GCM with the Keystore-generated IV, 128-bit tag. Stored value format is
     // "v1:" + base64(iv) + ":" + base64(ciphertext).
-    private static final int GCM_IV_BYTES = 12;
     private static final int GCM_TAG_BITS = 128;
     private static final String FORMAT_PREFIX = "v1:";
 
@@ -111,9 +109,14 @@ public class SecureStorePlugin extends Plugin {
     private String encrypt(String plaintext) {
         try {
             Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            byte[] iv = new byte[GCM_IV_BYTES];
-            new SecureRandom().nextBytes(iv);
-            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(GCM_TAG_BITS, iv));
+            // The Keystore must generate the IV: keys are created with
+            // randomized encryption required (the secure default), and passing
+            // a caller-provided IV at encrypt time throws
+            // InvalidAlgorithmParameterException ("Caller-provided IV not
+            // permitted") — which made every set() fail and presented as wiped
+            // sync settings in the 2.1.0 release candidate.
+            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+            byte[] iv = cipher.getIV();
             byte[] ct = cipher.doFinal(plaintext.getBytes("UTF-8"));
             return FORMAT_PREFIX
                 + Base64.encodeToString(iv, Base64.NO_WRAP)
