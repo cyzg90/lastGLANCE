@@ -4,7 +4,8 @@ import { pushSnapshot } from '@/native/snapshot'
 // Keeps the native widget snapshot fresh. Pushes on mount, whenever a chore is
 // logged or a sync is applied (the same signals the in-app heatmap listens to),
 // and when the app is being backgrounded so the launcher sees current data.
-// No-op off Android (pushSnapshot guards the platform internally).
+// No-op on web/PWA (pushSnapshot guards the platform internally); runs in both
+// native shells.
 export function useWidgetSnapshot(): void {
   useEffect(() => {
     pushSnapshot()
