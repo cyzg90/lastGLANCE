@@ -3,11 +3,21 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { IDBFactory } from 'fake-indexeddb'
 
 const nativeStore = new Map<string, string>()
+const broken = { value: false }
 vi.mock('@/native/secureStore', () => ({
   isSecureStoreAvailable: true,
-  secureGet: vi.fn(async (key: string) => (nativeStore.has(key) ? nativeStore.get(key)! : null)),
-  secureSet: vi.fn(async (key: string, value: string) => { nativeStore.set(key, value) }),
-  secureDelete: vi.fn(async (key: string) => { nativeStore.delete(key) }),
+  secureGet: vi.fn(async (key: string) => {
+    if (broken.value) throw new Error('native failure')
+    return nativeStore.has(key) ? nativeStore.get(key)! : null
+  }),
+  secureSet: vi.fn(async (key: string, value: string) => {
+    if (broken.value) throw new Error('native failure')
+    nativeStore.set(key, value)
+  }),
+  secureDelete: vi.fn(async (key: string) => {
+    if (broken.value) throw new Error('native failure')
+    nativeStore.delete(key)
+  }),
 }))
 
 import { FILE_SYNC_KEY_HOOKS, DB_ROOT_KEY_HOOKS } from './nativeKeyHooks'
@@ -45,6 +55,7 @@ function readLegacy(dbName: string, storeName: string, id: string): Promise<unkn
 describe('nativeKeyHooks', () => {
   beforeEach(() => {
     nativeStore.clear()
+    broken.value = false
     // Fresh IndexedDB universe per test.
     globalThis.indexedDB = new IDBFactory()
   })
@@ -101,6 +112,19 @@ describe('nativeKeyHooks', () => {
     const dbRoot = JSON.parse(atob((await DB_ROOT_KEY_HOOKS.nativeGetSyncKey!())!))
     expect(file.rawKey).toEqual([1])
     expect(dbRoot.rootBytes).toEqual([2])
+  })
+
+  it('a failing native layer still returns the legacy key and keeps the record for retry', async () => {
+    // Regression companion to the 2.1.0 rc Keystore bug: a broken SecureStore
+    // must not present as a lost encryption key (passphrase re-prompt).
+    await seedLegacyDb('lastglance-crypto', 'keys', { id: 'sync-key', rawKey: [3, 1, 4], salt: [1, 5] })
+    broken.value = true
+
+    const blob = await FILE_SYNC_KEY_HOOKS.nativeGetSyncKey!()
+    expect(JSON.parse(atob(blob!))).toEqual({ rawKey: [3, 1, 4], salt: [1, 5] })
+    // Legacy record survives for the next boot's migration retry.
+    expect(await readLegacy('lastglance-crypto', 'keys', 'sync-key')).not.toBeNull()
+    expect(nativeStore.size).toBe(0)
   })
 
   it('a malformed legacy record reads as absent (fail-safe)', async () => {

@@ -1,14 +1,26 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // In-memory stand-in for the native SecureStore plugin. `available` is
-// mutable so individual tests can exercise the non-Android no-op path.
+// mutable so individual tests can exercise the non-Android no-op path, and
+// `broken` simulates a native layer whose calls all reject (the 2.1.0 rc
+// Keystore bug) to pin down the fail-open behavior.
 const nativeStore = new Map<string, string>()
 const availability = { value: true }
+const broken = { value: false }
 vi.mock('@/native/secureStore', () => ({
   get isSecureStoreAvailable() { return availability.value },
-  secureGet: vi.fn(async (key: string) => (nativeStore.has(key) ? nativeStore.get(key)! : null)),
-  secureSet: vi.fn(async (key: string, value: string) => { nativeStore.set(key, value) }),
-  secureDelete: vi.fn(async (key: string) => { nativeStore.delete(key) }),
+  secureGet: vi.fn(async (key: string) => {
+    if (broken.value) throw new Error('native failure')
+    return nativeStore.has(key) ? nativeStore.get(key)! : null
+  }),
+  secureSet: vi.fn(async (key: string, value: string) => {
+    if (broken.value) throw new Error('native failure')
+    nativeStore.set(key, value)
+  }),
+  secureDelete: vi.fn(async (key: string) => {
+    if (broken.value) throw new Error('native failure')
+    nativeStore.delete(key)
+  }),
 }))
 
 // The vitest environment is node: no Storage / window / localStorage. The shim
@@ -38,6 +50,7 @@ describe('secureConfigShim', () => {
     g.window = globalThis
     nativeStore.clear()
     availability.value = true
+    broken.value = false
     vi.resetModules()
     shim = await import('./secureConfigShim')
   })
@@ -110,6 +123,23 @@ describe('secureConfigShim', () => {
     sessionStorage.setItem(SECRET_KEY, 'session-value')
     expect(sessionStorage.getItem(SECRET_KEY)).toBe('session-value')
     await shim.flushSecureWrites()
+    expect(nativeStore.size).toBe(0)
+  })
+
+  it('a failing native layer still serves legacy settings and keeps the plaintext for retry', async () => {
+    // Regression: the 2.1.0 rc Keystore bug made every secureSet reject, and
+    // hydration left the cache empty while the shim shadowed the intact
+    // plaintext — presenting as wiped sync settings.
+    const legacy = JSON.stringify({ enabled: true, appPassword: 'hunter2' })
+    localStorage.setItem(SECRET_KEY, legacy)
+    broken.value = true
+    shim.installSecureConfigShim()
+    await shim.hydrateSecureConfig()
+    // Settings must still be readable through the shim...
+    expect(localStorage.getItem(SECRET_KEY)).toBe(legacy)
+    // ...and the plaintext must survive for the next boot's retry.
+    shim.uninstallSecureConfigShimForTests()
+    expect(localStorage.getItem(SECRET_KEY)).toBe(legacy)
     expect(nativeStore.size).toBe(0)
   })
 

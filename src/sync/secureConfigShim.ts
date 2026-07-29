@@ -106,19 +106,25 @@ export async function hydrateSecureConfig(): Promise<void> {
     try {
       // Migrate legacy plaintext first. If a plaintext copy exists it is the
       // newest write (pre-shim builds wrote here), so it wins over any secure
-      // copy; removal makes the migration one-time.
+      // copy; removal makes the migration one-time. The cache is seeded BEFORE
+      // the secure write and the plaintext is removed only AFTER it succeeds:
+      // a native failure must present as "still works like before, migrates
+      // next boot", never as wiped settings (the 2.1.0 rc bug — a Keystore
+      // rejection made every write fail, and the shim shadowed the intact
+      // plaintext with an empty cache).
       const legacy = origGetItem.call(window.localStorage, key)
       if (legacy !== null) {
+        cache.set(key, legacy)
         await secureSet(key, legacy)
         origRemoveItem.call(window.localStorage, key)
-        cache.set(key, legacy)
         continue
       }
       const value = await secureGet(key)
       if (value !== null) cache.set(key, value)
     } catch {
-      // SecureStore unavailable for this key — the app degrades to "not
-      // configured" for that credential rather than failing to boot.
+      // SecureStore unavailable for this key. With legacy plaintext present
+      // the cache is already seeded above, so the app behaves exactly as
+      // pre-migration; without it there is genuinely nothing to serve.
     }
   }
 }
