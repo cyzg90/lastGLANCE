@@ -19,8 +19,11 @@
 // current — the same lifecycle contract the DB engine construction relies on.
 
 import { useEffect, useRef } from 'react'
+import type { PluginListenerHandle } from '@capacitor/core'
 import { getVaultConfig, isVaultEnabled } from '@/sync/vaultConfig'
+import { VaultSse } from '@/native/vaultSse'
 import {
+  createBridgeSseClient,
   createNudgeCoalescer,
   createVaultEventClient,
   detectSseTransport,
@@ -38,6 +41,10 @@ interface VaultSseDiag {
   lastEventSeq: number | null
   lastError: string | null
   stalled: boolean
+  // A terminal code from the native reader ('auth' | 'insecure' |
+  // 'unsupported'): native stopped and will NOT reconnect. Fixing the config
+  // reloads the app, which starts a fresh reader.
+  terminal: string | null
   lastConnectedAt: string | null
 }
 
@@ -56,9 +63,9 @@ export function useVaultEventStream({ drainSync, drainIntents }: {
     if (!isVaultEnabled()) return undefined
 
     const transport = detectSseTransport()
-    if (transport !== 'web') {
-      // 'native-unsupported' (Capacitor shell, phase 2 pending) / 'none' (SSR):
-      // nothing to open, nothing to clean up — polling backstop only.
+    if (transport !== 'web' && transport !== 'native-bridge') {
+      // 'native-unsupported' (a shell without the VaultSse plugin) / 'none'
+      // (SSR): nothing to open, nothing to clean up — polling backstop only.
       if (import.meta.env?.DEV) {
         console.info('[vault-sse] streaming unavailable on', transport, '— polling backstop only')
       }
@@ -75,7 +82,8 @@ export function useVaultEventStream({ drainSync, drainIntents }: {
     // stalled diagnostic still log unconditionally.
     const diag: VaultSseDiag = {
       state: 'idle', transport, connects: 0, events: 0, drains: 0,
-      lastEventSeq: null, lastError: null, stalled: false, lastConnectedAt: null,
+      lastEventSeq: null, lastError: null, stalled: false, terminal: null,
+      lastConnectedAt: null,
     }
     ;(window as unknown as Record<string, unknown>).__glanceVaultSse = diag
 
@@ -104,8 +112,19 @@ export function useVaultEventStream({ drainSync, drainIntents }: {
         diag.stalled = true
         console.warn('[vault-sse] stream opened but no frame arrived — a reverse proxy is likely buffering /events; SSE is inert and polling is covering')
       } else if (state === 'error') {
-        diag.lastError = detail instanceof Error ? detail.message : String(detail ?? 'error')
-        console.warn('[vault-sse] error:', diag.lastError)
+        const coded = detail as { message?: string; code?: string } | null
+        diag.lastError = detail instanceof Error ? detail.message
+          : coded?.message ?? String(detail ?? 'error')
+        // A coded error from the native reader is TERMINAL: native stopped and
+        // will not reconnect ('auth' / 'insecure' / 'unsupported'). It surfaces
+        // exactly once — warn loudly; fixing the config reloads the app, which
+        // starts a fresh reader. Polling covers meanwhile.
+        if (coded && typeof coded === 'object' && coded.code) {
+          diag.terminal = coded.code
+          console.warn(`[vault-sse] terminal error (${coded.code}) — native reader stopped, not reconnecting:`, diag.lastError)
+        } else {
+          console.warn('[vault-sse] error:', diag.lastError)
+        }
       } else if (state === 'unsupported-server') {
         console.warn('[vault-sse] this GLANCEvault server predates /events — push disabled, polling covers')
       } else if (sseDebug()) {
@@ -120,15 +139,48 @@ export function useVaultEventStream({ drainSync, drainIntents }: {
         : null
     }
 
+    const onEvent = (evt: unknown) => {
+      diag.events += 1
+      const seq = (evt as { seq?: number } | null)?.seq
+      if (typeof seq === 'number') diag.lastEventSeq = seq
+      coalescer.handleEvent(evt)
+    }
+
+    // ── NATIVE-BRIDGE: the shell owns the socket + reconnect + fg/bg ─────────
+    if (transport === 'native-bridge') {
+      const client = createBridgeSseClient({
+        getConnection,
+        // JS → native: hand over the connection and say "SSE desired on". The
+        // shell connects only while the Activity is foreground and reconnects
+        // with backoff — all invisible here.
+        startNative: (c) => {
+          VaultSse.start({ vaultUrl: c.vaultUrl, vaultToken: c.vaultToken, accountId: c.accountId })
+            .catch(err => onStateChange('error', err instanceof Error ? err.message : String(err)))
+        },
+        stopNative: () => { VaultSse.stop().catch(() => { /* teardown is best-effort */ }) },
+        onEvent,
+        onStateChange,
+      })
+      // Native → JS: every reader message arrives as an sseMessage plugin event.
+      let handle: PluginListenerHandle | undefined
+      VaultSse.addListener('sseMessage', client.receive).then(h => { handle = h })
+      // No visibilitychange wiring here: the native shell owns
+      // foreground/background (Activity lifecycle) and reconnect. The renderer
+      // only declares intent and hands over the connection.
+      client.start()
+
+      return () => {
+        client.stop()
+        handle?.remove()
+        coalescer.cancel()
+      }
+    }
+
+    // ── WEB: JS owns the fetch stream + reconnect/backoff ────────────────────
     const client = createVaultEventClient({
       getConnection,
       openStream: openWebSseStream,
-      onEvent: (evt) => {
-        diag.events += 1
-        const seq = (evt as { seq?: number } | null)?.seq
-        if (typeof seq === 'number') diag.lastEventSeq = seq
-        coalescer.handleEvent(evt)
-      },
+      onEvent,
       onStateChange,
     })
 

@@ -22,6 +22,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(BillingBridgePlugin.class);
         registerPlugin(WebDavHttpPlugin.class);
         registerPlugin(SecureStorePlugin.class);
+        registerPlugin(com.lastglance.app.sse.VaultSsePlugin.class);
         super.onCreate(savedInstanceState);
         captureWidgetDeepLink(getIntent());
         captureSharedText(getIntent());
