@@ -281,6 +281,10 @@
   },
   "sync": {
     "title": "Sincronização na nuvem",
+    "errors": {
+      "CREDENTIAL_INVALID": "O servidor de sincronização já não aceita o acesso deste dispositivo. As suas alterações estão guardadas neste dispositivo. Peça a quem gere o seu servidor de sincronização para restaurar o acesso deste dispositivo.",
+      "QUOTA_EXCEEDED": "O servidor de sincronização atingiu o limite desta conta. As suas alterações estão guardadas neste dispositivo e a sincronização será repetida automaticamente. Peça a quem gere o seu servidor de sincronização para aumentar o limite."
+    },
     "syncHalted": "Sincronização interrompida",
     "haltedDescription": "Ocorreu um erro crítico. Resolva o problema e limpe para tentar novamente.",
     "clearHalt": "Limpar",
