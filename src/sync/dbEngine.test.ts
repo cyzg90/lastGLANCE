@@ -397,3 +397,75 @@ describe('createDbEngine stale pull-cursor recovery', () => {
     expect(localStorage.getItem(RECOVERY_FLAG)).toBe(String(CURRENT_GEN))
   })
 })
+
+describe('first-sync snapshot seeding gate', () => {
+  // Regression guard for the SSE self-nudge loop: the old gate re-ran the
+  // full-snapshot marking on EVERY cycle while getHighWaterMark() === 0, so
+  // with the pull failing (or backed off) while pushes succeeded, each cycle
+  // re-pushed the whole dataset — and under SSE each push's own nudge
+  // triggered the next cycle. The gate is now a one-shot persisted flag: mark
+  // once, latch, and let the engine's persisted dirty set own delivery.
+  //
+  // The cycles below fail fast inside the engine (no passphrase in session →
+  // ensureRootKey throws PASSPHRASE_REQUIRED before any network) — deliberate:
+  // seeding runs before the engine cycle, and a failing cycle is exactly the
+  // state the old gate looped in.
+  const HWM_KEY = 'lastglance-db-sync-hwm'
+  const RECOVERY_FLAG = 'lastglance-db-sync-hwm-recovery-gen'
+  const SEEDED_FLAG = 'lastglance-db-sync-snapshot-seeded'
+  const DIRTY_KEY = 'lastglance-db-sync-dirty'
+
+  beforeAll(() => {
+    setVaultConfig({
+      enabled: true,
+      vaultUrl: 'http://127.0.0.1:9',
+      vaultToken: 'test-token',
+      accountId: 'acct-test',
+    })
+    // Keep the recovery path out of these tests' way.
+    localStorage.setItem(RECOVERY_FLAG, '2')
+  })
+
+  afterAll(() => {
+    setVaultConfig(null)
+    for (const k of [HWM_KEY, RECOVERY_FLAG, SEEDED_FLAG, DIRTY_KEY]) localStorage.removeItem(k)
+  })
+
+  it('seeds once on a fresh device, then never re-marks (the loop regression)', async () => {
+    localStorage.removeItem(HWM_KEY)
+    localStorage.removeItem(SEEDED_FLAG)
+    localStorage.removeItem(DIRTY_KEY)
+
+    const engine = createDbEngine()!
+    await engine.dbSyncCycle()
+
+    // Marking completed and latched: the rows seeded in beforeAll are dirty.
+    expect(localStorage.getItem(SEEDED_FLAG)).toBe('1')
+    const dirty = engine.getDirtySet()
+    expect(dirty).toContain(CAT_ID)
+    expect(dirty).toContain(EVENT_ID)
+
+    // The old gate's loop condition: HWM is STILL 0 (no pull succeeded), and
+    // another cycle runs. It must NOT re-mark — that re-mark is what re-pushed
+    // the full dataset every cycle.
+    engine.clearDirty()
+    expect(engine.getHighWaterMark()).toBe(0)
+    await engine.dbSyncCycle()
+    expect(engine.getDirtySet()).toEqual([])
+  })
+
+  it('migration shim: a pre-flag device whose first sync already completed latches without re-marking', async () => {
+    // An upgrading device: no flag, but a pull cursor past 0 proves the first
+    // sync happened under the old gate. It must not burst a redundant
+    // full-snapshot push (and its fleet-wide nudges) on upgrade.
+    localStorage.setItem(HWM_KEY, '42')
+    localStorage.removeItem(SEEDED_FLAG)
+    localStorage.removeItem(DIRTY_KEY)
+
+    const engine = createDbEngine()!
+    await engine.dbSyncCycle()
+
+    expect(localStorage.getItem(SEEDED_FLAG)).toBe('1')
+    expect(engine.getDirtySet()).toEqual([])
+  })
+})

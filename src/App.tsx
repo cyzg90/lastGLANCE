@@ -23,7 +23,8 @@ import { useReminders } from '@/hooks/useReminders'
 import { usePendingCompletions } from '@/hooks/usePendingCompletions'
 import { usePendingDeepLink } from '@/hooks/usePendingDeepLink'
 import { useIntentsPoller } from '@/hooks/useIntentsPoller'
-import { useDbIntentsPoller } from '@/hooks/useDbIntentsPoller'
+import { useDbIntentsPoller, drainDbIntents } from '@/hooks/useDbIntentsPoller'
+import { useVaultEventStream } from '@/hooks/useVaultEventStream'
 import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
@@ -369,6 +370,13 @@ function AppInner() {
   // GLANCEvault DB intents transport — gated by isDbIntentsEnabled(); a no-op
   // unless the per-user opt-in is on. WebDAV intents above remain the default.
   useDbIntentsPoller(loadHeatmap)
+  // GLANCEvault SSE push: nudges from the vault trigger the SAME drains the
+  // polls run (runDbSync for the sync tier, the intents poller's drain for the
+  // intents tier), so remote changes land in seconds instead of at the next
+  // poll. Purely additive — every poll cadence above stays untouched as the
+  // correctness backstop, and a no-op when the vault is disabled or the
+  // transport can't stream (native shell, pre-/events server).
+  useVaultEventStream({ drainSync: runDbSync, drainIntents: drainDbIntents })
   // Android/Tasker intents transport — lets another Android app drive lastGLANCE
   // via app.lastglance.* intents. No-op off native Android.
   useAndroidIntentBridge(loadHeatmap)

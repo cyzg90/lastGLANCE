@@ -429,8 +429,21 @@ export interface DbEngineCallbacks {
 //   gen 1 (v1.8.6): split-cursor poisoning from @glance-apps/sync ≤ 1.3.x.
 //   gen 2 (v1.8.7): re-pull so completions dropped on a not-yet-present chore by
 //                   the old applyCompletionEvent are re-listed and now parked.
+//
+// A generation rewind forces a full re-PULL only. It deliberately no longer
+// re-snapshot-pushes local data (the seed gate below is a one-shot flag, not an
+// HWM check): both existing generations were pull-side fixes, and push-side
+// loss has always been covered by dirty-retention-until-ack. If a FUTURE
+// generation ever needs a forced re-push (e.g. after server-side data loss), it
+// must ALSO remove SNAPSHOT_SEEDED_FLAG — rewinding the cursor alone will not
+// re-seed.
 const RECOVERY_GENERATION = 2
 const HWM_RECOVERY_FLAG = `${APP_ID}-db-sync-hwm-recovery-gen`
+
+// One-shot gate for the first-sync full-snapshot seed (see the seeding wrapper
+// in createDbEngine). Present-and-'1' means this device has completed its
+// initial marking; the engine's persisted dirty set owns delivery from there.
+const SNAPSHOT_SEEDED_FLAG = `${APP_ID}-db-sync-snapshot-seeded`
 
 function recoverStalePullCursor(engine: DbSyncEngine): void {
   if (typeof localStorage === 'undefined') return
@@ -507,8 +520,10 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
   })
 
   // Recover devices whose pull cursor was poisoned by the ≤1.3.x push/pull bug
-  // before deciding whether this is a first-ever sync below. Resetting to 0 here
-  // also makes the seeding wrapper re-snapshot local data, which is harmless.
+  // before deciding whether this is a first-ever sync below. The cursor rewind
+  // no longer re-triggers the snapshot seed (the seed gate is a one-shot flag,
+  // not an HWM check) — under SSE a rewind-triggered re-seed would not be
+  // harmless; see the seeding wrapper below.
   recoverStalePullCursor(engine)
 
   // Repair categories that were stored flat by an earlier build, immediately on
@@ -520,17 +535,39 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
     .then((n) => { if (n > 0) notifyApplied() })
     .catch((err) => console.warn('[lastglance] category parent repair failed:', err))
 
-  // On the first ever sync (high water mark 0), seed the dirty set with the full
-  // local dataset so existing users get everything pushed, not just new changes.
-  // After a successful first push the high water mark advances past 0, so this
-  // runs once. Seeding failures are non-fatal: the normal cycle still proceeds.
+  // On the first ever sync, seed the dirty set with the full local dataset so
+  // existing users get everything pushed, not just new changes.
+  //
+  // The gate is a ONE-SHOT PERSISTED FLAG (lifeGLANCE's pattern), set only
+  // after marking completes — NOT the old `getHighWaterMark() === 0` check.
+  // The HWM gate re-ran the full-snapshot mark on EVERY cycle until a pull
+  // succeeded, and the server nudges on byte-identical re-upserts, so with
+  // push succeeding while the pull was failing or backed off (exactly the
+  // state 1.9.0's push/pull decoupling sustains) each cycle re-pushed the
+  // whole dataset — under SSE, a self-nudge loop: push → own activity nudge →
+  // drain → re-mark (HWM still 0) → push. The flag latches after ONE
+  // successful marking; the engine's persisted dirty set then carries the
+  // seed until it is fully acked (pushDirtyRows only clears on full ack), so
+  // delivery stays guaranteed without ever re-marking. A marking FAILURE
+  // leaves the flag unset, so the next cycle retries. Seeding failures are
+  // non-fatal: the normal cycle still proceeds.
+  //
+  // Migration shim: a device upgrading from the HWM gate has no flag, but a
+  // pull cursor past 0 proves its first sync completed long ago — latch the
+  // flag without re-marking, so the upgrade does not trigger a fleet-wide
+  // burst of redundant full-snapshot pushes (and their nudges).
   const runCycle = engine.dbSyncCycle.bind(engine)
   const dbSyncCycle = async (): Promise<DbSyncResult> => {
-    if (engine.getHighWaterMark() === 0) {
-      try {
-        await markAllLocalEntitiesDirty(engine)
-      } catch (err) {
-        console.warn('[lastglance] vault initial snapshot failed:', err)
+    if (localStorage.getItem(SNAPSHOT_SEEDED_FLAG) !== '1') {
+      if (engine.getHighWaterMark() > 0) {
+        localStorage.setItem(SNAPSHOT_SEEDED_FLAG, '1')
+      } else {
+        try {
+          await markAllLocalEntitiesDirty(engine)
+          localStorage.setItem(SNAPSHOT_SEEDED_FLAG, '1')
+        } catch (err) {
+          console.warn('[lastglance] vault initial snapshot failed:', err)
+        }
       }
     }
     // The engine's own dbSyncCycle fires config.onRowsSkipped for any quarantined

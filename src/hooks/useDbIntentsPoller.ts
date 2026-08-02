@@ -26,6 +26,20 @@ import { processNotifyEnvelope } from '@/intents/processNotifyEnvelope'
 // This hook is gated by isDbIntentsEnabled(): when the DB intents transport is
 // off it does nothing, so it can be mounted alongside useIntentsPoller (the
 // WebDAV poller) and only the enabled transport runs.
+
+// The mounted hook's poll, registered so the SSE nudge path (useVaultEventStream)
+// can trigger the SAME drain the timer and focus triggers run — one drain, three
+// triggers. Null while the hook is unmounted; the poll itself no-ops when the
+// DB intents transport is disabled, so callers never need to check.
+let activeDrain: (() => Promise<void>) | null = null
+
+// Trigger one intents receive drain now (SSE nudge entry point). Fire-and-forget:
+// failures surface through the activity log exactly as a timer-triggered poll's
+// would, and the next poll (or nudge) retries — polling stays the backstop.
+export function drainDbIntents(): void {
+  activeDrain?.().catch(() => {/* surfaced via the activity log */})
+}
+
 export function useDbIntentsPoller(onNewCompletion?: () => void): void {
   const onNewCompletionRef = useRef<(() => void) | undefined>(onNewCompletion)
   useEffect(() => { onNewCompletionRef.current = onNewCompletion }, [onNewCompletion])
@@ -116,6 +130,7 @@ export function useDbIntentsPoller(onNewCompletion?: () => void): void {
     }
 
     poll()
+    activeDrain = poll
 
     const intervalMs = getDbIntentsConfig().pollIntervalMinutes * 60 * 1000
     const interval = setInterval(poll, intervalMs)
@@ -126,6 +141,7 @@ export function useDbIntentsPoller(onNewCompletion?: () => void): void {
     document.addEventListener('visibilitychange', onVisibilityChange)
 
     return () => {
+      if (activeDrain === poll) activeDrain = null
       clearInterval(interval)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
