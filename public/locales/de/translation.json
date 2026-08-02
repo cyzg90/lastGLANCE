@@ -281,6 +281,10 @@
   },
   "sync": {
     "title": "Cloud-Sync",
+    "errors": {
+      "CREDENTIAL_INVALID": "Der Sync-Server akzeptiert den Sync-Zugriff dieses Geräts nicht mehr. Deine Änderungen sind auf diesem Gerät gespeichert. Bitte die Person, die deinen Sync-Server betreibt, den Zugriff für dieses Gerät wiederherzustellen.",
+      "QUOTA_EXCEEDED": "Der Sync-Server hat das Limit für dieses Konto erreicht. Deine Änderungen sind auf diesem Gerät gespeichert und die Synchronisierung versucht es automatisch erneut. Bitte die Person, die deinen Sync-Server betreibt, das Limit zu erhöhen."
+    },
     "syncHalted": "Sync unterbrochen",
     "haltedDescription": "Ein kritischer Fehler ist aufgetreten. Problem beheben und löschen, um erneut zu versuchen.",
     "clearHalt": "Löschen",

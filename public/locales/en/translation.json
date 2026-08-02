@@ -302,6 +302,8 @@
       "ROW_DECRYPT_FAILED": "Some synced data couldn't be decrypted. Check your sync passphrase.",
       "VERIFIER_UNSUPPORTED": "Your sync server needs to be updated to support key verification.",
       "ACCOUNT_ID_REQUIRED": "Finishing sync setup — try again in a moment.",
+      "CREDENTIAL_INVALID": "The sync server no longer accepts this device's sync access. Your changes are saved on this device. Ask whoever runs your sync server to restore access for this device.",
+      "QUOTA_EXCEEDED": "The sync server has reached its limit for this account. Your changes are saved on this device and syncing will retry automatically. Ask whoever runs your sync server to raise the limit.",
       "passphraseNeeded": "Enter your sync passphrase to continue.",
       "vaultUnreachable": "Couldn't reach GLANCEvault: {{detail}}",
       "requestFailed": "Sync request failed. Please try again.",
