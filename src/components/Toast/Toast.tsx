@@ -8,6 +8,12 @@ export interface ToastOptions {
   body?: string
   type?: 'default' | 'success' | 'warning'
   duration?: number
+  // Identity of the chore an overdue toast is about, when there is one. Warning
+  // toasts persist until acted on, but the fact they announce can go stale: a
+  // completion made on another device (or in dayGLANCE) lands via sync/intents
+  // AFTER the toast fired from the pre-sync local read. dismissWhere uses this
+  // to retract a toast whose chore is no longer overdue.
+  choreId?: number
   onAction?: () => Promise<void> | void
   onDetails?: () => void
   onSendToDayGlance?: () => Promise<boolean>
@@ -15,10 +21,16 @@ export interface ToastOptions {
 
 interface ToastItem extends ToastOptions {
   id: string
+  // Set by dismissWhere; the card notices and runs its normal exit animation,
+  // so a programmatic retraction looks the same as a user dismissal.
+  exiting?: boolean
 }
 
 interface ToastContextValue {
   showToast: (opts: ToastOptions) => void
+  // Retract every visible toast matching the predicate (with the exit
+  // animation). Used by the overdue-toast reconciler in useNotifications.
+  dismissWhere: (pred: (toast: ToastOptions) => boolean) => void
 }
 
 const ToastContext = createContext<ToastContextValue | null>(null)
@@ -128,6 +140,11 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
     return () => clearTimeout(timer)
   }, [duration, exit])
 
+  // Programmatic retraction (dismissWhere): animate out like a user dismissal.
+  useEffect(() => {
+    if (toast.exiting) exit()
+  }, [toast.exiting, exit])
+
   const Icon = toast.type === 'success' ? Check : Bell
   const iconColor =
     toast.type === 'success' ? 'text-green-400' :
@@ -175,12 +192,18 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     })
   }, [])
 
+  // Mark matches as exiting rather than removing them, so each card runs its
+  // exit animation and then removes itself through the normal dismiss path.
+  const dismissWhere = useCallback((pred: (toast: ToastOptions) => boolean) => {
+    setToasts(prev => prev.map(t => (pred(t) && !t.exiting ? { ...t, exiting: true } : t)))
+  }, [])
+
   function dismiss(id: string) {
     setToasts(prev => prev.filter(t => t.id !== id))
   }
 
   return (
-    <ToastContext.Provider value={{ showToast }}>
+    <ToastContext.Provider value={{ showToast, dismissWhere }}>
       {children}
       {createPortal(
         <div className="fixed z-[60] flex flex-col gap-2 items-end bottom-20 right-4 min-[1060px]:bottom-6 min-[1060px]:right-6">
