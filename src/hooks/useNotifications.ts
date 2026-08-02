@@ -7,10 +7,51 @@ import { useIntents } from '@/intents/IntentsContext'
 import { emitCreateIntent } from '@/intents/emitter'
 import { getMultiUserEnabled, getMeUserSyncId } from '@/multiuser/settings'
 import { ownedByMe } from '@/utils/choreFilter'
+import { isPastCadence } from '@/utils/cadence'
+import type { ChoreWithLastCompletion } from '@/types'
 import dayjs from 'dayjs'
 
 const STORAGE_KEY = (choreId: number) => `lg_notified_${choreId}`
 const AUTO_SCHED_KEY = (choreId: number) => `lg_autosched_${choreId}`
+
+// The overdue checks read the LOCAL DB, which on launch/foreground predates the
+// sync and intents deliveries kicked off at the same moment — a chore completed
+// on another device (or in dayGLANCE) still reads as overdue for a few seconds.
+// Two mitigations, matched to what each mistake costs:
+//
+//  - The toast is retractable, so it fires immediately and a reconciler
+//    dismisses it if an arriving completion makes it stale (see the second
+//    effect below). Applies from any lg:chore-logged/lg:sync-applied source:
+//    both sync tiers, both intents pollers, and local completions.
+//  - The dayGLANCE auto-schedule emit is durable and CANNOT be recalled, so it
+//    instead waits out a grace period and re-reads fresh rows before deciding.
+//    A settle signal would be nicer than a delay, but "sync is done" has no
+//    single definition here — completions arrive via the file tier, the vault
+//    tier, or either intents poller, each optional, and (since sync 1.10.0) a
+//    cycle may legitimately be suppressed by backoff — so the honest gate is a
+//    delay that comfortably covers a normal launch sync, then the freshest
+//    data available. Nothing user-visible waits on it, and the once-per-day
+//    marker means the delay is imperceptible.
+const RECONCILE_DEBOUNCE_MS = 400
+const AUTO_SCHED_SYNC_GRACE_MS = 15_000
+
+// Chores the current user acts on: everything, or in multi-user mode only
+// chores owned by "Me" — shared (unassigned) or assigned to me, and not inside
+// a category assigned to someone else. Mirrors the "Mine" view filter
+// (filterCategoryData) so we don't surface (or auto-schedule) another user's
+// chores.
+async function candidateChores(): Promise<ChoreWithLastCompletion[]> {
+  const categories = await getCategories()
+  const allChores = (await Promise.all(categories.map(c => getChoresForCategory(c.id)))).flat()
+  const meId = getMeUserSyncId()
+  if (!getMultiUserEnabled() || !meId) return allChores
+  const categoryById = new Map(categories.map(c => [c.id, c]))
+  return allChores.filter(chore => {
+    const category = categoryById.get(chore.category_id)
+    return ownedByMe(category?.assigned_user_sync_ids ?? [], meId) &&
+      ownedByMe(chore.assigned_user_sync_ids ?? [], meId)
+  })
+}
 
 async function fireBrowserNotification(title: string, body: string) {
   if (Notification.permission !== 'granted') return
@@ -50,7 +91,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 }
 
 export function useNotifications() {
-  const { showToast } = useToast()
+  const { showToast, dismissWhere } = useToast()
   // Ref so the async checkAndNotify closure always sees the latest showToast
   const showToastRef = useRef<(opts: ToastOptions) => void>(showToast)
   useEffect(() => { showToastRef.current = showToast }, [showToast])
@@ -60,32 +101,38 @@ export function useNotifications() {
   useEffect(() => { isConfiguredRef.current = isConfigured }, [isConfigured])
 
   useEffect(() => {
-    async function checkAndNotify() {
+    // Trailing-edge: each trigger restarts the grace window, and the evaluation
+    // re-reads the DB after it, so it always runs on the freshest rows.
+    let autoSchedTimer: ReturnType<typeof setTimeout> | null = null
+
+    async function runAutoSchedule() {
       const today = dayjs().format('YYYY-MM-DD')
-      const categories = await getCategories()
-      const allChores = (await Promise.all(categories.map(c => getChoresForCategory(c.id)))).flat()
-
-      // In multi-user mode, only act on chores owned by "Me" — shared
-      // (unassigned) or assigned to me, and not inside a category assigned to
-      // someone else. Mirrors the "Mine" view filter (filterCategoryData) so we
-      // don't surface (or auto-schedule) another user's chores.
-      const meId = getMeUserSyncId()
-      const filterByMe = getMultiUserEnabled() && !!meId
-      const categoryById = new Map(categories.map(c => [c.id, c]))
-
-      for (const chore of allChores) {
-        if (filterByMe) {
-          const category = categoryById.get(chore.category_id)
-          if (!ownedByMe(category?.assigned_user_sync_ids ?? [], meId!) ||
-              !ownedByMe(chore.assigned_user_sync_ids ?? [], meId!)) {
-            continue
+      for (const chore of await candidateChores()) {
+        // Auto-schedule: emit at most once per day when overdue
+        if (
+          chore.auto_schedule_to_dayglance &&
+          isConfiguredRef.current &&
+          isPastCadence(chore.target_cadence_days, chore.elapsed_days)
+        ) {
+          if (localStorage.getItem(AUTO_SCHED_KEY(chore.id!)) !== today) {
+            // Write the "sent today" marker ONLY after a durable enqueue. The old
+            // order wrote it BEFORE the send, so a failed send was both lost and
+            // suppressed for the rest of the day. Enqueue is durable, so once it
+            // resolves the intent will be delivered (retried as needed); a failed
+            // enqueue leaves the marker unset so the next pass retries.
+            const queued = await emitCreateIntent(chore).catch(() => false)
+            if (queued) localStorage.setItem(AUTO_SCHED_KEY(chore.id!), today)
           }
         }
+      }
+    }
 
+    async function checkAndNotify() {
+      const today = dayjs().format('YYYY-MM-DD')
+
+      for (const chore of await candidateChores()) {
         const isOverdue = chore.notify_when_overdue &&
-          chore.target_cadence_days &&
-          chore.elapsed_days !== null &&
-          chore.elapsed_days >= chore.target_cadence_days
+          isPastCadence(chore.target_cadence_days, chore.elapsed_days)
 
         if (isOverdue) {
           if (localStorage.getItem(STORAGE_KEY(chore.id!)) !== today) {
@@ -100,6 +147,10 @@ export function useNotifications() {
                 title: chore.name,
                 body,
                 type: 'warning',
+                // Lets the reconciler retract this toast if a completion for
+                // the chore lands after the fact (synced from another device,
+                // or made in dayGLANCE).
+                choreId,
                 onAction: async () => {
                   await logCompletion(choreId, { completedByUserSyncId: getMeUserSyncId() })
                   window.dispatchEvent(new CustomEvent('lg:chore-logged'))
@@ -122,26 +173,15 @@ export function useNotifications() {
             localStorage.setItem(STORAGE_KEY(chore.id!), today)
           }
         }
-
-        // Auto-schedule: emit at most once per day when overdue
-        if (
-          chore.auto_schedule_to_dayglance &&
-          isConfiguredRef.current &&
-          chore.target_cadence_days &&
-          chore.elapsed_days !== null &&
-          chore.elapsed_days >= chore.target_cadence_days
-        ) {
-          if (localStorage.getItem(AUTO_SCHED_KEY(chore.id!)) !== today) {
-            // Write the "sent today" marker ONLY after a durable enqueue. The old
-            // order wrote it BEFORE the send, so a failed send was both lost and
-            // suppressed for the rest of the day. Enqueue is durable, so once it
-            // resolves the intent will be delivered (retried as needed); a failed
-            // enqueue leaves the marker unset so the next pass retries.
-            const queued = await emitCreateIntent(chore).catch(() => false)
-            if (queued) localStorage.setItem(AUTO_SCHED_KEY(chore.id!), today)
-          }
-        }
       }
+
+      // The irreversible half runs after the sync grace, on a fresh read (see
+      // the constants above for why this is a delay and not a settle signal).
+      if (autoSchedTimer) clearTimeout(autoSchedTimer)
+      autoSchedTimer = setTimeout(() => {
+        autoSchedTimer = null
+        runAutoSchedule().catch(() => {/* next trigger retries */})
+      }, AUTO_SCHED_SYNC_GRACE_MS)
     }
 
     checkAndNotify()
@@ -151,6 +191,45 @@ export function useNotifications() {
     return () => {
       clearInterval(interval)
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      if (autoSchedTimer) clearTimeout(autoSchedTimer)
     }
   }, [])
+
+  // Reconcile visible overdue toasts against reality whenever a completion
+  // lands. Every path that writes a completion into Dexie dispatches
+  // lg:chore-logged (both sync tiers, both intents pollers, the native pending
+  // path, and local logging), so this is the complete "data changed" signal.
+  // The vault tier fires per applied row, so a pull produces a burst — debounce
+  // and re-check once. A chore that vanished entirely (remote delete) also
+  // leaves the overdue set, which retracts its toast too.
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    async function reconcile() {
+      const categories = await getCategories()
+      const chores = (await Promise.all(categories.map(c => getChoresForCategory(c.id)))).flat()
+      const stillOverdue = new Set(
+        chores
+          .filter(c => isPastCadence(c.target_cadence_days, c.elapsed_days))
+          .map(c => c.id!),
+      )
+      dismissWhere(t => t.choreId != null && !stillOverdue.has(t.choreId))
+    }
+
+    function scheduleReconcile() {
+      if (timer) clearTimeout(timer)
+      timer = setTimeout(() => {
+        timer = null
+        reconcile().catch(() => {/* transient read failure; next event retries */})
+      }, RECONCILE_DEBOUNCE_MS)
+    }
+
+    window.addEventListener('lg:chore-logged', scheduleReconcile)
+    window.addEventListener('lg:sync-applied', scheduleReconcile)
+    return () => {
+      window.removeEventListener('lg:chore-logged', scheduleReconcile)
+      window.removeEventListener('lg:sync-applied', scheduleReconcile)
+      if (timer) clearTimeout(timer)
+    }
+  }, [dismissWhere])
 }

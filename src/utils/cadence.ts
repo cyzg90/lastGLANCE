@@ -29,6 +29,23 @@ export function needsAttention(targetCadenceDays: number | null, elapsedDays: nu
 }
 
 /**
+ * True when a chore has aged past its full cadence — the strict "overdue"
+ * threshold (ratio >= 1), as opposed to needsAttention's earlier amber zone.
+ * Chores without a cadence, or never completed (elapsed null), never qualify.
+ *
+ * This is the single overdue definition shared by the overdue toast, the
+ * toast reconciler that dismisses it once a completion lands, and the
+ * dayGLANCE auto-schedule — so they can never drift apart.
+ */
+export function isPastCadence(
+  targetCadenceDays: number | null | undefined,
+  elapsedDays: number | null | undefined,
+): boolean {
+  if (!targetCadenceDays || elapsedDays == null) return false
+  return elapsedDays >= targetCadenceDays
+}
+
+/**
  * Within cadence (ratio 0→1): green → amber.
  * Overdue (ratio 1→2+): amber → red. Full red at 2× overdue.
  *
