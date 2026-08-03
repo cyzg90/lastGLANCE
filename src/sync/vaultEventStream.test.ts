@@ -7,6 +7,7 @@ import { describe, it, expect, vi } from 'vitest'
 import {
   parseSseFrame,
   drainSseBuffer,
+  createBridgeSseClient,
   createNudgeCoalescer,
   createVaultEventClient,
   openWebSseStream,
@@ -225,6 +226,80 @@ describe('createVaultEventClient', () => {
     })
     client.start()
     await vi.waitFor(() => expect(states).toContain('stalled'))
+  })
+})
+
+describe('createBridgeSseClient', () => {
+  const connection = { vaultUrl: 'http://v', vaultToken: 't', accountId: 'a' }
+
+  function make(getConnection: () => typeof connection | null = () => connection) {
+    const started: unknown[] = []
+    let stops = 0
+    const events: unknown[] = []
+    const states: Array<[SseClientState, unknown?]> = []
+    const client = createBridgeSseClient({
+      getConnection,
+      startNative: c => started.push(c),
+      stopNative: () => { stops++ },
+      onEvent: e => events.push(e),
+      onStateChange: (s, d) => states.push([s, d]),
+    })
+    return { client, started, events, states, stops: () => stops }
+  }
+
+  it('start hands the connection to native; stop tears down; both idempotent', () => {
+    const { client, started, stops } = make()
+    expect(client.start()).toBe(true)
+    expect(client.start()).toBe(false) // already running
+    expect(started).toEqual([connection])
+    client.stop()
+    client.stop()
+    expect(stops()).toBe(1)
+    expect(client.isRunning()).toBe(false)
+  })
+
+  it('does not start without a connection (polling covers)', () => {
+    const { client, started } = make(() => null)
+    expect(client.start()).toBe(false)
+    expect(started).toEqual([])
+  })
+
+  it('routes frames through the shared parser and forwards only real nudges', () => {
+    const { client, events } = make()
+    client.receive({ type: 'frame', block: 'event: ready\ndata: {"seq":3}' })
+    client.receive({ type: 'frame', block: 'event: activity\ndata: {"seq":7}' })
+    client.receive({ type: 'frame', block: ': heartbeat' })    // parses to null → dropped
+    client.receive({ type: 'frame', block: 'data: not-json' }) // unparseable → dropped
+    expect(events).toEqual([{ seq: 3 }, { seq: 7 }])
+  })
+
+  it('accepts JSON-string messages from a stringifying shell', () => {
+    const { client, events, states } = make()
+    client.receive('{"type":"open"}')
+    client.receive('{"type":"frame","block":"event: activity\\ndata: {\\"seq\\":9}"}')
+    expect(states).toEqual([['open', undefined]])
+    expect(events).toEqual([{ seq: 9 }])
+  })
+
+  it('surfaces coded (terminal) errors with the code attached, plain errors without', () => {
+    const { client, states } = make()
+    client.receive({ type: 'error', message: 'auth failed: 401', code: 'auth' })
+    client.receive({ type: 'error', message: 'read reset' })
+    expect(states).toEqual([
+      ['error', { message: 'auth failed: 401', code: 'auth' }],
+      ['error', 'read reset'],
+    ])
+  })
+
+  it('ignores malformed pushes without throwing', () => {
+    const { client, events, states } = make()
+    client.receive(null)
+    client.receive(42)
+    client.receive('not json')
+    client.receive({ type: 'mystery' })
+    client.receive({ type: 'frame' }) // no block
+    expect(events).toEqual([])
+    expect(states).toEqual([])
   })
 })
 

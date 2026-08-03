@@ -29,20 +29,23 @@
 // backoff (@glance-apps/sync 1.10.0) additionally guarantees a nudge-triggered
 // cycle can never hammer a failing server.
 //
-// TRANSPORTS (phase 1: web only):
+// TRANSPORTS:
 //   • WEB (browser/PWA): EventSource cannot set an Authorization header, and the
 //     vault authenticates with a Bearer token — so we use a fetch-based
 //     streaming reader (response.body.getReader()). See openWebSseStream.
-//   • NATIVE (Capacitor Android/iOS): vault HTTP rides CapacitorHttp (whole-body,
-//     cannot stream), and a WebView fetch to the vault is constrained by the
-//     same CORS/cleartext realities that made CapacitorHttp necessary — so
-//     streaming inside the WebView is not attempted. detectSseTransport reports
-//     'native-unsupported' and the app keeps its polling behavior, exactly as
-//     dayGLANCE's shells did before their native readers shipped. Phase 2 is a
-//     small Capacitor plugin owning the socket natively (reference
-//     implementations: dayGLANCE's VaultSseClient.kt / VaultSseBridge.swift).
+//   • NATIVE-BRIDGE (Capacitor shells with the VaultSse plugin): vault HTTP
+//     rides CapacitorHttp (whole-body, cannot stream), so the SHELL owns the
+//     socket — a native SSE reader (Android sse/VaultSseClient.kt; iOS pending)
+//     that connects while foreground, drops on background, reconnects with
+//     backoff, and pushes each raw SSE block in as a plugin event. The renderer
+//     reuses the SAME parseSseFrame + coalescer + drains — only the transport
+//     INPUT differs (see createBridgeSseClient). No vault CORS change: a native
+//     HTTP client has no browser origin.
+//   • NATIVE-UNSUPPORTED (a shell without the plugin — an older APK, or iOS
+//     until its reader ships): polling only, exactly today's behavior.
 
 import { isNativePlatform } from './nativeHttp'
+import { isVaultSseNativeAvailable } from '@/native/vaultSse'
 
 // ─── SSE frame parsing ───────────────────────────────────────────────────────
 
@@ -101,16 +104,18 @@ export function drainSseBuffer(buffer: string, onEvent: (evt: unknown) => void):
 
 // ─── transport detection ─────────────────────────────────────────────────────
 
-export type SseTransport = 'web' | 'native-unsupported' | 'none'
+export type SseTransport = 'web' | 'native-bridge' | 'native-unsupported' | 'none'
 
 /**
- * Which SSE consumption path this runtime supports. 'web' opens a stream; every
- * other value degrades to polling (the permanent correctness backstop).
+ * Which SSE consumption path this runtime supports. 'web' and 'native-bridge'
+ * open a stream; every other value degrades to polling (the permanent
+ * correctness backstop).
  */
 export function detectSseTransport(): SseTransport {
   if (typeof window === 'undefined') return 'none'
-  // Capacitor shell: no streaming vault path exists in phase 1 (see header).
-  if (isNativePlatform) return 'native-unsupported'
+  // Capacitor shell: the shell streams natively when it carries the VaultSse
+  // plugin; an older shell degrades to polling (see header).
+  if (isNativePlatform) return isVaultSseNativeAvailable() ? 'native-bridge' : 'native-unsupported'
   if (typeof fetch === 'function' && typeof ReadableStream !== 'undefined') return 'web'
   return 'none'
 }
@@ -424,5 +429,108 @@ export function createVaultEventClient({
     },
     isRunning: () => !stopped,
     isSupported: () => supported,
+  }
+}
+
+// ─── bridge-fed client (native shell owns the socket) ────────────────────────
+
+export interface BridgeSseClient {
+  receive: (msg: unknown) => void
+  start: () => boolean
+  stop: () => void
+  isRunning: () => boolean
+}
+
+/**
+ * The renderer half of the 'native-bridge' transport, ported from dayGLANCE.
+ * Unlike createVaultEventClient (which owns a fetch stream + JS-side
+ * reconnect/backoff), here the NATIVE SHELL owns the socket and its whole
+ * lifecycle: it connects when foreground, drops on background, and reconnects
+ * with backoff — all invisible to JS. This client's job is only to (a) tell
+ * native "SSE desired on/off" with the connection params, and (b) funnel the
+ * raw SSE blocks native pushes back through the SAME parseSseFrame + onEvent
+ * (→ coalescer → drains) the web path uses. There is deliberately NO JS
+ * reconnect loop here — reconnect belongs to exactly ONE owner per transport,
+ * and for native that owner is the shell. Polling remains the backstop.
+ *
+ * `receive` is fed by the VaultSse plugin's `sseMessage` events (see
+ * src/native/vaultSse.ts for the message shapes). A coded error means the
+ * native reader stopped TERMINALLY and will not reconnect ('auth',
+ * 'insecure', 'unsupported') — surfaced once via onStateChange with the code
+ * attached so the consumer can distinguish it.
+ */
+export function createBridgeSseClient({
+  getConnection,
+  startNative,
+  stopNative,
+  onEvent,
+  onStateChange,
+}: {
+  getConnection: () => VaultSseConnection | null
+  startNative: (connection: VaultSseConnection) => void
+  stopNative: () => void
+  onEvent: (evt: unknown) => void
+  onStateChange?: (state: SseClientState, detail?: unknown) => void
+}): BridgeSseClient {
+  let running = false
+
+  // The native shell pushes messages here. Accepts a parsed object OR a JSON
+  // string (a shell that stringifies is handled too). Never throws — a
+  // malformed push is ignored so it can't break the bridge.
+  const receive = (msg: unknown) => {
+    if (typeof msg === 'string') {
+      try { msg = JSON.parse(msg) } catch { return }
+    }
+    if (!msg || typeof msg !== 'object') return
+    const m = msg as { type?: string; block?: string; message?: string; code?: string }
+    switch (m.type) {
+      case 'open':
+        onStateChange?.('open')
+        break
+      case 'frame': {
+        // Reuse the EXISTING parser: native did transport + frame boundary
+        // detection; {seq} extraction stays in ONE place (parseSseFrame).
+        if (typeof m.block === 'string') {
+          const evt = parseSseFrame(m.block)
+          if (evt) onEvent(evt)
+        }
+        break
+      }
+      case 'closed':
+        onStateChange?.('closed')
+        break
+      case 'error':
+        // A coded error is terminal — native stopped and will NOT reconnect —
+        // so it surfaces exactly once. Non-coded errors are informational
+        // (native owns the retry).
+        onStateChange?.('error', m.code ? { message: m.message, code: m.code } : m.message)
+        break
+      default:
+        break
+    }
+  }
+
+  return {
+    receive,
+    start() {
+      if (running) return false
+      const connection = getConnection()
+      if (!connection) return false // nothing to connect to → polling covers it
+      running = true
+      onStateChange?.('connecting')
+      try {
+        startNative(connection)
+      } catch (err) {
+        onStateChange?.('error', err instanceof Error ? err.message : String(err))
+      }
+      return true
+    },
+    stop() {
+      if (!running) return
+      running = false
+      try { stopNative() } catch { /* teardown must not throw */ }
+      onStateChange?.('stopped')
+    },
+    isRunning: () => running,
   }
 }
