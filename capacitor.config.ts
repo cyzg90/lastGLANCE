@@ -17,6 +17,15 @@ const config: CapacitorConfig = {
     // never promote such a build to production.
     webContentsDebuggingEnabled: process.env.CAP_WEBVIEW_DEBUG === '1',
   },
+  ios: {
+    // Same gate, same hazard as Android above, for Release/TestFlight builds:
+    // Capacitor's iOS default (inspectable in Debug builds only) is right, so
+    // the key is set ONLY when CAP_WEBVIEW_DEBUG=1 was exported at `cap sync`
+    // time — an explicit false here would also kill Xcode-Run inspection.
+    // A TestFlight build synced with the flag is Safari-inspectable and must
+    // never be the build submitted for App Store review.
+    ...(process.env.CAP_WEBVIEW_DEBUG === '1' ? { webContentsDebuggingEnabled: true } : {}),
+  },
   plugins: {
     // Route fetch/XHR through the native HTTP stack so WebDAV/Nextcloud sync
     // works without a CORS proxy inside the native WebView.
