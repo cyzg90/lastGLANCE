@@ -282,8 +282,24 @@
   "sync": {
     "title": "Sync cloud",
     "errors": {
+      "APP_ID_MISMATCH": "Ce dossier de synchronisation appartient à une autre application. Choisissez un dossier créé par lastGLANCE.",
+      "SCHEMA_FORWARD_INCOMPATIBLE": "Ces données ont été enregistrées par une version plus récente de lastGLANCE. Mettez l'application à jour pour synchroniser.",
+      "PASSPHRASE_REQUIRED": "Saisissez votre phrase secrète de sync pour continuer.",
+      "PRECONDITION_FAILED": "La synchronisation a rencontré un conflit et doit réessayer. Veuillez synchroniser à nouveau.",
+      "FORBIDDEN": "Le serveur de synchronisation a refusé l'accès. Vérifiez les autorisations de votre compte.",
+      "AUTH_FAILURE": "Échec de la connexion. Vérifiez votre nom d'utilisateur et votre mot de passe.",
+      "LOCKED": "Un autre appareil synchronise en ce moment. Réessayez dans un instant.",
+      "NETWORK_ERROR": "Impossible de joindre le serveur de synchronisation. Vérifiez votre connexion et réessayez.",
+      "KEY_MISMATCH": "Phrase secrète incorrecte — elle doit correspondre exactement à celle de vos autres appareils.",
+      "ROW_DECRYPT_FAILED": "Certaines données synchronisées n'ont pas pu être déchiffrées. Vérifiez votre phrase secrète.",
+      "VERIFIER_UNSUPPORTED": "Votre serveur de synchronisation doit être mis à jour pour prendre en charge la vérification des clés.",
+      "ACCOUNT_ID_REQUIRED": "Finalisation de la configuration de la sync — réessayez dans un instant.",
       "CREDENTIAL_INVALID": "Le serveur de synchronisation n'accepte plus l'accès de cet appareil. Vos modifications sont enregistrées sur cet appareil. Demandez à la personne qui gère votre serveur de synchronisation de rétablir l'accès pour cet appareil.",
-      "QUOTA_EXCEEDED": "Le serveur de synchronisation a atteint la limite de ce compte. Vos modifications sont enregistrées sur cet appareil et la synchronisation réessaiera automatiquement. Demandez à la personne qui gère votre serveur de synchronisation d'augmenter la limite."
+      "QUOTA_EXCEEDED": "Le serveur de synchronisation a atteint la limite de ce compte. Vos modifications sont enregistrées sur cet appareil et la synchronisation réessaiera automatiquement. Demandez à la personne qui gère votre serveur de synchronisation d'augmenter la limite.",
+      "passphraseNeeded": "Saisissez votre phrase secrète de sync pour continuer.",
+      "vaultUnreachable": "Impossible de joindre GLANCEvault : {{detail}}",
+      "requestFailed": "La requête de synchronisation a échoué. Veuillez réessayer.",
+      "iCloudUnavailable": "iCloud est indisponible : {{error}}"
     },
     "syncHalted": "Sync interrompue",
     "haltedDescription": "Une erreur critique s'est produite. Résolvez le problème puis cliquez sur Effacer pour réessayer.",

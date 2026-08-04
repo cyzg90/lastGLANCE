@@ -282,8 +282,24 @@
   "sync": {
     "title": "Cloud-Sync",
     "errors": {
+      "APP_ID_MISMATCH": "Dieser Sync-Ordner gehört zu einer anderen App. Wähle einen von lastGLANCE erstellten Ordner.",
+      "SCHEMA_FORWARD_INCOMPATIBLE": "Diese Daten wurden von einer neueren Version von lastGLANCE gespeichert. Aktualisiere die App, um zu synchronisieren.",
+      "PASSPHRASE_REQUIRED": "Gib deine Sync-Passphrase ein, um fortzufahren.",
+      "PRECONDITION_FAILED": "Die Synchronisierung ist auf einen Konflikt gestoßen und muss es erneut versuchen. Bitte synchronisiere noch einmal.",
+      "FORBIDDEN": "Der Sync-Server hat den Zugriff verweigert. Prüfe die Berechtigungen deines Kontos.",
+      "AUTH_FAILURE": "Anmeldung fehlgeschlagen. Prüfe Benutzername und Passwort.",
+      "LOCKED": "Ein anderes Gerät synchronisiert gerade. Versuche es gleich noch einmal.",
+      "NETWORK_ERROR": "Der Sync-Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+      "KEY_MISMATCH": "Falsche Sync-Passphrase – sie muss exakt mit der Passphrase deiner anderen Geräte übereinstimmen.",
+      "ROW_DECRYPT_FAILED": "Einige synchronisierte Daten konnten nicht entschlüsselt werden. Prüfe deine Sync-Passphrase.",
+      "VERIFIER_UNSUPPORTED": "Dein Sync-Server muss aktualisiert werden, um die Schlüsselprüfung zu unterstützen.",
+      "ACCOUNT_ID_REQUIRED": "Die Sync-Einrichtung wird abgeschlossen – versuche es gleich noch einmal.",
       "CREDENTIAL_INVALID": "Der Sync-Server akzeptiert den Sync-Zugriff dieses Geräts nicht mehr. Deine Änderungen sind auf diesem Gerät gespeichert. Bitte die Person, die deinen Sync-Server betreibt, den Zugriff für dieses Gerät wiederherzustellen.",
-      "QUOTA_EXCEEDED": "Der Sync-Server hat das Limit für dieses Konto erreicht. Deine Änderungen sind auf diesem Gerät gespeichert und die Synchronisierung versucht es automatisch erneut. Bitte die Person, die deinen Sync-Server betreibt, das Limit zu erhöhen."
+      "QUOTA_EXCEEDED": "Der Sync-Server hat das Limit für dieses Konto erreicht. Deine Änderungen sind auf diesem Gerät gespeichert und die Synchronisierung versucht es automatisch erneut. Bitte die Person, die deinen Sync-Server betreibt, das Limit zu erhöhen.",
+      "passphraseNeeded": "Gib deine Sync-Passphrase ein, um fortzufahren.",
+      "vaultUnreachable": "GLANCEvault ist nicht erreichbar: {{detail}}",
+      "requestFailed": "Sync-Anfrage fehlgeschlagen. Bitte versuche es erneut.",
+      "iCloudUnavailable": "iCloud ist nicht verfügbar: {{error}}"
     },
     "syncHalted": "Sync unterbrochen",
     "haltedDescription": "Ein kritischer Fehler ist aufgetreten. Problem beheben und löschen, um erneut zu versuchen.",
