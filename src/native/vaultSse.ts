@@ -1,7 +1,7 @@
 import { Capacitor, registerPlugin, type PluginListenerHandle } from '@capacitor/core'
 
-// Native GLANCEvault SSE reader (Android today; the iOS shell will implement the
-// same plugin surface). The WebView cannot stream /events (vault HTTP rides the
+// Native GLANCEvault SSE reader (Android and iOS shells implement the same
+// plugin surface). The WebView cannot stream /events (vault HTTP rides the
 // buffered CapacitorHttp path), so the SHELL owns the socket — connecting while
 // foreground, dropping on background, reconnecting with backoff — and pushes
 // every reader message in as an `sseMessage` plugin event. The renderer's bridge
