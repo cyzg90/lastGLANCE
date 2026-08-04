@@ -282,8 +282,24 @@
   "sync": {
     "title": "Sincronización en la nube",
     "errors": {
+      "APP_ID_MISMATCH": "Esta carpeta de sincronización pertenece a otra app. Elige una carpeta creada por lastGLANCE.",
+      "SCHEMA_FORWARD_INCOMPATIBLE": "Estos datos se guardaron con una versión más reciente de lastGLANCE. Actualiza la app para sincronizar.",
+      "PASSPHRASE_REQUIRED": "Introduce tu contraseña de sincronización para continuar.",
+      "PRECONDITION_FAILED": "La sincronización encontró un conflicto y debe reintentarse. Sincroniza de nuevo.",
+      "FORBIDDEN": "El servidor de sincronización rechazó el acceso. Comprueba los permisos de tu cuenta.",
+      "AUTH_FAILURE": "Error al iniciar sesión. Comprueba tu usuario y contraseña.",
+      "LOCKED": "Otro dispositivo está sincronizando ahora mismo. Inténtalo de nuevo en un momento.",
+      "NETWORK_ERROR": "No se pudo conectar con el servidor de sincronización. Comprueba tu conexión e inténtalo de nuevo.",
+      "KEY_MISMATCH": "Contraseña de sincronización incorrecta: debe coincidir exactamente con la de tus otros dispositivos.",
+      "ROW_DECRYPT_FAILED": "Algunos datos sincronizados no se pudieron descifrar. Comprueba tu contraseña de sincronización.",
+      "VERIFIER_UNSUPPORTED": "Tu servidor de sincronización necesita actualizarse para admitir la verificación de claves.",
+      "ACCOUNT_ID_REQUIRED": "Finalizando la configuración de sincronización: inténtalo de nuevo en un momento.",
       "CREDENTIAL_INVALID": "El servidor de sincronización ya no acepta el acceso de este dispositivo. Tus cambios están guardados en este dispositivo. Pide a quien administra tu servidor de sincronización que restaure el acceso para este dispositivo.",
-      "QUOTA_EXCEEDED": "El servidor de sincronización ha alcanzado el límite de esta cuenta. Tus cambios están guardados en este dispositivo y la sincronización se reintentará automáticamente. Pide a quien administra tu servidor de sincronización que aumente el límite."
+      "QUOTA_EXCEEDED": "El servidor de sincronización ha alcanzado el límite de esta cuenta. Tus cambios están guardados en este dispositivo y la sincronización se reintentará automáticamente. Pide a quien administra tu servidor de sincronización que aumente el límite.",
+      "passphraseNeeded": "Introduce tu contraseña de sincronización para continuar.",
+      "vaultUnreachable": "No se pudo conectar con GLANCEvault: {{detail}}",
+      "requestFailed": "La solicitud de sincronización falló. Inténtalo de nuevo.",
+      "iCloudUnavailable": "iCloud no está disponible: {{error}}"
     },
     "syncHalted": "Sincronización detenida",
     "haltedDescription": "Ocurrió un error crítico. Resuelve el problema y borra para reintentar.",
