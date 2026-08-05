@@ -157,6 +157,22 @@ if $RELEASE; then
     echo "    (apksigner not found on PATH or in \$ANDROID_HOME; skipping signature check)"
   fi
 
+  # SHA-256 checksums for both release artifacts, written with bare filenames
+  # so `sha256sum -c SHA256SUMS.txt` works wherever they are downloaded to.
+  # Publish the file with the GitHub release: single-engine AV heuristics can
+  # flag the Play/sideload signature split as "repacked" (issue #255), and a
+  # checksum match is the user-side proof their APK is the authentic build.
+  echo "==> Writing SHA-256 checksums..."
+  (
+    cd "$OUT_DIR"
+    if command -v sha256sum >/dev/null 2>&1; then
+      sha256sum lastglance.apk lastglance.aab > SHA256SUMS.txt
+    else
+      shasum -a 256 lastglance.apk lastglance.aab > SHA256SUMS.txt
+    fi
+    sed 's/^/    /' SHA256SUMS.txt
+  )
+
   echo ""
   echo "==> Android release build complete. outputs/:"
   ls -lh "$OUT_DIR"
