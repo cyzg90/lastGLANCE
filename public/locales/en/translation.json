@@ -289,6 +289,11 @@
   },
   "sync": {
     "title": "Cloud Sync",
+    "backoff": {
+      "transport": "Can't reach the sync server. Retrying in {{seconds}}s.",
+      "auth": "The sync server rejected the sign-in. Next retry in about an hour. Check your device token in sync settings.",
+      "retrying": "Retrying on the next sync…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "This sync folder belongs to a different app. Pick a folder created by lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "This data was saved by a newer version of lastGLANCE. Update the app to sync.",
