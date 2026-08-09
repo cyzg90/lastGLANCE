@@ -1,9 +1,14 @@
-import { Capacitor, registerPlugin } from '@capacitor/core'
+import { registerPlugin } from '@capacitor/core'
+import { isNativeShell } from './platform'
 
-// Native bridge to the Android home-screen widgets. The web app owns the data
-// (IndexedDB lives in the WebView), so it pushes a denormalized JSON snapshot
-// to native SharedPreferences; the widgets render from that snapshot and never
-// touch the database. No-op on web/PWA and iOS (no plugin registered there).
+// Native bridge to the home-screen widgets. The web app owns the data (IndexedDB
+// lives in the WebView), so it pushes a denormalized JSON snapshot to a native
+// store; the widgets render from that snapshot and never touch the database.
+// No-op on web/PWA, where no plugin is registered.
+//
+// Both native shells implement the identical interface below — Android over
+// SharedPreferences (WidgetBridgePlugin.java), iOS over the group.com.lastglance
+// App Group (WidgetBridgePlugin.swift) — so nothing here branches per platform.
 export interface WidgetBridgePlugin {
   // Persist the snapshot JSON and refresh any placed widgets.
   updateSnapshot(options: { json: string }): Promise<void>
@@ -19,7 +24,7 @@ export interface WidgetBridgePlugin {
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge')
 
 export async function pushWidgetSnapshot(json: string): Promise<void> {
-  if (Capacitor.getPlatform() !== 'android') return
+  if (!isNativeShell()) return
   try {
     await WidgetBridge.updateSnapshot({ json })
   } catch {
@@ -35,7 +40,7 @@ export interface PendingCompletion {
 }
 
 export async function drainPendingCompletions(): Promise<PendingCompletion[]> {
-  if (Capacitor.getPlatform() !== 'android') return []
+  if (!isNativeShell()) return []
   try {
     const res = await WidgetBridge.drainPendingCompletions()
     const arr = JSON.parse(res?.completions ?? '[]')
@@ -46,7 +51,7 @@ export async function drainPendingCompletions(): Promise<PendingCompletion[]> {
 }
 
 export async function consumeDeepLink(): Promise<string | null> {
-  if (Capacitor.getPlatform() !== 'android') return null
+  if (!isNativeShell()) return null
   try {
     const res = await WidgetBridge.consumeDeepLink()
     return res?.deepLink ?? null
@@ -56,7 +61,7 @@ export async function consumeDeepLink(): Promise<string | null> {
 }
 
 export async function consumeSharedChore(): Promise<string | null> {
-  if (Capacitor.getPlatform() !== 'android') return null
+  if (!isNativeShell()) return null
   try {
     const res = await WidgetBridge.consumeSharedChore()
     return res?.text ?? null

@@ -6,18 +6,26 @@ lastGLANCE **iOS** app. This is the iOS counterpart to
 to be cross-platform, so this plan reuses the shared JS layer and data contracts
 and only reimplements the native rendering per platform.
 
-> **▶ STATUS (last updated 2026-07-12)**
-> **Not started. Only the stock Capacitor iOS shell exists.**
+> **▶ STATUS (last updated 2026-07-29)**
+> **Phase 0 written, not yet built.** Everything below is authored but has never
+> been through a compiler — the work happens on Linux, Xcode is macOS-only, and CI
+> is `ubuntu-latest` and JS-only. Treat Phase 0 as unverified until it builds.
 >
-> - Present today: default `AppDelegate.swift`, the Capacitor SPM package, and a
->   default `Info.plist`. **No custom Swift, no widget extension, no App Group, no
->   entitlements.** `@capacitor/ios` is installed, so the web app runs in the iOS
->   WebView, but zero native features are wired.
-> - All native JS is hard-gated to `getPlatform() === 'android'` (12 guards, 0 iOS
->   branches), so even the cross-platform notification layer does not run on iOS.
-> - Android, by contrast, is feature-complete (Phases 0-3). Bringing iOS up is
->   **additive**: the shared JS/design layer does not change, only the native
->   declarations and rendering are added.
+> - Landed: `App.entitlements` + `GlanceWidgets.entitlements` (App Group
+>   `group.com.lastglance`), `Shared/SharedDataStore.swift`,
+>   `plugins/WidgetBridgePlugin.swift`, and a `GlanceWidgetsExtension` WidgetKit
+>   target rendering the heatmap. `project.pbxproj` was hand-edited to add the
+>   target (no Xcode available), so it needs an eyes-on check before anything is
+>   stacked on it.
+> - JS: `src/native/platform.ts` adds `isAndroid()` / `isIOS()` / `isNativeShell()`;
+>   `widgetBridge.ts` now runs in both shells. The reminder, deep-link and
+>   pending-completion hooks are still Android-gated — those are Phases 1-3.
+> - **Still required off-repo:** register the App Group on the App ID in the Apple
+>   Developer portal and let Xcode regenerate the provisioning profiles. Nothing
+>   reads or writes the shared container until that is done.
+> - Android remains feature-complete (Phases 0-3). Bringing iOS up is **additive**:
+>   the shared JS/design layer does not change, only the native declarations and
+>   rendering are added.
 
 ---
 
@@ -26,14 +34,20 @@ and only reimplements the native rendering per platform.
 On Android the native side reads a JSON snapshot from `SharedPreferences` and a
 pending-action queue from the same store. On iOS the equivalent shared container
 between the main app and its widget/share extensions is an **App Group**
-(`group.app.lastglance`). Every native feature below reads or writes that
+(`group.com.lastglance`). Every native feature below reads or writes that
 container, so it is the first thing to stand up and it gates everything else.
 
 - Requires an Apple Developer account, an App Group capability added to the app
   target and each extension target, and matching provisioning profiles.
-- The shared store is `UserDefaults(suiteName: "group.app.lastglance")` for small
-  JSON (snapshot, queues) and the App Group's file container for anything larger
-  (rasterized icons). This mirrors the Android `SharedDataStore` split.
+- The shared store is `UserDefaults(suiteName: "group.com.lastglance")` for small
+  JSON (snapshot, queues) and the App Group's file container for anything larger.
+  This mirrors the Android `SharedDataStore` split.
+- The identifier follows the iOS bundle ID (`com.lastglance`), **not** the Android
+  application ID (`com.lastglance.app`) — the two have never matched. An earlier
+  draft of this plan said `group.app.lastglance`, which matches neither.
+- A wrong or unprovisioned group fails **silently**: `UserDefaults(suiteName:)`
+  returns nil and every read looks like a fresh install. `SharedDataStore.isAvailable`
+  exists so `updateSnapshot` can reject loudly instead.
 
 ---
 
@@ -70,20 +84,35 @@ Android Phase 0.
 
 - Add the **App Group** capability + `App.entitlements` to the app target.
 - New **Swift Capacitor plugin `WidgetBridge`** exposing the same JS interface the
-  Android plugin does, so `src/native/widgetBridge.ts` wrappers are unchanged:
-  `updateSnapshot({ json })`, `getPendingActions()`, `clearPendingActions({ ids })`,
-  `drainPendingCompletions()`, `consumeDeepLink()`. Reads/writes the App Group
-  container.
+  Android plugin does, so `src/native/widgetBridge.ts` wrappers are unchanged.
+  The interface is exactly four methods — `updateSnapshot({ json })`,
+  `drainPendingCompletions()`, `consumeDeepLink()`, `consumeSharedChore()`.
+  (An earlier draft listed `getPendingActions` / `clearPendingActions`; those have
+  never existed on either platform.) Reads/writes the App Group container.
 - A minimal **WidgetKit** extension target that renders the heatmap from
   `snapshot.heatmap` (static, non-interactive) to validate the App-Group read and
   light/dark handling.
 - **Relax the JS guards**: introduce an `isIOS()` helper and let the snapshot push
-  path run on iOS (`getPlatform() === 'android' || 'ios'`), starting with
-  `widgetBridge.ts` and `useWidgetSnapshot.ts`.
+  path run on iOS, starting with `widgetBridge.ts` and `useWidgetSnapshot.ts`.
 
 **Exit criteria:** the heatmap widget on the home screen reflects completions
 within one app foreground cycle and survives relaunch (re-renders from the
 persisted App-Group snapshot).
+
+**First-build checklist** (the parts that cannot be done from the repo):
+
+1. Apple Developer portal: add the App Group `group.com.lastglance`, then enable
+   it on the App IDs `com.lastglance` and `com.lastglance.GlanceWidgets`.
+2. Open `ios/App/App.xcodeproj` and confirm the hand-written
+   `GlanceWidgetsExtension` target appears with its five files, and that Signing &
+   Capabilities shows App Groups ticked on **both** targets.
+3. `npm run build:ios`, then Run. `cap sync` only touches web assets and the SPM
+   package, so it will not disturb the new target.
+4. If `WidgetBridge` is not found at runtime, Capacitor's Objective-C plugin
+   discovery did not pick the class up; register it explicitly with
+   `bridge.registerPluginInstance(WidgetBridgePlugin())` from the AppDelegate.
+   `@objc` + `CAPBridgedPlugin` conformance is supposed to be sufficient on
+   Capacitor 8.
 
 ### Phase 1 — Overdue notifications (mostly portable)
 
@@ -137,6 +166,10 @@ sync round-trip.
   `lastglance://filter/soon`; the app handles the URL in the Scene/AppDelegate and
   stashes the target in the App Group, consumed on foreground by the existing
   `consumeDeepLink` -> `routeWidgetDeepLink` path.
+  Note what gets stored: `routeWidgetDeepLink` expects the **internal token**
+  form, not the URL — `chore:<syncId>`, `filter:soon`, `action:search`,
+  `action:add`. The URL is mapped to a token before it is written, exactly as
+  `MainActivity.toDeepLinkToken` does on Android.
 - **Shortcuts**: `UIApplicationShortcutItem` (Home-screen long-press) and/or
   **App Shortcuts via AppIntents** (Spotlight/Siri), targeting the same
   `lastglance://` verbs as the Android dynamic shortcuts (Add chore, Search,
@@ -163,13 +196,28 @@ out of scope; reconcile on next foreground).
   there is no arbitrary background execution. The snapshot-read model fits, but
   freshness of relative time ("Xd ago") relies on TimelineProvider entries and/or
   SwiftUI relative-date formatting rather than polling.
-- **AppIntents interactivity is iOS 17+.** Pick a minimum deployment target; older
-  devices get tap-to-open widgets only.
+- **AppIntents interactivity is iOS 17+.** Decided 2026-07: the **app target stays
+  at iOS 15.0** and the **widget extension targets 17.0**. An extension may set a
+  higher floor than its host, so no existing app user is dropped and there is only
+  one widget code path — devices below 17 simply are not offered the widgets. No
+  pre-17 tap-to-open fallback will be built.
+- **Notification actions may not be able to run headless.** On Android "Mark done"
+  writes through the plugin with no UI. On iOS a non-`.foreground`
+  `UNNotificationAction` wakes the app process, but the Capacitor JS listener only
+  fires if the WebView is alive to run it. Phase 1 must establish empirically
+  whether "Mark done" can stay headless or has to open the app / be reimplemented
+  as an AppIntent writing to the App-Group queue. This is a design fork, not a
+  detail.
 - **64 pending local notifications** system cap; stay under it (our model does).
 - **No exact-alarm timing.** Delivery may be batched; acceptable for the
   single-shot overdue model, but call it out to avoid a "why is it late" surprise.
-- **Icon pipeline decision up front:** rasterize Lucide SVGs to App-Group PNGs
-  (recommended, reuses the set-aside Android approach) vs render SVGs in SwiftUI.
+- **Icon pipeline (decided 2026-07): generate Swift path data.** Extend
+  `gen-lucide-drawables.mjs` to emit a Swift source file of Lucide path strings
+  plus a small SVG-path-to-`SwiftUI.Path` parser, compiled into the widget bundle.
+  Vector-crisp at any size, tintable to the recency colour, a few hundred KB.
+  Rejected: rasterizing to App-Group PNGs (the container is runtime-only, so it
+  would mean a first-launch write of 1,703 icons x 2 scales, tens of MB, at fixed
+  resolution) and bundling them in an asset catalog (same bloat, in the download).
 
 ---
 
@@ -189,12 +237,20 @@ out of scope; reconcile on next foreground).
   usage strings.
 
 **Shared JS (small edits, no behavior change):**
+- `src/native/platform.ts` (new) — `isAndroid()` / `isIOS()` / `isNativeShell()`.
+  Kept separate from the `isAndroid()` in `intentsBridge.ts`, which answers the
+  narrower "can this device receive Tasker intents" and will never grow an iOS
+  branch.
 - `src/native/widgetBridge.ts`, `src/hooks/useWidgetSnapshot.ts`,
   `src/native/reminders.ts`, `src/hooks/useReminders.ts`,
   `src/hooks/useNotifications.ts` — relax the `=== 'android'` guards to include
-  iOS; add an `isIOS()` helper alongside `isAndroid()`.
-- `scripts/gen-lucide-drawables.mjs` — add a PNG-emitting mode for iOS icons (or a
-  sibling script).
+  iOS.
+- `scripts/gen-lucide-drawables.mjs` — add a Swift-path-data mode for iOS icons
+  (or a sibling script).
+- `scripts/sync-ios-version.mjs` — its `MARKETING_VERSION` regex is global, so it
+  already covers the extension targets. `CURRENT_PROJECT_VERSION` is **not** synced
+  and both are hardcoded to 1; App Store upload rejects an app and extension whose
+  build numbers differ, so whoever bumps one must bump all of them.
 
 **To stay iOS-friendly going forward:** keep decision logic in JS behind the
 plugin boundary; route every new entry point through the shared `lastglance://`
