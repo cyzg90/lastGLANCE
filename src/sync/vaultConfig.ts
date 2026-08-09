@@ -43,3 +43,14 @@ export function isVaultEnabled(): boolean {
   const c = getVaultConfig()
   return !!(c && c.enabled && c.vaultUrl && c.vaultToken && c.accountId)
 }
+
+// The sync 1.10 credential halt persists under the engine's storage prefix and
+// is cleared by the package only via per-account recovery, which shared-token
+// mode never runs (issue #257). This is the wrapper-level exit: called from
+// SyncSettingsModal's save when the vault credentials were actually edited, it
+// grants exactly one fresh attempt — a still-rejected credential re-halts on
+// the first cycle, so a user re-saving a bad token can never turn this into a
+// retry storm. Cursors are untouched.
+export function clearCredentialHalt(): void {
+  try { localStorage.removeItem('lastglance-db-sync-credential-halt') } catch { /* storage unavailable */ }
+}

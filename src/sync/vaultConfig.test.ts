@@ -53,3 +53,14 @@ describe('vaultConfig', () => {
     expect(getVaultConfig()).toBeNull()
   })
 })
+
+describe('clearCredentialHalt (#257)', () => {
+  it('removes exactly the credential-halt key, nothing else', async () => {
+    const { clearCredentialHalt } = await import('./vaultConfig')
+    localStorage.setItem('lastglance-db-sync-credential-halt', '{"message":"rejected"}')
+    localStorage.setItem('lastglance-db-sync-hwm', '42')
+    clearCredentialHalt()
+    expect(localStorage.getItem('lastglance-db-sync-credential-halt')).toBeNull()
+    expect(localStorage.getItem('lastglance-db-sync-hwm')).toBe('42')
+  })
+})
