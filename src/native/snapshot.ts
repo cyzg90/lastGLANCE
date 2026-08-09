@@ -105,8 +105,8 @@ export async function buildSnapshot(): Promise<WidgetSnapshot> {
   }
 }
 
-// Build the snapshot and hand it to native. Safe to call anywhere; no-ops off
-// Android and never throws.
+// Build the snapshot and hand it to native. Safe to call anywhere; no-ops on
+// web/PWA and never throws.
 export async function pushSnapshot(): Promise<void> {
   try {
     const snapshot = await buildSnapshot()

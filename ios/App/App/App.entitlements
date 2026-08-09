@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Shared container between the app and its widget/share extensions. This is
+	     the iOS analogue of the Android SharedPreferences store: the WebView owns
+	     the data and pushes a denormalized snapshot here for the extensions to
+	     render from. Must also be registered on the App ID in the Apple Developer
+	     portal, and declared identically in GlanceWidgets/GlanceWidgets.entitlements. -->
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>group.com.lastglance</string>
+	</array>
+</dict>
+</plist>
