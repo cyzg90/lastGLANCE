@@ -5,7 +5,7 @@ import type { SyncEngine, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
 import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
-import { clearCredentialHalt, getVaultConfig, setVaultConfig } from '@/sync/vaultConfig'
+import { clearCredentialHalt, getVaultConfig, resetVaultSyncState, setVaultConfig, vaultIdentityChanged } from '@/sync/vaultConfig'
 import { testVaultConnection } from '@/sync/testVaultConnection'
 import { cloudSyncProviders } from '@/utils/cloudSyncProviders'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
@@ -144,11 +144,20 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
     // credential writes above are an async write-through to the SecureStore
     // (issue #210) — wait for them, or the reload could tear the page down with
     // the new credentials not yet persisted. Off Android this resolves at once.
-    // An edited vault credential exits any standing sync 1.10 credential halt
-    // (issue #257): the user just changed the thing the halt is about, so the
-    // reconstructed engine gets one fresh attempt. Still-bad credentials
-    // re-halt on their first rejected cycle.
-    if (vaultChanged && nextVault) clearCredentialHalt()
+    // Stream-state hygiene on vault changes, decided BEFORE the reload
+    // reconstructs the engines:
+    //  - identity change (different account/server) or UNLINK: reset ALL
+    //    per-stream state (cursors, seed flag, halt). Cursors from one account
+    //    must never be applied to another, and an unlink drops the credentials,
+    //    so the next link has no identity to compare against — it must start
+    //    clean. The next cycle re-seeds in both directions.
+    //  - same-identity credential edit: exit any standing sync 1.10 credential
+    //    halt only (issue #257) — the stream didn't move, cursors stay.
+    if (vaultIdentityChanged(prevVault, nextVault) || (prevVault && !nextVault)) {
+      resetVaultSyncState()
+    } else if (vaultChanged && nextVault) {
+      clearCredentialHalt()
+    }
     if (folderPath !== originalFolder.current || vaultChanged) {
       flushSecureWrites().finally(() => window.location.reload())
     }
