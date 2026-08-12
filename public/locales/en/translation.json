@@ -300,6 +300,8 @@
     "addFirstCategory": "Add your first category",
     "addCategory": "Add category",
     "addCategoryAriaLabel": "Add category",
+    "addChoreAriaLabel": "Add a chore",
+    "addChoreTitle": "Add a chore",
     "searchChoresAriaLabel": "Search chores",
     "searchTitle": "Search (/)",
     "toggleMyTasksAriaLabel": "Toggle my tasks filter",
@@ -314,6 +316,7 @@
     "placeholder": "Search chores…",
     "clearSearch": "Clear search",
     "noResults": "No chores match",
+    "createChore": "Create “{{name}}”",
     "startTyping": "Start typing to search chores"
   },
   "shortcuts": {

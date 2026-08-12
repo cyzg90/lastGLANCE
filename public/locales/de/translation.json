@@ -292,6 +292,8 @@
     "addFirstCategory": "Erste Kategorie hinzufügen",
     "addCategory": "Kategorie hinzufügen",
     "addCategoryAriaLabel": "Kategorie hinzufügen",
+    "addChoreAriaLabel": "Aufgabe hinzufügen",
+    "addChoreTitle": "Aufgabe hinzufügen",
     "searchChoresAriaLabel": "Aufgaben suchen",
     "searchTitle": "Suchen (/)",
     "toggleMyTasksAriaLabel": "Meine Aufgaben filtern",
@@ -306,6 +308,7 @@
     "placeholder": "Aufgaben suchen…",
     "clearSearch": "Suche löschen",
     "noResults": "Keine Aufgaben gefunden",
+    "createChore": "„{{name}}“ erstellen",
     "startTyping": "Tippen, um Aufgaben zu suchen"
   },
   "shortcuts": {

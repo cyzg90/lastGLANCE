@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Smile, Bell, ArrowUpRight, Leaf, Users } from 'lucide-react'
 import type { Chore, Category } from '@/types'
@@ -87,6 +87,15 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
   const [endMonth, setEndMonth] = useState(initEnd.month)
   const [endDay, setEndDay] = useState(initEnd.day)
 
+  // The category this form was opened for is always offered, even if the
+  // caller's list predates it — a just-created Inbox has not reached the
+  // ribbon's loaded data yet, and omitting it would leave the picker showing
+  // some other category while the chore silently saved into the Inbox.
+  const categoryOptions = useMemo(() => {
+    const list = allCategories ?? []
+    return list.some(c => c.id === category.id) ? list : [...list, category]
+  }, [allCategories, category])
+
   useEscapeKey(showIconPicker ? () => setShowIconPicker(false) : onClose)
 
   async function handleSave() {
@@ -105,7 +114,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
       } else {
         await createChore({
           name: trimmed,
-          category_id: category.id,
+          category_id: selectedCategoryId,
           target_cadence_days: cadenceDays,
           notify_when_overdue: notify,
           auto_schedule_to_dayglance: autoSchedule,
@@ -167,7 +176,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
               </div>
             </div>
 
-            {isEdit && allCategories && allCategories.length > 1 && (
+            {categoryOptions.length > 1 && (
               <div>
                 <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('choreForm.categoryLabel')}</label>
                 <select
@@ -175,7 +184,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
                   onChange={e => setSelectedCategoryId(Number(e.target.value))}
                   className="w-full bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
                 >
-                  {sortHierarchically(allCategories).map(cat => (
+                  {sortHierarchically(categoryOptions).map(cat => (
                     <option key={cat.id} value={cat.id}>
                       {cat.parent_category_id ? `  ${cat.name}` : cat.name}
                     </option>
