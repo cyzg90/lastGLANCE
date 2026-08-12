@@ -8,6 +8,7 @@ import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { CompletionRow } from '@/components/CompletionRow/CompletionRow'
 import { ICON_REGISTRY } from '@/icons/registry'
 import { saveCsvFile } from '@/utils/exportFile'
+import { formatDayHeading, formatMonthDay } from '@/utils/datetime'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -189,7 +190,7 @@ export function JournalModal({ onClose, initialDate, onChanged }: Props) {
   function dayLabel(day: string): string {
     if (day === today) return t('journal.today')
     if (day === yesterday) return t('journal.yesterday')
-    return dayjs(day).format('dddd, MMM D, YYYY')
+    return formatDayHeading(day)
   }
 
   const hasFilters = userFilter !== 'all' || categoryFilter !== 'all' || query.trim() !== ''
@@ -313,7 +314,7 @@ export function JournalModal({ onClose, initialDate, onChanged }: Props) {
           <SummaryCell label={t('journal.statChores')} value={String(summary.chores)} />
           <SummaryCell
             label={t('journal.statBusiestDay')}
-            value={summary.busiestDay ? `${dayjs(summary.busiestDay).format('MMM D')} · ${summary.busiestCount}` : '—'}
+            value={summary.busiestDay ? `${formatMonthDay(summary.busiestDay)} · ${summary.busiestCount}` : '—'}
           />
         </div>
 

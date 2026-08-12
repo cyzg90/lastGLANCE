@@ -92,7 +92,7 @@ export function ChoreRow({ chore, editMode, onTap, onEdit, onDelete, onRefresh, 
           </span>
         )}
         {chore.seasonal_start && (
-          <span data-tooltip={`Seasonal: ${chore.seasonal_start} – ${chore.seasonal_end}`}>
+          <span data-tooltip={t('choreRow.seasonalRange', { start: chore.seasonal_start, end: chore.seasonal_end })}>
             <Leaf size={11} className="text-green-400/60" />
           </span>
         )}

@@ -148,7 +148,16 @@
     "deleteAriaLabel": "Elimina {{name}}",
     "quickLogAriaLabel": "Registra {{name}} rapidamente",
     "sendAriaLabel": "Invia {{name}} a dayGLANCE",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Stagionale: {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Scegli una data…",
+    "time": "Ora",
+    "clearTime": "cancella",
+    "clear": "Cancella",
+    "today": "Oggi",
+    "noTimeHint": "Nessun orario — verrà usato mezzogiorno"
   },
   "help": {
     "title": "Aiuto e feedback",

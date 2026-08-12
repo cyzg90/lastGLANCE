@@ -148,7 +148,16 @@
     "deleteAriaLabel": "Supprimer {{name}}",
     "quickLogAriaLabel": "Enregistrer {{name}} rapidement",
     "sendAriaLabel": "Envoyer {{name}} à dayGLANCE",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Saisonnier : {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Choisir une date…",
+    "time": "Heure",
+    "clearTime": "effacer",
+    "clear": "Effacer",
+    "today": "Aujourd'hui",
+    "noTimeHint": "Aucune heure — midi sera utilisé"
   },
   "help": {
     "title": "Aide & Retours",

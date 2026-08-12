@@ -4,6 +4,7 @@ import dayjs from 'dayjs'
 import type { ChoreWithLastCompletion, CompletionEvent } from '@/types'
 import { logCompletion, getCompletionHistory, deleteCompletion, updateCompletionNote } from '@/db/queries'
 import { CompletionRow } from '@/components/CompletionRow/CompletionRow'
+import { formatMonthShort, weekdayAtOffset } from '@/utils/datetime'
 import { getMeUserSyncId } from '@/multiuser/settings'
 import { useUsersContext } from '@/multiuser/UsersContext'
 import { formatElapsed } from '@/utils/cadence'
@@ -260,7 +261,14 @@ type HeatDay = { date: string; count: number; isFuture: boolean }
 function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
   const today = dayjs().format('YYYY-MM-DD')
   const months = getMonthLabels(weeks)
-  const DAY_LABELS = ['', 'M', '', 'W', '', 'F', '']
+  // Rows are weekdays in the locale's own week order — Sunday-first in en,
+  // Monday-first elsewhere — because that is what startOf('week') produces
+  // below. Label every other row (Mon/Wed/Fri) wherever those land, rather
+  // than assuming fixed row indices.
+  const dayLabels = Array.from({ length: 7 }, (_, i) => {
+    const { weekday, narrow } = weekdayAtOffset(i)
+    return weekday === 1 || weekday === 3 || weekday === 5 ? narrow : ''
+  })
 
   return (
     <div className="inline-flex flex-col gap-1 select-none">
@@ -273,7 +281,7 @@ function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
       </div>
       <div className="flex gap-[3px]">
         <div className="flex flex-col gap-[3px] mr-1">
-          {DAY_LABELS.map((l, i) => (
+          {dayLabels.map((l, i) => (
             <div key={i} className="h-[11px] w-3 text-[9px] text-slate-400 dark:text-slate-600 text-right leading-[11px]">{l}</div>
           ))}
         </div>
@@ -307,7 +315,7 @@ function getMonthLabels(weeks: HeatDay[][]): Map<number, string> {
   let last = -1
   weeks.forEach((week, wi) => {
     const m = dayjs(week[0].date).month()
-    if (m !== last) { labels.set(wi, dayjs(week[0].date).format('MMM')); last = m }
+    if (m !== last) { labels.set(wi, formatMonthShort(week[0].date)); last = m }
   })
   return labels
 }
@@ -340,5 +348,5 @@ function computeStats(completions: CompletionEvent[]) {
     dayjs(c.completed_at).diff(dayjs(completions[i + 1].completed_at), 'day')
   )
   const avg = Math.round(gaps.reduce((a, b) => a + b, 0) / gaps.length)
-  return { avgInterval: avg === 1 ? '1 day' : `${avg}d` }
+  return { avgInterval: `${avg}d` }
 }

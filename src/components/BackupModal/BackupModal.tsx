@@ -3,6 +3,7 @@ import { Download, Upload, Cloud, X, Loader, Trash2, Archive } from 'lucide-reac
 import { exportBackup, restoreFromBackup, hasSeedData, seedChoresUsed, clearSeedData, type BackupPayload } from '@/db/queries'
 import { buildPayload } from '@/sync/engine'
 import { saveJsonFile, stashJsonFile } from '@/utils/exportFile'
+import { formatDateTime } from '@/utils/datetime'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import type { SyncEngine } from '@glance-apps/sync'
 import dayjs from 'dayjs'
@@ -152,7 +153,7 @@ export function BackupModal({ engine, onClose, onImported }: Props) {
 
   function formatDate(iso: string | null) {
     if (!iso) return t('backup.unknownDate')
-    return dayjs(iso).format('MMM D, YYYY h:mm A')
+    return formatDateTime(iso)
   }
 
   return (
