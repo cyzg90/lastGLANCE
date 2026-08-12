@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Loader } from 'lucide-react'
+import { X, Loader, Plug } from 'lucide-react'
 import { hasEncryptionReady, getSyncPassphrase } from '@glance-apps/sync'
 import {
   type IntentsConfig,
@@ -218,8 +218,9 @@ export function IntegrationSettingsModal({ onClose, onSaved }: Props) {
     >
       <div className="w-full sm:max-w-lg bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 shrink-0">
+          <Plug size={18} className="text-green-400 shrink-0" />
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">
             {t('integration.title')}
           </h2>
           <button

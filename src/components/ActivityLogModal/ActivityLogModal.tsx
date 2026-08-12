@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { X, RefreshCw, ChevronRight, ChevronDown } from 'lucide-react'
+import { X, RefreshCw, ChevronRight, ChevronDown, ScrollText } from 'lucide-react'
 import { type ActivityEntry, type IntentDelivery, getActivityLog, clearActivityLog, INTENTS_ACTIVITY_EVENT } from '@/intents/config'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { useTranslation } from 'react-i18next'
@@ -61,8 +61,9 @@ export function ActivityLogModal({ onClose }: Props) {
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="w-full sm:max-w-lg bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[85vh]">
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 shrink-0 border-b border-slate-100 dark:border-slate-700/40">
-          <h2 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+        <div className="flex items-center gap-3 px-6 pt-5 pb-4 shrink-0 border-b border-slate-100 dark:border-slate-700/40">
+          <ScrollText size={18} className="text-green-400 shrink-0" />
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">
             {t('activityLog.title')}
           </h2>
           <div className="flex items-center gap-4">

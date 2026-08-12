@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert } from 'lucide-react'
+import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert, Cloud } from 'lucide-react'
 import type { SyncEngine, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
 import { flushSecureWrites } from '@/sync/secureConfigShim'
@@ -320,8 +320,9 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
     >
       <div className="w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 shrink-0">
-          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">{t('sync.title')}</h2>
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 shrink-0">
+          <Cloud size={18} className="text-green-400 shrink-0" />
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">{t('sync.title')}</h2>
           <button
             onClick={handleClose}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
