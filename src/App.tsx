@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Pencil, Check, Sun, Moon, Archive, Plug, Cloud, CloudOff, RefreshCw, HelpCircle, Users, Settings, UserCircle, Clock, BadgeCheck } from 'lucide-react'
+import { Pencil, Check, Sun, Moon, Archive, Plug, Cloud, CloudOff, RefreshCw, HelpCircle, Users, Settings, UserCircle, Clock, BadgeCheck, BookOpen } from 'lucide-react'
 import { Ribbon } from '@/components/Ribbon/Ribbon'
 import { BackupModal } from '@/components/BackupModal/BackupModal'
 import { WelcomeModal } from '@/components/WelcomeModal/WelcomeModal'
@@ -10,6 +10,7 @@ import { PassphraseModal } from '@/components/PassphraseModal/PassphraseModal'
 import { HelpModal } from '@/components/HelpModal/HelpModal'
 import { ShortcutsModal } from '@/components/ShortcutsModal/ShortcutsModal'
 import { ActivityLogModal } from '@/components/ActivityLogModal/ActivityLogModal'
+import { JournalModal } from '@/components/JournalModal/JournalModal'
 import { ToastProvider, useToast } from '@/components/Toast/Toast'
 import { UsersModal } from '@/components/UsersModal/UsersModal'
 import { PaywallModal } from '@/components/PaywallModal/PaywallModal'
@@ -87,7 +88,7 @@ function getWaveColor(wi: number, di: number, day: HeatDay, wavePos: number): st
   return heatCellColor(day)
 }
 
-function HeaderHeatmap({ weeks }: { weeks: HeatDay[][] }) {
+function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay: (date: string) => void }) {
   const [wavePos, setWavePos] = useState(-WAVE_WIDTH)
 
   useEffect(() => {
@@ -110,10 +111,14 @@ function HeaderHeatmap({ weeks }: { weeks: HeatDay[][] }) {
       {weeks.map((week, wi) => (
         <div key={wi} className="flex flex-col gap-[3px]">
           {week.map((day, di) => (
-            <div
+            <button
               key={di}
+              type="button"
+              disabled={day.isFuture}
+              onClick={() => onSelectDay(day.date)}
               title={day.isFuture ? '' : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
-              className="w-[9px] h-[9px] rounded-[2px]"
+              aria-label={day.date}
+              className="w-[9px] h-[9px] rounded-[2px] transition-transform hover:scale-150 disabled:cursor-default disabled:hover:scale-100"
               style={{ backgroundColor: getWaveColor(wi, di, day, wavePos) }}
             />
           ))}
@@ -152,6 +157,10 @@ function AppInner() {
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [showActivityLog, setShowActivityLog] = useState(false)
   const [showUsers, setShowUsers] = useState(false)
+  // Journal. `journalDate` is the day a heatmap cell handed off, or null when
+  // opened from the toolbar (which lands on the default range instead).
+  const [showJournal, setShowJournal] = useState(false)
+  const [journalDate, setJournalDate] = useState<string | null>(null)
   const [showSettingsSheet, setShowSettingsSheet] = useState(false)
   const [ribbonKey, setRibbonKey] = useState(0)
   const [heatmapWeeks, setHeatmapWeeks] = useState<HeatDay[][]>([])
@@ -413,7 +422,8 @@ function AppInner() {
   const anyModalOpenRef = useRef(false)
   anyModalOpenRef.current = (
     showWelcome || showBackup || showIntegration || showSyncSettings ||
-    showPassphrase || showHelp || showShortcuts || showActivityLog || showUsers
+    showPassphrase || showHelp || showShortcuts || showActivityLog || showUsers ||
+    showJournal
   )
   const filterRef = useRef(filter)
   filterRef.current = filter
@@ -429,6 +439,7 @@ function AppInner() {
         case 's': case 'S': setShowSyncSettings(true); break
         case 'a': case 'A': setShowBackup(true); break
         case 'l': case 'L': setShowActivityLog(true); break
+        case 'j': case 'J': setJournalDate(null); setShowJournal(true); break
         case 'm': case 'M':
           if (multiUserEnabled && meId && !editMode) setFilter(filterRef.current === 'mine' ? 'all' : 'mine')
           break
@@ -440,7 +451,13 @@ function AppInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  const openJournal = useCallback((date: string | null) => {
+    setJournalDate(date)
+    setShowJournal(true)
+  }, [])
+
   const settingsItems = [
+    { label: t('app.journal'), icon: <BookOpen size={15} />, onClick: () => { openJournal(null); setShowSettingsSheet(false) } },
     { label: t('app.cloudSync'), icon: syncHalted || syncError ? <CloudOff size={15} /> : syncStatus === 'uploading' || syncStatus === 'downloading' ? <RefreshCw size={15} className="animate-spin" /> : <Cloud size={15} />, onClick: () => { setShowSyncSettings(true); setShowSettingsSheet(false) }, warn: !!(syncHalted || syncError) },
     { label: t('app.dayglanceIntegration'), icon: <Plug size={22} />, onClick: () => { setShowIntegration(true); setShowSettingsSheet(false) } },
     { label: t('app.users'), icon: <Users size={15} />, onClick: () => { setShowUsers(true); setShowSettingsSheet(false) } },
@@ -476,11 +493,11 @@ function AppInner() {
             <>
               {/* 26 weeks on landscape mobile / small screens */}
               <div className="hidden min-[828px]:block min-[1140px]:hidden pb-0.5 opacity-80">
-                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks.slice(-26)} />
+                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks.slice(-26)} onSelectDay={openJournal} />
               </div>
               {/* 52 weeks on large screens */}
               <div className="hidden min-[1140px]:block pb-0.5 opacity-80">
-                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks} />
+                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks} onSelectDay={openJournal} />
               </div>
             </>
           )}
@@ -579,6 +596,7 @@ function AppInner() {
               >
                 {syncStatus === 'uploading' || syncStatus === 'downloading' ? <RefreshCw size={15} className="animate-spin" /> : syncHalted || syncError ? <CloudOff size={15} /> : <Cloud size={15} />}
               </button>
+              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} title={t('app.journalTooltip')}><BookOpen size={15} /></button>
               <button onClick={() => setShowIntegration(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.dayglanceIntegration')}><Plug size={15} /></button>
               <button onClick={() => setShowUsers(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.users')}><Users size={15} /></button>
               <button
@@ -660,6 +678,18 @@ function AppInner() {
 
       {showActivityLog && (
         <ActivityLogModal onClose={() => setShowActivityLog(false)} />
+      )}
+
+      {showJournal && (
+        <JournalModal
+          // Remount when the requested day changes, so tapping a second heatmap
+          // cell while the Journal is open re-seeds its range instead of being
+          // swallowed by the initial-state-only prop.
+          key={journalDate ?? 'default'}
+          initialDate={journalDate ?? undefined}
+          onChanged={loadHeatmap}
+          onClose={() => setShowJournal(false)}
+        />
       )}
 
       {showShortcuts && (
