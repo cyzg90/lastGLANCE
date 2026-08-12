@@ -6,23 +6,36 @@ lastGLANCE **iOS** app. This is the iOS counterpart to
 to be cross-platform, so this plan reuses the shared JS layer and data contracts
 and only reimplements the native rendering per platform.
 
-> **▶ STATUS (last updated 2026-07-29)**
-> **Phase 0 written, not yet built.** Everything below is authored but has never
-> been through a compiler — the work happens on Linux, Xcode is macOS-only, and CI
-> is `ubuntu-latest` and JS-only. Treat Phase 0 as unverified until it builds.
+> **▶ STATUS (last updated 2026-08-09)**
+> **Phase 0 merged (PR #260), still never compiled.** Every Swift file in the tree
+> was authored on Linux; Xcode is macOS-only, and CI is `ubuntu-latest` running
+> JS checks only. Nothing here has been through a Swift compiler or onto a device.
+> Treat the whole iOS native surface as unverified.
 >
-> - Landed: `App.entitlements` + `GlanceWidgets.entitlements` (App Group
->   `group.com.lastglance`), `Shared/SharedDataStore.swift`,
->   `plugins/WidgetBridgePlugin.swift`, and a `GlanceWidgetsExtension` WidgetKit
->   target rendering the heatmap. `project.pbxproj` was hand-edited to add the
->   target (no Xcode available), so it needs an eyes-on check before anything is
->   stacked on it.
-> - JS: `src/native/platform.ts` adds `isAndroid()` / `isIOS()` / `isNativeShell()`;
->   `widgetBridge.ts` now runs in both shells. The reminder, deep-link and
->   pending-completion hooks are still Android-gated — those are Phases 1-3.
-> - **Still required off-repo:** register the App Group on the App ID in the Apple
+> - **Phase 0 (this plan):** `App.entitlements` + `GlanceWidgets.entitlements`
+>   (App Group `group.com.lastglance`), `App/Shared/SharedDataStore.swift`,
+>   `App/plugins/WidgetBridgePlugin.swift`, and a `GlanceWidgetsExtension`
+>   WidgetKit target rendering the heatmap. `project.pbxproj` was hand-edited to
+>   add the target.
+> - **Arrived separately:** Vault SSE phase 3 added `VaultSseClient.swift` and
+>   `VaultSsePlugin.swift` to the App target. It is not part of this plan, but it
+>   shares the plugin-registration point below, so Phases 1-3 must keep it working.
+> - **`BridgeViewController.swift` is the registration point for every app-local
+>   plugin.** Capacitor 5+ removed runtime plugin scanning on iOS, so `@objc` +
+>   `CAPBridgedPlugin` conformance is **not** sufficient on its own (an earlier
+>   draft of this plan claimed it was). `Main.storyboard` instantiates this
+>   `CAPBridgeViewController` subclass, and `capacitorDidLoad()` registers
+>   `VaultSsePlugin` and `WidgetBridgePlugin`. **Every new plugin must be added
+>   there or it is simply absent at runtime, with no error.**
+> - **JS:** `src/native/platform.ts` adds `isAndroid()` / `isIOS()` /
+>   `isNativeShell()`; `widgetBridge.ts` runs in both shells. The reminder,
+>   deep-link and pending-completion hooks are still Android-gated — Phases 1-3.
+> - **Still required off-repo:** register the App Group on the App IDs in the Apple
 >   Developer portal and let Xcode regenerate the provisioning profiles. Nothing
 >   reads or writes the shared container until that is done.
+> - **Version drift:** all four build configs still read `MARKETING_VERSION =
+>   1.12.0` against a `package.json` on 2.2.0. `npm run build:ios` runs
+>   `sync-ios-version.mjs`, which fixes this globally; it has not been run yet.
 > - Android remains feature-complete (Phases 0-3). Bringing iOS up is **additive**:
 >   the shared JS/design layer does not change, only the native declarations and
 >   rendering are added.
@@ -107,12 +120,14 @@ persisted App-Group snapshot).
    `GlanceWidgetsExtension` target appears with its five files, and that Signing &
    Capabilities shows App Groups ticked on **both** targets.
 3. `npm run build:ios`, then Run. `cap sync` only touches web assets and the SPM
-   package, so it will not disturb the new target.
-4. If `WidgetBridge` is not found at runtime, Capacitor's Objective-C plugin
-   discovery did not pick the class up; register it explicitly with
-   `bridge.registerPluginInstance(WidgetBridgePlugin())` from the AppDelegate.
-   `@objc` + `CAPBridgedPlugin` conformance is supposed to be sufficient on
-   Capacitor 8.
+   package, so it will not disturb the new target. It also runs
+   `sync-ios-version.mjs`, which rewrites `MARKETING_VERSION` in all four build
+   configs — expect that diff.
+4. Plugin registration is already handled: `BridgeViewController.capacitorDidLoad()`
+   registers `WidgetBridgePlugin` alongside `VaultSsePlugin`, and
+   `Main.storyboard` instantiates that subclass. If `WidgetBridge` still comes
+   back undefined in JS, check the storyboard's `customClass` first — that wiring
+   is the single point of failure for both plugins.
 
 ### Phase 1 — Overdue notifications (mostly portable)
 
@@ -201,13 +216,17 @@ out of scope; reconcile on next foreground).
   higher floor than its host, so no existing app user is dropped and there is only
   one widget code path — devices below 17 simply are not offered the widgets. No
   pre-17 tap-to-open fallback will be built.
-- **Notification actions may not be able to run headless.** On Android "Mark done"
-  writes through the plugin with no UI. On iOS a non-`.foreground`
-  `UNNotificationAction` wakes the app process, but the Capacitor JS listener only
-  fires if the WebView is alive to run it. Phase 1 must establish empirically
-  whether "Mark done" can stay headless or has to open the app / be reimplemented
-  as an AppIntent writing to the App-Group queue. This is a design fork, not a
-  detail.
+- **Notification actions may not be able to run headless.** On iOS a
+  non-`.foreground` `UNNotificationAction` wakes the app process, but the
+  Capacitor JS listener only fires if the WebView is alive to run it, so "Mark
+  done" may have to open the app.
+  **This is less of a fork than it looks:** Android already settled on the same
+  compromise — see the Android plan's "silent *Mark done* left opening the app
+  (truly background completion needs the Path B alarm layer)". So opening the app
+  is parity, not an iOS regression, and it is the right v1 behaviour. Revisit only
+  if truly-headless completion becomes a goal on both platforms, in which case the
+  iOS answer is an AppIntent writing to the App-Group queue (the Phase 2
+  mechanism), not the notification listener.
 - **64 pending local notifications** system cap; stay under it (our model does).
 - **No exact-alarm timing.** Delivery may be batched; acceptable for the
   single-shot overdue model, but call it out to avoid a "why is it late" surprise.

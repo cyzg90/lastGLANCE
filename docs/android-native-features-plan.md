@@ -7,9 +7,9 @@ This plan was informed by a teardown of how the sibling app **dayGLANCE**
 solved timely closed-app notifications (its process is referenced throughout).
 Where lastGLANCE differs from dayGLANCE, it is called out explicitly.
 
-> **▶ STATUS (last updated 2026-07-12)**
-> **Android: feature-complete against this plan. iOS: not started (stock Capacitor
-> shell only) — see the companion `docs/ios-native-features-plan.md`.**
+> **▶ STATUS (last updated 2026-08-09)**
+> **Android: feature-complete against this plan. iOS: Phase 0 written but never
+> compiled — see the companion `docs/ios-native-features-plan.md`.**
 >
 > - **Phases 0–3 are all built and in the tree.** Snapshot bridge, exact-alarm
 >   overdue notifications, action widgets with optimistic tap-to-complete, dynamic

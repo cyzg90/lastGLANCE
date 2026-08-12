@@ -14,8 +14,13 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>$(PRODUCT_NAME)</string>
+	<!-- Literal, not $(PRODUCT_BUNDLE_PACKAGE_TYPE): that build setting is only
+	     defined when GENERATE_INFOPLIST_FILE is YES, and this target supplies its
+	     own Info.plist. Left as the variable it expands to an empty string and the
+	     extension fails to register. "XPC!" is the package type for all app
+	     extensions, WidgetKit included. -->
 	<key>CFBundlePackageType</key>
-	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+	<string>XPC!</string>
 	<key>CFBundleShortVersionString</key>
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
