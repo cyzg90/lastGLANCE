@@ -316,7 +316,7 @@ function SubcategorySection({
           <button
             onClick={() => setIconPicker(true)}
             className="shrink-0 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 dark:text-slate-500 hover:text-green-400"
-            title={t('categorySection.changeIcon')}
+            data-tooltip={t('categorySection.changeIcon')}
           >
             {SubIcon
               ? <SubIcon size={14} className="text-green-400" />
@@ -338,7 +338,7 @@ function SubcategorySection({
               style={{ backgroundColor: getCadenceColor(overdueRatio) }}
               role="img"
               aria-label={t('categorySection.overdueHidden')}
-              title={t('categorySection.overdueHidden')}
+              data-tooltip={t('categorySection.overdueHidden')}
             />
           )}
         </div>
@@ -519,7 +519,7 @@ export function CategorySection({
               onClick={() => setIconPickerOpen(true)}
               className="shrink-0 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors text-slate-400 dark:text-slate-500 hover:text-green-400"
               aria-label={t('categorySection.changeCategoryIcon')}
-              title={t('categorySection.changeIcon')}
+              data-tooltip={t('categorySection.changeIcon')}
             >
               {CategoryIcon
                 ? <CategoryIcon size={18} className="text-green-400" />
@@ -541,7 +541,7 @@ export function CategorySection({
                 onClick={() => setAddingSubcategory(true)}
                 className="p-1.5 rounded-lg text-slate-400 dark:text-slate-500 hover:text-green-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 aria-label={t('categoryForm.addSubcategory')}
-                title={t('categoryForm.addSubcategory')}
+                data-tooltip={t('categoryForm.addSubcategory')}
               >
                 <FolderPlus size={13} />
               </button>

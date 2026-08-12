@@ -160,7 +160,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
                   type="button"
                   onClick={() => setShowIconPicker(true)}
                   className="h-[38px] w-[38px] flex items-center justify-center bg-slate-100 dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-green-400/60 transition-colors text-slate-400 hover:text-green-400"
-                  title={t('choreForm.pickIcon')}
+                  data-tooltip={t('choreForm.pickIcon')}
                 >
                   {SelectedIcon ? <SelectedIcon size={18} className="text-green-400" /> : <Smile size={16} />}
                 </button>

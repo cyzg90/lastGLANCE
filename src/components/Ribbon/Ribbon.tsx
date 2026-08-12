@@ -691,7 +691,7 @@ export function Ribbon({ editMode, onLogged }: Props) {
             }`}
             aria-pressed={attentionOnly}
             aria-label={t('ribbon.toggleSoonAriaLabel')}
-            title={t('app.soonTooltip')}
+            data-tooltip={t('app.soonTooltip')}
           >
             <Clock size={20} />
           </button>
@@ -718,7 +718,7 @@ export function Ribbon({ editMode, onLogged }: Props) {
               fabsCollapsed ? 'opacity-0 translate-y-4 scale-90 pointer-events-none' : 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
             }`}
             aria-label={t('ribbon.searchChoresAriaLabel')}
-            title={t('ribbon.searchTitle')}
+            data-tooltip={t('ribbon.searchTitle')}
           >
             <Search size={20} />
           </button>

@@ -2,6 +2,13 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import HttpBackend from 'i18next-http-backend'
+import { applyDateLocale } from '@/utils/datetime'
+
+// Keep date handling on the same language as the UI strings. Registered before
+// .init() so this listener runs ahead of react-i18next's own — the locale is
+// already switched by the time it re-renders, so no frame paints a date in the
+// language the user just left.
+i18n.on('languageChanged', applyDateLocale)
 
 i18n
   .use(HttpBackend)
@@ -23,5 +30,10 @@ i18n
       caches: ['localStorage'],
     },
   })
+
+// Detection resolves during .init(), which can settle before the listener above
+// is reached on some paths; seed from the resolved language so the very first
+// render is already correct.
+applyDateLocale(i18n.language)
 
 export default i18n

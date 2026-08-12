@@ -2,8 +2,8 @@ import { Directory, Encoding, Filesystem } from '@capacitor/filesystem'
 import { Share } from '@capacitor/share'
 import { isNativePlatform } from '@/sync/nativeHttp'
 
-function anchorDownload(filename: string, json: string): void {
-  const blob = new Blob([json], { type: 'application/json' })
+function anchorDownload(filename: string, text: string, mimeType: string): void {
+  const blob = new Blob([text], { type: mimeType })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -12,18 +12,18 @@ function anchorDownload(filename: string, json: string): void {
   URL.revokeObjectURL(url)
 }
 
-// Hand a JSON export to the user. On the web a plain anchor download works;
+// Hand a text export to the user. On the web a plain anchor download works;
 // inside the Android WebView that is a silent no-op (no DownloadListener is
 // installed), so on native the file is written to the app cache and offered
 // through the system share sheet instead (issue #233).
-export async function saveJsonFile(filename: string, json: string): Promise<void> {
+export async function saveTextFile(filename: string, text: string, mimeType: string): Promise<void> {
   if (!isNativePlatform) {
-    anchorDownload(filename, json)
+    anchorDownload(filename, text, mimeType)
     return
   }
   const written = await Filesystem.writeFile({
     path: filename,
-    data: json,
+    data: text,
     directory: Directory.Cache,
     encoding: Encoding.UTF8,
   })
@@ -36,6 +36,14 @@ export async function saveJsonFile(filename: string, json: string): Promise<void
   }
 }
 
+export function saveJsonFile(filename: string, json: string): Promise<void> {
+  return saveTextFile(filename, json, 'application/json')
+}
+
+export function saveCsvFile(filename: string, csv: string): Promise<void> {
+  return saveTextFile(filename, csv, 'text/csv')
+}
+
 // Silently stash a JSON snapshot without any user interaction — used for the
 // pre-restore parachute. On the web this is the same anchor download as before;
 // on native it writes to app-private storage (public folders need a picker or
@@ -44,7 +52,7 @@ export async function saveJsonFile(filename: string, json: string): Promise<void
 // recovery, alongside the remote parachute when sync is configured.
 export async function stashJsonFile(filename: string, json: string): Promise<void> {
   if (!isNativePlatform) {
-    anchorDownload(filename, json)
+    anchorDownload(filename, json, 'application/json')
     return
   }
   await Filesystem.writeFile({

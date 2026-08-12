@@ -3,6 +3,8 @@
     "tagline": "wann hast du das zuletzt gemacht?",
     "cloudSync": "Cloud-Sync",
     "dayglanceIntegration": "dayGLANCE-Integration",
+    "journal": "Journal",
+    "journalTooltip": "Alle Erledigungen ansehen",
     "users": "Benutzer",
     "lightMode": "Heller Modus",
     "darkMode": "Dunkler Modus",
@@ -146,7 +148,16 @@
     "deleteAriaLabel": "{{name}} löschen",
     "quickLogAriaLabel": "{{name}} schnell eintragen",
     "sendAriaLabel": "{{name}} an dayGLANCE senden",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Saisonal: {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Datum wählen…",
+    "time": "Uhrzeit",
+    "clearTime": "löschen",
+    "clear": "Zurücksetzen",
+    "today": "Heute",
+    "noTimeHint": "Keine Uhrzeit — es wird 12 Uhr verwendet"
   },
   "help": {
     "title": "Hilfe & Feedback",
@@ -201,6 +212,44 @@
     "cancel": "Abbrechen",
     "save": "Speichern",
     "setupFailed": "Einrichtung fehlgeschlagen"
+  },
+  "journal": {
+    "title": "Journal",
+    "close": "Journal schließen",
+    "exportCsv": "CSV exportieren",
+    "range": {
+      "7d": "7 Tage",
+      "30d": "30 Tage",
+      "90d": "90 Tage",
+      "year": "Dieses Jahr",
+      "all": "Gesamt",
+      "custom": "Eigen"
+    },
+    "from": "Von",
+    "to": "bis",
+    "filterPlaceholder": "Nach Aufgabe oder Notiz filtern…",
+    "allCategories": "Alle Kategorien",
+    "allUsers": "Alle",
+    "statCompletions": "Erledigungen",
+    "statChores": "Aufgaben",
+    "statBusiestDay": "Aktivster Tag",
+    "loading": "Wird geladen…",
+    "empty": "In diesem Zeitraum wurde nichts erledigt.",
+    "emptyFiltered": "Keine Einträge passen zu diesen Filtern.",
+    "clearFilters": "Filter zurücksetzen",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "dayCount_one": "{{count}} Eintrag",
+    "dayCount_other": "{{count}} Einträge",
+    "loadMore_one": "Mehr laden · 1 verbleibt",
+    "loadMore_other": "Mehr laden · {{count}} verbleiben",
+    "csvDate": "Datum",
+    "csvTime": "Uhrzeit",
+    "csvChore": "Aufgabe",
+    "csvCategory": "Kategorie",
+    "csvUser": "Benutzer",
+    "csvSource": "Quelle",
+    "csvNote": "Notiz"
   },
   "logModal": {
     "lastDone": "Zuletzt erledigt: {{elapsed}}",
@@ -270,6 +319,7 @@
     "toggleMineAll": "Filter Meine / Alle umschalten",
     "toggleDarkMode": "Dunklen Modus umschalten",
     "panels": "Bereiche",
+    "journal": "Journal",
     "integrationSettings": "Integrationseinstellungen",
     "syncSettings": "Sync-Einstellungen",
     "backupRestore": "Sicherung & Wiederherstellung",
@@ -281,6 +331,11 @@
   },
   "sync": {
     "title": "Cloud-Sync",
+    "backoff": {
+      "transport": "Der Sync-Server ist nicht erreichbar. Neuer Versuch in {{seconds}} s.",
+      "auth": "Der Sync-Server hat die Anmeldung abgelehnt. Nächster Versuch in etwa einer Stunde. Überprüfe den Geräte-Token in den Sync-Einstellungen.",
+      "retrying": "Neuer Versuch bei der nächsten Synchronisierung …"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Dieser Sync-Ordner gehört zu einer anderen App. Wähle einen von lastGLANCE erstellten Ordner.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Diese Daten wurden von einer neueren Version von lastGLANCE gespeichert. Aktualisiere die App, um zu synchronisieren.",

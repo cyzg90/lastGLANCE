@@ -3,6 +3,8 @@
     "tagline": "when did you last...?",
     "cloudSync": "Cloud Sync",
     "dayglanceIntegration": "dayGLANCE Integration",
+    "journal": "Journal",
+    "journalTooltip": "Review everything that's been completed",
     "users": "Users",
     "lightMode": "Light Mode",
     "darkMode": "Dark Mode",
@@ -151,7 +153,16 @@
     "deleteAriaLabel": "Delete {{name}}",
     "quickLogAriaLabel": "Quick-log {{name}}",
     "sendAriaLabel": "Send {{name}} to dayGLANCE",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Seasonal: {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Set date…",
+    "time": "Time",
+    "clearTime": "clear",
+    "clear": "Clear",
+    "today": "Today",
+    "noTimeHint": "No time set — will use noon"
   },
   "help": {
     "title": "Help & Feedback",
@@ -209,6 +220,44 @@
     "cancel": "Cancel",
     "save": "Save",
     "setupFailed": "Setup failed"
+  },
+  "journal": {
+    "title": "Journal",
+    "close": "Close journal",
+    "exportCsv": "Export CSV",
+    "range": {
+      "7d": "7 days",
+      "30d": "30 days",
+      "90d": "90 days",
+      "year": "This year",
+      "all": "All time",
+      "custom": "Custom"
+    },
+    "from": "From",
+    "to": "to",
+    "filterPlaceholder": "Filter by chore or note…",
+    "allCategories": "All categories",
+    "allUsers": "Everyone",
+    "statCompletions": "Completions",
+    "statChores": "Chores",
+    "statBusiestDay": "Busiest day",
+    "loading": "Loading…",
+    "empty": "Nothing completed in this range.",
+    "emptyFiltered": "No entries match these filters.",
+    "clearFilters": "Clear filters",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "dayCount_one": "{{count}} entry",
+    "dayCount_other": "{{count}} entries",
+    "loadMore_one": "Load more · 1 remaining",
+    "loadMore_other": "Load more · {{count}} remaining",
+    "csvDate": "Date",
+    "csvTime": "Time",
+    "csvChore": "Chore",
+    "csvCategory": "Category",
+    "csvUser": "User",
+    "csvSource": "Source",
+    "csvNote": "Note"
   },
   "logModal": {
     "lastDone": "Last done: {{elapsed}}",
@@ -278,6 +327,7 @@
     "toggleMineAll": "Toggle Mine / All filter",
     "toggleDarkMode": "Toggle dark mode",
     "panels": "Panels",
+    "journal": "Journal",
     "integrationSettings": "Integration settings",
     "syncSettings": "Sync settings",
     "backupRestore": "Backup & Restore",
@@ -289,6 +339,11 @@
   },
   "sync": {
     "title": "Cloud Sync",
+    "backoff": {
+      "transport": "Can't reach the sync server. Retrying in {{seconds}}s.",
+      "auth": "The sync server rejected the sign-in. Next retry in about an hour. Check your device token in sync settings.",
+      "retrying": "Retrying on the next sync…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "This sync folder belongs to a different app. Pick a folder created by lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "This data was saved by a newer version of lastGLANCE. Update the app to sync.",

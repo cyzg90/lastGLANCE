@@ -94,6 +94,7 @@ export function ShortcutsModal({ onClose }: Props) {
               {t('shortcuts.panels')}
             </p>
             <div className="divide-y divide-slate-100 dark:divide-slate-700/40">
+              <ShortcutRow keys={['J']} label={t('shortcuts.journal')} />
               <ShortcutRow keys={['I']} label={t('shortcuts.integrationSettings')} />
               <ShortcutRow keys={['S']} label={t('shortcuts.syncSettings')} />
               <ShortcutRow keys={['A']} label={t('shortcuts.backupRestore')} />

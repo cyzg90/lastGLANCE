@@ -3,6 +3,8 @@
     "tagline": "quand'è stata l'ultima volta?",
     "cloudSync": "Sincronizzazione cloud",
     "dayglanceIntegration": "Integrazione dayGLANCE",
+    "journal": "Diario",
+    "journalTooltip": "Rivedi tutto ciò che è stato completato",
     "users": "Utenti",
     "lightMode": "Modalità chiara",
     "darkMode": "Modalità scura",
@@ -146,7 +148,16 @@
     "deleteAriaLabel": "Elimina {{name}}",
     "quickLogAriaLabel": "Registra {{name}} rapidamente",
     "sendAriaLabel": "Invia {{name}} a dayGLANCE",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Stagionale: {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Scegli una data…",
+    "time": "Ora",
+    "clearTime": "cancella",
+    "clear": "Cancella",
+    "today": "Oggi",
+    "noTimeHint": "Nessun orario — verrà usato mezzogiorno"
   },
   "help": {
     "title": "Aiuto e feedback",
@@ -201,6 +212,44 @@
     "cancel": "Annulla",
     "save": "Salva",
     "setupFailed": "Configurazione fallita"
+  },
+  "journal": {
+    "title": "Diario",
+    "close": "Chiudi diario",
+    "exportCsv": "Esporta CSV",
+    "range": {
+      "7d": "7 giorni",
+      "30d": "30 giorni",
+      "90d": "90 giorni",
+      "year": "Quest'anno",
+      "all": "Tutto",
+      "custom": "Personalizzato"
+    },
+    "from": "Dal",
+    "to": "al",
+    "filterPlaceholder": "Filtra per attività o nota…",
+    "allCategories": "Tutte le categorie",
+    "allUsers": "Tutti",
+    "statCompletions": "Completamenti",
+    "statChores": "Attività",
+    "statBusiestDay": "Giorno più attivo",
+    "loading": "Caricamento…",
+    "empty": "Nulla completato in questo periodo.",
+    "emptyFiltered": "Nessuna voce corrisponde a questi filtri.",
+    "clearFilters": "Cancella filtri",
+    "today": "Oggi",
+    "yesterday": "Ieri",
+    "dayCount_one": "{{count}} voce",
+    "dayCount_other": "{{count}} voci",
+    "loadMore_one": "Carica altro · 1 rimanente",
+    "loadMore_other": "Carica altro · {{count}} rimanenti",
+    "csvDate": "Data",
+    "csvTime": "Ora",
+    "csvChore": "Attività",
+    "csvCategory": "Categoria",
+    "csvUser": "Utente",
+    "csvSource": "Origine",
+    "csvNote": "Nota"
   },
   "logModal": {
     "lastDone": "Ultima volta: {{elapsed}}",
@@ -270,6 +319,7 @@
     "toggleMineAll": "Alterna filtro Mie / Tutte",
     "toggleDarkMode": "Attiva/disattiva modalità scura",
     "panels": "Pannelli",
+    "journal": "Diario",
     "integrationSettings": "Impostazioni integrazione",
     "syncSettings": "Impostazioni sincronizzazione",
     "backupRestore": "Backup e ripristino",
@@ -281,6 +331,11 @@
   },
   "sync": {
     "title": "Sincronizzazione cloud",
+    "backoff": {
+      "transport": "Impossibile raggiungere il server di sincronizzazione. Nuovo tentativo tra {{seconds}} s.",
+      "auth": "Il server di sincronizzazione ha rifiutato l'accesso. Prossimo tentativo tra circa un'ora. Controlla il token del dispositivo nelle impostazioni di sincronizzazione.",
+      "retrying": "Nuovo tentativo alla prossima sincronizzazione…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Questa cartella di sincronizzazione appartiene a un'altra app. Scegli una cartella creata da lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Questi dati sono stati salvati da una versione più recente di lastGLANCE. Aggiorna l'app per sincronizzare.",
