@@ -1,5 +1,5 @@
 import { useRef, useState, useEffect } from 'react'
-import { Download, Upload, Cloud, X, Loader, Trash2 } from 'lucide-react'
+import { Download, Upload, Cloud, X, Loader, Trash2, Archive } from 'lucide-react'
 import { exportBackup, restoreFromBackup, hasSeedData, seedChoresUsed, clearSeedData, type BackupPayload } from '@/db/queries'
 import { buildPayload } from '@/sync/engine'
 import { saveJsonFile, stashJsonFile } from '@/utils/exportFile'
@@ -161,8 +161,11 @@ export function BackupModal({ engine, onClose, onImported }: Props) {
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
       <div className="w-full sm:max-w-sm bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700/50">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('backup.title')}</h2>
+        {/* Archive matches the toolbar button and settings-sheet row that open
+            this modal; the heading follows the Journal/Help/Shortcuts pattern. */}
+        <div className="flex items-center gap-3 mb-5">
+          <Archive size={18} className="text-green-400 shrink-0" />
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">{t('backup.title')}</h2>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
