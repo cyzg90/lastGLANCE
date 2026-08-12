@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Clock, CalendarDays } from 'lucide-react'
 import dayjs from 'dayjs'
+import { formatDate, formatMonthYear, weekdayMinLabels } from '@/utils/datetime'
+import { useTranslation } from 'react-i18next'
 
 interface Props {
   date: string
@@ -9,8 +11,6 @@ interface Props {
   onTimeChange: (t: string) => void
   maxDate?: string
 }
-
-const DAY_LABELS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa']
 
 type DayCell = {
   date: string
@@ -21,6 +21,10 @@ type DayCell = {
 }
 
 export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate }: Props) {
+  const { t } = useTranslation()
+  // Column headers must follow the same week order startOf('week') uses when
+  // building the grid below — Sunday-first in en, Monday-first elsewhere.
+  const dayLabels = weekdayMinLabels()
   const today = dayjs().format('YYYY-MM-DD')
   const limit = maxDate ?? today
   const [open, setOpen] = useState(false)
@@ -57,7 +61,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
   }
 
   const displayLabel = date
-    ? `${dayjs(date).format('MMM D, YYYY')}${time ? ` · ${time}` : ''}`
+    ? `${formatDate(date)}${time ? ` · ${time}` : ''}`
     : null
 
   return (
@@ -76,7 +80,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
         `}
       >
         <CalendarDays size={14} className={date ? 'text-green-400' : 'text-slate-400 dark:text-slate-500'} />
-        <span className="flex-1">{displayLabel ?? 'Set date…'}</span>
+        <span className="flex-1">{displayLabel ?? t('dateTimePicker.setDate')}</span>
         {date && (
           <span
             role="button"
@@ -100,7 +104,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
               <ChevronLeft size={15} />
             </button>
             <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {viewDate.format('MMMM YYYY')}
+              {formatMonthYear(viewDate)}
             </span>
             <button
               onClick={() => setViewDate(v => v.add(1, 'month'))}
@@ -112,7 +116,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
 
           {/* Day header */}
           <div className="grid grid-cols-7 px-3 pt-3 pb-1">
-            {DAY_LABELS.map(l => (
+            {dayLabels.map(l => (
               <div key={l} className="text-center text-xs font-medium text-slate-400 dark:text-slate-600">{l}</div>
             ))}
           </div>
@@ -149,7 +153,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
           {/* Time row */}
           <div className="flex items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800">
             <Clock size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
-            <span className="text-xs text-slate-400 dark:text-slate-500">Time</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">{t('dateTimePicker.time')}</span>
             <input
               type="time"
               value={time}
@@ -163,7 +167,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
                 onClick={() => onTimeChange('')}
                 className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors shrink-0"
               >
-                clear
+                {t('dateTimePicker.clearTime')}
               </button>
             )}
           </div>
@@ -174,20 +178,20 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
               onClick={clear}
               className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
             >
-              Clear
+              {t('dateTimePicker.clear')}
             </button>
             <button
               onClick={() => { onDateChange(today); setViewDate(dayjs()); onTimeChange('') }}
               className="text-xs text-green-500 dark:text-green-400 hover:text-green-400 dark:hover:text-green-300 transition-colors font-medium"
             >
-              Today
+              {t('dateTimePicker.today')}
             </button>
           </div>
         </div>
       )}
 
       {date && !time && open && (
-        <p className="text-xs text-slate-400 dark:text-slate-600">No time set — will use noon</p>
+        <p className="text-xs text-slate-400 dark:text-slate-600">{t('dateTimePicker.noTimeHint')}</p>
       )}
     </div>
   )

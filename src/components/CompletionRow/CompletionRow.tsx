@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Trash2, NotebookPen } from 'lucide-react'
-import dayjs from 'dayjs'
 import type { CompletionEvent } from '@/types'
+import { formatDate, formatTime } from '@/utils/datetime'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -32,7 +32,7 @@ export function CompletionRow({ evt, onDelete, onEditNote, userName, heading }: 
   const [editingNote, setEditingNote] = useState(false)
   const [noteValue, setNoteValue] = useState(evt.note ?? '')
   const noteInputRef = useRef<HTMLInputElement>(null)
-  const dt = dayjs(evt.completed_at)
+  const at = evt.completed_at
 
   function openNoteEdit() {
     setNoteValue(evt.note ?? '')
@@ -58,9 +58,9 @@ export function CompletionRow({ evt, onDelete, onEditNote, userName, heading }: 
           <span className={heading
             ? 'text-xs text-slate-400 dark:text-slate-500'
             : 'text-sm font-medium text-slate-700 dark:text-slate-200'}>
-            {dt.format('MMM D, YYYY')}
+            {formatDate(at)}
           </span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">{dt.format('h:mm A')}</span>
+          <span className="text-xs text-slate-400 dark:text-slate-500">{formatTime(at)}</span>
           {userName && (
             <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 rounded">{userName}</span>
           )}

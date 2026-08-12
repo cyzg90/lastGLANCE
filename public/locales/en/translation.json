@@ -153,7 +153,16 @@
     "deleteAriaLabel": "Delete {{name}}",
     "quickLogAriaLabel": "Quick-log {{name}}",
     "sendAriaLabel": "Send {{name}} to dayGLANCE",
-    "choreLabel": "{{name}} — {{elapsed}}"
+    "choreLabel": "{{name}} — {{elapsed}}",
+    "seasonalRange": "Seasonal: {{start}} – {{end}}"
+  },
+  "dateTimePicker": {
+    "setDate": "Set date…",
+    "time": "Time",
+    "clearTime": "clear",
+    "clear": "Clear",
+    "today": "Today",
+    "noTimeHint": "No time set — will use noon"
   },
   "help": {
     "title": "Help & Feedback",
