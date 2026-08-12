@@ -8,7 +8,10 @@ import {
   getCategories,
   exportBackup,
   restoreFromBackup,
+  logCompletion,
+  getJournalEntries,
 } from './queries'
+import dayjs from 'dayjs'
 import type { Chore, CompletionEvent } from '@/types'
 
 // markDirty/markDeleted are no-ops without a registered DB engine (see
@@ -192,5 +195,79 @@ describe('#192 — restoreFromBackup', () => {
     ).rejects.toThrow(/empty backup/)
     // Data untouched.
     expect(await db.categories.count()).toBe(1)
+  })
+})
+
+describe('getJournalEntries', () => {
+  async function addChore(name: string, categoryId: number): Promise<number> {
+    return createChore({
+      name, category_id: categoryId, target_cadence_days: null,
+      notify_when_overdue: false, auto_schedule_to_dayglance: false,
+      preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null,
+      assigned_user_sync_ids: [],
+    } as unknown as Parameters<typeof createChore>[0])
+  }
+
+  it('joins each event to its chore and root category, newest first', async () => {
+    const homeId = await createCategory('Home')
+    const kitchenId = await createCategory('Kitchen', undefined, undefined, homeId)
+    const mopId = await addChore('Mop', kitchenId)
+    const trashId = await addChore('Trash', homeId)
+
+    await logCompletion(mopId, { completedAt: '2026-03-01T10:00:00.000Z', note: 'front only' })
+    await logCompletion(trashId, { completedAt: '2026-03-05T10:00:00.000Z', source: 'dayglance' })
+
+    const entries = await getJournalEntries()
+
+    expect(entries.map(e => e.chore_name)).toEqual(['Trash', 'Mop'])
+    // The chore's own category is reported, but the root is what the category
+    // filter matches on — so a chore in a subcategory still rolls up to Home.
+    const mop = entries.find(e => e.chore_name === 'Mop')!
+    expect(mop.category_name).toBe('Kitchen')
+    expect(mop.root_category_id).toBe(homeId)
+    expect(mop.root_category_name).toBe('Home')
+    expect(mop.event.note).toBe('front only')
+    expect(entries.find(e => e.chore_name === 'Trash')!.event.source).toBe('dayglance')
+  })
+
+  it('honours the exact from/to bounds despite the widened index prefilter', async () => {
+    const catId = await createCategory('Home')
+    const choreId = await addChore('Mop', catId)
+
+    // One event inside the window, and one on each side within the extra day
+    // the index range is widened by — the day-grain padding must not leak them in.
+    const from = dayjs('2026-03-10').startOf('day')
+    const to = dayjs('2026-03-11').endOf('day')
+    await logCompletion(choreId, { completedAt: from.subtract(2, 'hour').toISOString() })
+    await logCompletion(choreId, { completedAt: from.add(6, 'hour').toISOString() })
+    await logCompletion(choreId, { completedAt: to.add(2, 'hour').toISOString() })
+
+    const entries = await getJournalEntries({ from: from.toISOString(), to: to.toISOString() })
+
+    expect(entries).toHaveLength(1)
+    expect(dayjs(entries[0].event.completed_at).isSame(from.add(6, 'hour'))).toBe(true)
+  })
+
+  it('supports an open-ended bound', async () => {
+    const catId = await createCategory('Home')
+    const choreId = await addChore('Mop', catId)
+    await logCompletion(choreId, { completedAt: '2026-01-01T10:00:00.000Z' })
+    await logCompletion(choreId, { completedAt: '2026-06-01T10:00:00.000Z' })
+
+    expect(await getJournalEntries({ from: '2026-03-01T00:00:00.000Z' })).toHaveLength(1)
+    expect(await getJournalEntries({ to: '2026-03-01T00:00:00.000Z' })).toHaveLength(1)
+    expect(await getJournalEntries()).toHaveLength(2)
+  })
+
+  it('drops events whose chore no longer exists rather than rendering a blank row', async () => {
+    const catId = await createCategory('Home')
+    const choreId = await addChore('Mop', catId)
+    await logCompletion(choreId, { completedAt: '2026-03-01T10:00:00.000Z' })
+    // An event that arrived from sync ahead of (or after) its chore.
+    await logCompletion(9999, { completedAt: '2026-03-02T10:00:00.000Z' })
+
+    const entries = await getJournalEntries()
+    expect(entries).toHaveLength(1)
+    expect(entries[0].chore_name).toBe('Mop')
   })
 })

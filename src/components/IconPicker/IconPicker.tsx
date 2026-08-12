@@ -117,7 +117,7 @@ function IconGrid({ names, selected, onPick }: {
         return (
           <button
             key={name}
-            title={name}
+            data-tooltip={name}
             onClick={() => onPick(name)}
             className={`
               flex items-center justify-center w-full aspect-square rounded-lg transition-colors

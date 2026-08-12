@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Trash2, NotebookPen } from 'lucide-react'
+import { X } from 'lucide-react'
 import dayjs from 'dayjs'
 import type { ChoreWithLastCompletion, CompletionEvent } from '@/types'
 import { logCompletion, getCompletionHistory, deleteCompletion, updateCompletionNote } from '@/db/queries'
+import { CompletionRow } from '@/components/CompletionRow/CompletionRow'
 import { getMeUserSyncId } from '@/multiuser/settings'
 import { useUsersContext } from '@/multiuser/UsersContext'
 import { formatElapsed } from '@/utils/cadence'
@@ -239,86 +240,6 @@ function StatCell({ label, value }: { label: string; value: string }) {
   )
 }
 
-function CompletionRow({ evt, onDelete, onEditNote, userName }: { evt: CompletionEvent; onDelete: () => void; onEditNote: (note: string | null) => void; userName: string | null }) {
-  const { t } = useTranslation()
-  const [confirming, setConfirming] = useState(false)
-  const [editingNote, setEditingNote] = useState(false)
-  const [noteValue, setNoteValue] = useState(evt.note ?? '')
-  const noteInputRef = useRef<HTMLInputElement>(null)
-  const dt = dayjs(evt.completed_at)
-
-  function openNoteEdit() {
-    setNoteValue(evt.note ?? '')
-    setEditingNote(true)
-    setTimeout(() => noteInputRef.current?.focus(), 0)
-  }
-
-  function saveNote() {
-    onEditNote(noteValue.trim() || null)
-    setEditingNote(false)
-  }
-
-  function cancelNote() {
-    setNoteValue(evt.note ?? '')
-    setEditingNote(false)
-  }
-
-  return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-slate-100 dark:border-slate-700/30 group">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-sm font-medium text-slate-700 dark:text-slate-200">{dt.format('MMM D, YYYY')}</span>
-          <span className="text-xs text-slate-400 dark:text-slate-500">{dt.format('h:mm A')}</span>
-          {userName && (
-            <span className="text-xs text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 px-1.5 py-0.5 rounded">{userName}</span>
-          )}
-          {evt.source === 'dayglance' && (
-            <span className="text-xs text-blue-500 dark:text-blue-400 bg-blue-50 dark:bg-blue-400/10 px-1.5 py-0.5 rounded">{t('logModal.viaDayglance')}</span>
-          )}
-        </div>
-        {editingNote ? (
-          <div className="flex items-center gap-2 mt-1">
-            <input
-              ref={noteInputRef}
-              type="text"
-              value={noteValue}
-              onChange={e => setNoteValue(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') saveNote(); if (e.key === 'Escape') cancelNote() }}
-              placeholder={t('logModal.addNotePlaceholder')}
-              className="flex-1 bg-slate-100 dark:bg-slate-700 rounded px-2 py-1 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
-            />
-            <button onClick={cancelNote} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0">{t('logModal.cancel')}</button>
-            <button onClick={saveNote} className="text-xs text-green-500 hover:text-green-400 font-medium shrink-0">{t('logModal.saveNote')}</button>
-          </div>
-        ) : (
-          evt.note && <p className="text-xs text-slate-400 dark:text-slate-400 italic mt-0.5">{evt.note}</p>
-        )}
-      </div>
-      {!editingNote && (confirming ? (
-        <div className="flex items-center gap-2 shrink-0">
-          <button onClick={() => setConfirming(false)} className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">{t('logModal.cancel')}</button>
-          <button onClick={onDelete} className="text-xs text-red-500 hover:text-red-400 font-medium">{t('logModal.delete')}</button>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2.5 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 [@media(hover:none)]:opacity-100">
-          <button
-            onClick={openNoteEdit}
-            className="text-slate-300 dark:text-slate-700 hover:text-green-400 transition-colors"
-          >
-            <NotebookPen size={15} />
-          </button>
-          <button
-            onClick={() => setConfirming(true)}
-            className="text-slate-300 dark:text-slate-700 hover:text-red-400 transition-colors"
-          >
-            <Trash2 size={15} />
-          </button>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 function GapMarker({ days, target }: { days: number; target: number | null }) {
   const { t } = useTranslation()
   const overdue = target !== null && days > target
@@ -361,7 +282,7 @@ function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
             {week.map((day, di) => (
               <div
                 key={di}
-                title={day.isFuture ? '' : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
+                data-tooltip={day.isFuture ? undefined : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
                 className="w-[11px] h-[11px] rounded-[2px]"
                 style={{ backgroundColor: cellColor(day, today) }}
               />

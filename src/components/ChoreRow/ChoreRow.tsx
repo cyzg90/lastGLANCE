@@ -92,7 +92,7 @@ export function ChoreRow({ chore, editMode, onTap, onEdit, onDelete, onRefresh, 
           </span>
         )}
         {chore.seasonal_start && (
-          <span title={`Seasonal: ${chore.seasonal_start} – ${chore.seasonal_end}`}>
+          <span data-tooltip={`Seasonal: ${chore.seasonal_start} – ${chore.seasonal_end}`}>
             <Leaf size={11} className="text-green-400/60" />
           </span>
         )}
@@ -150,7 +150,7 @@ export function ChoreRow({ chore, editMode, onTap, onEdit, onDelete, onRefresh, 
             {multiUserEnabled && chore.assigned_user_sync_ids.length > 0 && chore.assigned_user_sync_ids.map(sid => {
               const u = users.find(u => u.sync_id === sid)
               return u ? (
-                <span key={sid} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-600 text-[9px] font-bold text-slate-500 dark:text-slate-300 shrink-0" title={u.name}>
+                <span key={sid} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-600 text-[9px] font-bold text-slate-500 dark:text-slate-300 shrink-0" data-tooltip={u.name}>
                   {u.name.charAt(0).toUpperCase()}
                 </span>
               ) : null

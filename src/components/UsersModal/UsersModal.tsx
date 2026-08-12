@@ -148,11 +148,9 @@ export function UsersModal({ engine, onUserMutated, onClose }: Props) {
     >
       <div className="w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/40 shrink-0">
-          <div className="flex items-center gap-2">
-            <Users size={16} className="text-green-400" />
-            <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100">{t('users.title')}</h2>
-          </div>
+        <div className="flex items-center gap-3 px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-700/40 shrink-0">
+          <Users size={18} className="text-green-400 shrink-0" />
+          <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">{t('users.title')}</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
             <X size={18} />
           </button>

@@ -276,6 +276,101 @@ export async function getCompletionHistory(
     .then(evts => evts.sort((a, b) => b.completed_at.localeCompare(a.completed_at)).slice(0, limit))
 }
 
+// ── Journal ───────────────────────────────────────────────────────────────────
+//
+// A completion event joined with the chore and category it belongs to, so the
+// Journal can render a statement-style row without re-querying per entry.
+// Chores and categories are small enough to load whole and join in memory.
+export interface JournalEntry {
+  event: CompletionEvent
+  chore_id: number
+  chore_name: string
+  chore_icon?: string
+  /** The chore's own category — a subcategory when it lives in one. */
+  category_name: string | null
+  /**
+   * The root ancestor of that category. The Journal's category filter lists
+   * roots (mirroring how the Ribbon groups things), so picking "Home" also
+   * matches chores filed under "Home › Kitchen".
+   */
+  root_category_id: number | null
+  root_category_name: string | null
+}
+
+/**
+ * Completion events in the window [from, to], newest first.
+ *
+ * The `completed_at` index does the heavy lifting, but it compares ISO strings
+ * lexicographically — which is only equivalent to comparing instants when every
+ * stored value shares the same UTC `Z` shape. logCompletion always writes
+ * `dayjs().toISOString()`, so in practice they do; a restored backup is only
+ * validated down to `YYYY-MM-DDTHH:mm:ss` and could in principle carry an
+ * offset. So the index range is widened by a day on each side and used purely as
+ * a prefilter, with the exact bounds applied afterwards in real time arithmetic.
+ *
+ * Events whose chore no longer exists are dropped. deleteChore/deleteCategory
+ * cascade-delete an entity's events, so an orphan here only ever means a synced
+ * event that arrived before (or after) its chore — there is no name or category
+ * to show for it, and it would render as a blank row.
+ */
+export async function getJournalEntries(
+  opts: { from?: string; to?: string } = {}
+): Promise<JournalEntry[]> {
+  const { from, to } = opts
+
+  // '' sorts below and '￿' above every ISO timestamp, so an open-ended
+  // bound needs no separate query shape.
+  const lower = from ? dayjs(from).subtract(1, 'day').toISOString() : ''
+  const upper = to ? dayjs(to).add(1, 'day').toISOString() : '￿'
+  const events = from || to
+    ? await db.completionEvents.where('completed_at').between(lower, upper, true, true).toArray()
+    : await db.completionEvents.toArray()
+
+  const inRange = events.filter(evt => {
+    const at = dayjs(evt.completed_at)
+    if (from && at.isBefore(dayjs(from))) return false
+    if (to && at.isAfter(dayjs(to))) return false
+    return true
+  })
+  inRange.sort((a, b) => b.completed_at.localeCompare(a.completed_at))
+
+  const [chores, categories] = await Promise.all([db.chores.toArray(), db.categories.toArray()])
+  const choreById = new Map(chores.map(c => [c.id, c]))
+  const catById = new Map(categories.map(c => [c.id, c]))
+
+  // Walk to the root ancestor, guarding against a cycle or a missing parent the
+  // same way useChores does.
+  function rootOf(categoryId: number | undefined): Category | null {
+    let cat = categoryId != null ? catById.get(categoryId) ?? null : null
+    const seen = new Set<number>()
+    while (cat?.parent_category_id != null && !seen.has(cat.id)) {
+      seen.add(cat.id)
+      const parent = catById.get(cat.parent_category_id)
+      if (!parent) break
+      cat = parent
+    }
+    return cat
+  }
+
+  const entries: JournalEntry[] = []
+  for (const event of inRange) {
+    const chore = choreById.get(event.chore_id)
+    if (!chore) continue
+    const cat = catById.get(chore.category_id) ?? null
+    const root = rootOf(chore.category_id)
+    entries.push({
+      event,
+      chore_id: chore.id,
+      chore_name: chore.name,
+      chore_icon: chore.icon,
+      category_name: cat?.name ?? null,
+      root_category_id: root?.id ?? null,
+      root_category_name: root?.name ?? null,
+    })
+  }
+  return entries
+}
+
 export async function updateCompletionNote(id: number, note: string | null): Promise<void> {
   await db.completionEvents.update(id, { note: note || null })
   const evt = await db.completionEvents.get(id)
