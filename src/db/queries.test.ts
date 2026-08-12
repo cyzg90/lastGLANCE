@@ -10,6 +10,7 @@ import {
   restoreFromBackup,
   logCompletion,
   getJournalEntries,
+  ensureInboxCategory,
 } from './queries'
 import dayjs from 'dayjs'
 import type { Chore, CompletionEvent } from '@/types'
@@ -269,5 +270,46 @@ describe('getJournalEntries', () => {
     const entries = await getJournalEntries()
     expect(entries).toHaveLength(1)
     expect(entries[0].chore_name).toBe('Mop')
+  })
+})
+
+describe('ensureInboxCategory', () => {
+  it('creates the Inbox with its icon the first time one is needed', async () => {
+    const { category, created } = await ensureInboxCategory()
+
+    expect(created).toBe(true)
+    expect(category.name).toBe('Inbox')
+    // The icon is what distinguishes it in the ribbon; the Tasker path used to
+    // create this category without one.
+    expect(category.icon).toBe('Inbox')
+    expect(await db.categories.count()).toBe(1)
+  })
+
+  it('reuses the existing Inbox instead of creating a second one', async () => {
+    const first = await ensureInboxCategory()
+    const second = await ensureInboxCategory()
+
+    expect(second.created).toBe(false)
+    expect(second.category.id).toBe(first.category.id)
+    expect(await db.categories.count()).toBe(1)
+  })
+
+  it('matches an existing Inbox case-insensitively and ignoring surrounding space', async () => {
+    const existingId = await createCategory('  inbox ')
+    const { category, created } = await ensureInboxCategory()
+
+    expect(created).toBe(false)
+    expect(category.id).toBe(existingId)
+    expect(await db.categories.count()).toBe(1)
+  })
+
+  it('leaves other categories alone', async () => {
+    const homeId = await createCategory('Home')
+    const { category, created } = await ensureInboxCategory()
+
+    expect(created).toBe(true)
+    expect(category.id).not.toBe(homeId)
+    const names = (await getCategories()).map(c => c.name).sort()
+    expect(names).toEqual(['Home', 'Inbox'])
   })
 })

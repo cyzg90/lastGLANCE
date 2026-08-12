@@ -4,16 +4,13 @@
 
 import dayjs from 'dayjs'
 import { db } from '@/db/client'
-import { getCategories, createCategory, createChore as dbCreateChore, logCompletion as dbLogCompletion } from '@/db/queries'
+import { getCategories, createCategory, createChore as dbCreateChore, logCompletion as dbLogCompletion, ensureInboxCategory } from '@/db/queries'
 import { getMeUserSyncId } from '@/multiuser/settings'
 import { addActivityEntry } from './config'
 import { nativeSendNotifyBroadcast } from '@/native/intentsBridge'
 import type { IntentChore, IntentContext, OpenTarget } from './handleIntent'
 import { ACTIONS, EVENTS, SOURCE_APPS, eventId } from '@glance-apps/intents'
 
-// The category intent-created chores land in when the CREATE payload names no
-// `project` (or names one that doesn't exist and we fall through to a default).
-const INBOX_CATEGORY_NAME = 'Inbox'
 
 // Loads every chore with its computed `elapsed_days` (age since last completion),
 // the same derivation getChoresForCategory uses, but across all categories in a
@@ -40,9 +37,12 @@ async function listChores(): Promise<IntentChore[]> {
 }
 
 // Finds a category by name (case-insensitive), creating it if absent. A null
-// name (no `project` in the payload) resolves the shared Inbox category.
+// name (no `project` in the payload) resolves the shared Inbox category — the
+// same one the in-app add paths use, so a Tasker-created chore and one added
+// with `N` land together.
 async function ensureCategory(name: string | null): Promise<number> {
-  const target = (name ?? INBOX_CATEGORY_NAME).trim()
+  if (name === null) return (await ensureInboxCategory()).category.id
+  const target = name.trim()
   const categories = await getCategories()
   const existing = categories.find(c => c.name.trim().toLowerCase() === target.toLowerCase())
   if (existing) return existing.id
