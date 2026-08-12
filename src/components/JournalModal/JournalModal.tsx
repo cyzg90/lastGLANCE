@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom'
-import { X, BookOpen, Download, Search } from 'lucide-react'
+import { X, NotebookText, Download, Search } from 'lucide-react'
 import dayjs from 'dayjs'
 import { getJournalEntries, deleteCompletion, updateCompletionNote, type JournalEntry } from '@/db/queries'
 import { useUsersContext } from '@/multiuser/UsersContext'
@@ -203,7 +203,7 @@ export function JournalModal({ onClose, initialDate, onChanged }: Props) {
 
         {/* Header */}
         <div className="flex items-center gap-3 px-5 sm:px-6 pt-5 pb-4 shrink-0 border-b border-slate-100 dark:border-slate-700/40">
-          <BookOpen size={18} className="text-green-400 shrink-0" />
+          <NotebookText size={18} className="text-green-400 shrink-0" />
           <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1 min-w-0">
             {t('journal.title')}
           </h2>
@@ -323,7 +323,7 @@ export function JournalModal({ onClose, initialDate, onChanged }: Props) {
             <p className="text-sm text-slate-400 dark:text-slate-500 py-10 text-center">{t('journal.loading')}</p>
           ) : filtered.length === 0 ? (
             <div className="py-12 flex flex-col items-center gap-3 text-center">
-              <BookOpen size={26} className="text-slate-300 dark:text-slate-600" />
+              <NotebookText size={26} className="text-slate-300 dark:text-slate-600" />
               <p className="text-sm text-slate-400 dark:text-slate-500">
                 {hasFilters ? t('journal.emptyFiltered') : t('journal.empty')}
               </p>

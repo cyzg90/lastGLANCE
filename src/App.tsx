@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Pencil, Check, Sun, Moon, Archive, Plug, Cloud, CloudOff, RefreshCw, HelpCircle, Users, Settings, UserCircle, Clock, BadgeCheck, BookOpen } from 'lucide-react'
+import { Pencil, Check, Sun, Moon, Archive, Plug, Cloud, CloudOff, RefreshCw, HelpCircle, Users, Settings, UserCircle, Clock, BadgeCheck, NotebookText } from 'lucide-react'
 import { Ribbon } from '@/components/Ribbon/Ribbon'
 import { BackupModal } from '@/components/BackupModal/BackupModal'
 import { WelcomeModal } from '@/components/WelcomeModal/WelcomeModal'
@@ -461,7 +461,7 @@ function AppInner() {
     { label: t('app.cloudSync'), icon: syncHalted || syncError ? <CloudOff size={15} /> : syncStatus === 'uploading' || syncStatus === 'downloading' ? <RefreshCw size={15} className="animate-spin" /> : <Cloud size={15} />, onClick: () => { setShowSyncSettings(true); setShowSettingsSheet(false) }, warn: !!(syncHalted || syncError) },
     { label: t('app.dayglanceIntegration'), icon: <Plug size={22} />, onClick: () => { setShowIntegration(true); setShowSettingsSheet(false) } },
     { label: t('app.users'), icon: <Users size={15} />, onClick: () => { setShowUsers(true); setShowSettingsSheet(false) } },
-    { label: t('app.journal'), icon: <BookOpen size={15} />, onClick: () => { openJournal(null); setShowSettingsSheet(false) } },
+    { label: t('app.journal'), icon: <NotebookText size={15} />, onClick: () => { openJournal(null); setShowSettingsSheet(false) } },
     { label: isDark ? t('app.lightMode') : t('app.darkMode'), icon: isDark ? <Sun size={15} /> : <Moon size={15} />, onClick: () => { toggleTheme(); setShowSettingsSheet(false) } },
     { label: t('app.backupRestore'), icon: <Archive size={15} />, onClick: () => { setShowBackup(true); setShowSettingsSheet(false) } },
     { label: t('app.helpFeedback'), icon: <HelpCircle size={15} />, onClick: () => { setShowHelp(true); setShowSettingsSheet(false) } },
@@ -601,7 +601,7 @@ function AppInner() {
               </button>
               <button onClick={() => setShowIntegration(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.dayglanceIntegration')} data-tooltip={t('app.dayglanceIntegration')}><Plug size={15} /></button>
               <button onClick={() => setShowUsers(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.users')} data-tooltip={t('app.users')}><Users size={15} /></button>
-              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t('app.journalTooltip')}><BookOpen size={15} /></button>
+              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t('app.journalTooltip')}><NotebookText size={15} /></button>
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
