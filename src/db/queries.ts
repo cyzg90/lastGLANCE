@@ -99,6 +99,38 @@ export async function updateCategory(id: number, fields: { name?: string; icon?:
   for (const sid of movedChildSyncIds) markDirty(sid)
 }
 
+// The catch-all category a chore lands in when it is created without the user
+// naming somewhere to put it — the `N` shortcut, the Add widget, a share, and
+// the Tasker CREATE action with no `project`. Matching is case-insensitive on
+// this canonical name, so all of those paths converge on one category rather
+// than each minting its own.
+export const INBOX_CATEGORY_NAME = 'Inbox'
+const INBOX_CATEGORY_ICON = 'Inbox'
+
+/**
+ * Resolve the Inbox, creating it if this is the first time anything needed one.
+ *
+ * Returns the category plus whether it had to be created, since a caller
+ * showing the category list needs to know to refresh when a new one appeared.
+ *
+ * Note the match is by name: a user who renames their Inbox gets a fresh one on
+ * the next unfiled chore. That is the same behaviour the Tasker path has always
+ * had, and the alternative — pinning a sync_id — would need to survive being
+ * synced between devices that each resolved it independently.
+ */
+export async function ensureInboxCategory(): Promise<{ category: Category; created: boolean }> {
+  const categories = await getCategories()
+  const existing = categories.find(
+    c => c.name.trim().toLowerCase() === INBOX_CATEGORY_NAME.toLowerCase()
+  )
+  if (existing) return { category: existing, created: false }
+
+  const id = await createCategory(INBOX_CATEGORY_NAME, undefined, INBOX_CATEGORY_ICON)
+  const category = await db.categories.get(id)
+  if (!category) throw new Error('failed to create Inbox category')
+  return { category, created: true }
+}
+
 export async function getAllCompletionCounts(): Promise<Map<string, number>> {
   const all = await db.completionEvents.toArray()
   const counts = new Map<string, number>()

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react'
 import { Plus, GripVertical, Search, UserCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 import { useChores } from '@/hooks/useChores'
-import { reorderCategories } from '@/db/queries'
+import { ensureInboxCategory, reorderCategories } from '@/db/queries'
 import { CategorySection } from '@/components/CategorySection/CategorySection'
 import { LogModal } from '@/components/LogModal/LogModal'
 import { CategoryFormModal } from '@/components/CategoryFormModal/CategoryFormModal'
@@ -179,22 +179,35 @@ export function Ribbon({ editMode, onLogged }: Props) {
   const ribbonModalOpenRef = useRef(false)
   ribbonModalOpenRef.current = showSearch || selectedChore !== null || addingCategory || newChoreCategory !== null
 
-  // Launcher shortcuts / the Add widget / a share: open Search or the new-chore
-  // form (optionally pre-filled with a shared name). A new chore needs a category,
-  // which may not have loaded yet on a cold-start launch, so stash the request and
-  // open it once data arrives (mirrors pending-open).
-  const pendingNewChoreRef = useRef<{ name: string } | null>(null)
-  const openNewChore = useCallback((name = '') => {
-    const cat = viewDataRef.current[activeCategoryIndexRef.current]?.category
-      ?? viewDataRef.current[0]?.category
-    if (cat) { setNewChoreName(name); setNewChoreCategory(cat); return true }
-    return false
-  }, [])
+  // Every "add a chore" path that doesn't name a destination — the N shortcut,
+  // launcher shortcuts, the Add widget, a share, Tasker's OPEN add — files into
+  // the Inbox, the same category Tasker's CREATE uses when its payload has no
+  // `project`. The user moves it somewhere permanent afterwards. Adding from a
+  // category's own "+" button still targets that category: there the user has
+  // already said where it goes.
+  //
+  // Resolved from the DB rather than from loaded state, so a cold-start launch
+  // that fires before the Ribbon has data still lands somewhere real — which is
+  // what the old pending-request stash existed to work around.
+  const openNewChore = useCallback(async (name = '') => {
+    const { category, created } = await ensureInboxCategory()
+    setNewChoreName(name)
+    setNewChoreCategory(category)
+    // A brand new Inbox isn't in localData yet; pull it in so the form's
+    // category list and the ribbon behind it agree.
+    if (created) refresh()
+  }, [refresh])
+
+  // The keydown listener below is registered once on mount; this keeps it
+  // pointed at the live callback without re-binding.
+  const openNewChoreRef = useRef(openNewChore)
+  openNewChoreRef.current = openNewChore
+
   useEffect(() => {
     function onOpenSearch() { setShowSearch(true) }
     function onNewChore(e: Event) {
       const name = (e as CustomEvent<{ name?: string }>).detail?.name ?? ''
-      if (!openNewChore(name)) pendingNewChoreRef.current = { name }
+      openNewChore(name)
     }
     window.addEventListener('lg:open-search', onOpenSearch)
     window.addEventListener('lg:new-chore', onNewChore)
@@ -203,11 +216,6 @@ export function Ribbon({ editMode, onLogged }: Props) {
       window.removeEventListener('lg:new-chore', onNewChore)
     }
   }, [openNewChore])
-
-  useEffect(() => {
-    const pending = pendingNewChoreRef.current
-    if (pending && openNewChore(pending.name)) pendingNewChoreRef.current = null
-  }, [localData, openNewChore])
 
   // Keyboard shortcuts owned by Ribbon: search, category nav, new chore
   useEffect(() => {
@@ -230,8 +238,8 @@ export function Ribbon({ editMode, onLogged }: Props) {
         e.preventDefault()
         setActiveCategoryIndex(i => Math.min(viewDataRef.current.length - 1, i + 1))
       } else if (e.key === 'n' || e.key === 'N') {
-        const cat = viewDataRef.current[activeCategoryIndexRef.current]?.category
-        if (cat) { e.preventDefault(); setNewChoreCategory(cat) }
+        e.preventDefault()
+        openNewChoreRef.current()
       }
     }
     window.addEventListener('keydown', onKey)
