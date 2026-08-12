@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert, Cloud } from 'lucide-react'
 import type { SyncEngine, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
 import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
+import { backoffStatusText, currentBackoff, type BackoffDescriptor } from '@/sync/backoffStatus'
 import { clearCredentialHalt, getVaultConfig, setVaultConfig } from '@/sync/vaultConfig'
 import { testVaultConnection } from '@/sync/testVaultConnection'
 import { cloudSyncProviders } from '@/utils/cloudSyncProviders'
@@ -108,8 +109,21 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
   const [vaultSyncResult, setVaultSyncResult] = useState<SyncResult>('idle')
   const [vaultSyncResultMsg, setVaultSyncResultMsg] = useState('')
   const [vaultLastSynced, setVaultLastSynced] = useState(() => dbEngine?.getLastSynced() ?? null)
+  // Standing backoff window (issue #250), polled from getBackoffState() while
+  // the modal is open — onError is an event stream and goes quiet during
+  // windows, so this is the only truthful standing source. 1s tick drives the
+  // countdown; the read is memory/localStorage only.
+  const [vaultBackoff, setVaultBackoff] = useState<BackoffDescriptor | null>(() => currentBackoff(dbEngine))
 
   const halted = engine?.isHardStopped() ?? false
+
+  useEffect(() => {
+    if (!dbEngine || !vaultEnabled) { setVaultBackoff(null); return }
+    const tick = () => setVaultBackoff(currentBackoff(dbEngine))
+    tick()
+    const id = setInterval(tick, 1000)
+    return () => clearInterval(id)
+  }, [dbEngine, vaultEnabled])
 
   const activeProvider = cloudSyncProviders[provider]
   const requiredFieldsFilled = activeProvider?.configFields.every(f => formData[f.key]) ?? false
@@ -303,6 +317,10 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
       setVaultSyncResult('ok')
     } else {
       setVaultSyncResult('error')
+      // During an open backoff window the engine truthfully skipped the work;
+      // say so (reason + countdown) instead of the generic failure (#250).
+      const d = currentBackoff(dbEngine)
+      if (d) setVaultSyncResultMsg(backoffStatusText(t, d) ?? '')
     }
     setVaultSyncing(false)
   }
@@ -729,6 +747,14 @@ export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, 
                       ? t('sync.lastSynced', { date: formatLastSynced(vaultLastSynced) })
                       : 'Save & reload to activate GLANCEvault sync.'}
                   </p>
+                )}
+                {vaultBackoff && (
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
+                    <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-amber-700 dark:text-amber-300">
+                      {backoffStatusText(t, vaultBackoff)}
+                    </p>
+                  </div>
                 )}
                 {vaultSkipped > 0 && (
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">

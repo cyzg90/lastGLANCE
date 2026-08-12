@@ -331,6 +331,11 @@
   },
   "sync": {
     "title": "Sync cloud",
+    "backoff": {
+      "transport": "Impossible de joindre le serveur de synchronisation. Nouvelle tentative dans {{seconds}} s.",
+      "auth": "Le serveur de synchronisation a refusé la connexion. Prochaine tentative dans environ une heure. Vérifiez le jeton d'appareil dans les réglages de synchronisation.",
+      "retrying": "Nouvelle tentative à la prochaine synchronisation…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Ce dossier de synchronisation appartient à une autre application. Choisissez un dossier créé par lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Ces données ont été enregistrées par une version plus récente de lastGLANCE. Mettez l'application à jour pour synchroniser.",

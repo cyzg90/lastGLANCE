@@ -331,6 +331,11 @@
   },
   "sync": {
     "title": "Sincronização na nuvem",
+    "backoff": {
+      "transport": "Não é possível contactar o servidor de sincronização. Nova tentativa em {{seconds}} s.",
+      "auth": "O servidor de sincronização rejeitou o início de sessão. Próxima tentativa dentro de cerca de uma hora. Verifique o token do dispositivo nas definições de sincronização.",
+      "retrying": "Nova tentativa na próxima sincronização…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Esta pasta de sincronização pertence a outra aplicação. Escolha uma pasta criada pelo lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Estes dados foram guardados por uma versão mais recente do lastGLANCE. Atualize a aplicação para sincronizar.",

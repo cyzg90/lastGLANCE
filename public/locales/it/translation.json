@@ -331,6 +331,11 @@
   },
   "sync": {
     "title": "Sincronizzazione cloud",
+    "backoff": {
+      "transport": "Impossibile raggiungere il server di sincronizzazione. Nuovo tentativo tra {{seconds}} s.",
+      "auth": "Il server di sincronizzazione ha rifiutato l'accesso. Prossimo tentativo tra circa un'ora. Controlla il token del dispositivo nelle impostazioni di sincronizzazione.",
+      "retrying": "Nuovo tentativo alla prossima sincronizzazione…"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Questa cartella di sincronizzazione appartiene a un'altra app. Scegli una cartella creata da lastGLANCE.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Questi dati sono stati salvati da una versione più recente di lastGLANCE. Aggiorna l'app per sincronizzare.",
