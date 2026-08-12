@@ -11,6 +11,7 @@ import { HelpModal } from '@/components/HelpModal/HelpModal'
 import { ShortcutsModal } from '@/components/ShortcutsModal/ShortcutsModal'
 import { ActivityLogModal } from '@/components/ActivityLogModal/ActivityLogModal'
 import { JournalModal } from '@/components/JournalModal/JournalModal'
+import { TooltipHost } from '@/components/Tooltip/Tooltip'
 import { ToastProvider, useToast } from '@/components/Toast/Toast'
 import { UsersModal } from '@/components/UsersModal/UsersModal'
 import { PaywallModal } from '@/components/PaywallModal/PaywallModal'
@@ -116,7 +117,7 @@ function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay
               type="button"
               disabled={day.isFuture}
               onClick={() => onSelectDay(day.date)}
-              title={day.isFuture ? '' : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
+              data-tooltip={day.isFuture ? undefined : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
               aria-label={day.date}
               className="w-[9px] h-[9px] rounded-[2px] transition-transform hover:scale-150 disabled:cursor-default disabled:hover:scale-100"
               style={{ backgroundColor: getWaveColor(wi, di, day, wavePos) }}
@@ -457,10 +458,10 @@ function AppInner() {
   }, [])
 
   const settingsItems = [
-    { label: t('app.journal'), icon: <BookOpen size={15} />, onClick: () => { openJournal(null); setShowSettingsSheet(false) } },
     { label: t('app.cloudSync'), icon: syncHalted || syncError ? <CloudOff size={15} /> : syncStatus === 'uploading' || syncStatus === 'downloading' ? <RefreshCw size={15} className="animate-spin" /> : <Cloud size={15} />, onClick: () => { setShowSyncSettings(true); setShowSettingsSheet(false) }, warn: !!(syncHalted || syncError) },
     { label: t('app.dayglanceIntegration'), icon: <Plug size={22} />, onClick: () => { setShowIntegration(true); setShowSettingsSheet(false) } },
     { label: t('app.users'), icon: <Users size={15} />, onClick: () => { setShowUsers(true); setShowSettingsSheet(false) } },
+    { label: t('app.journal'), icon: <BookOpen size={15} />, onClick: () => { openJournal(null); setShowSettingsSheet(false) } },
     { label: isDark ? t('app.lightMode') : t('app.darkMode'), icon: isDark ? <Sun size={15} /> : <Moon size={15} />, onClick: () => { toggleTheme(); setShowSettingsSheet(false) } },
     { label: t('app.backupRestore'), icon: <Archive size={15} />, onClick: () => { setShowBackup(true); setShowSettingsSheet(false) } },
     { label: t('app.helpFeedback'), icon: <HelpCircle size={15} />, onClick: () => { setShowHelp(true); setShowSettingsSheet(false) } },
@@ -564,20 +565,20 @@ function AppInner() {
                 </button>
               )}
               {!editMode && (
-                <button
-                  onClick={() => setAttentionOnly(!attentionOnly)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
-                    attentionOnly
-                      ? 'text-amber-400 border-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 hover:border-amber-400/60'
-                      : 'text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                  }`}
-                  aria-pressed={attentionOnly}
-                  aria-label={t('app.toggleSoonFilter')}
-                  title={t('app.soonTooltip')}
-                >
-                  <Clock size={14} />
-                  {t('app.soon')}
-                </button>
+                  <button
+                    onClick={() => setAttentionOnly(!attentionOnly)}
+                    className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
+                      attentionOnly
+                        ? 'text-amber-400 border-amber-400/40 hover:text-amber-300 hover:bg-amber-400/10 hover:border-amber-400/60'
+                        : 'text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                    }`}
+                    aria-pressed={attentionOnly}
+                    aria-label={t('app.toggleSoonFilter')}
+                    data-tooltip={t('app.soonTooltip')}
+                  >
+                    <Clock size={14} />
+                    {t('app.soon')}
+                  </button>
               )}
               <button
                 onClick={() => setEditMode(e => !e)}
@@ -587,27 +588,30 @@ function AppInner() {
                 {editMode ? <><Check size={14} /> {t('app.done')}</> : <><Pencil size={14} /> {t('app.edit')}</>}
               </button>
             </div>
-            {/* Row 2: sync, intents, multi-user, theme, archive, help */}
+            {/* Row 2: sync, intents, multi-user, journal, theme, archive, help.
+                Every control here is icon-only, so each carries a tooltip. */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSyncSettings(true)}
                 className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${syncHalted || syncError ? 'text-amber-400 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}
                 aria-label={t('app.cloudSync')}
+                data-tooltip={t('app.cloudSync')}
               >
                 {syncStatus === 'uploading' || syncStatus === 'downloading' ? <RefreshCw size={15} className="animate-spin" /> : syncHalted || syncError ? <CloudOff size={15} /> : <Cloud size={15} />}
               </button>
-              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} title={t('app.journalTooltip')}><BookOpen size={15} /></button>
-              <button onClick={() => setShowIntegration(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.dayglanceIntegration')}><Plug size={15} /></button>
-              <button onClick={() => setShowUsers(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.users')}><Users size={15} /></button>
+              <button onClick={() => setShowIntegration(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.dayglanceIntegration')} data-tooltip={t('app.dayglanceIntegration')}><Plug size={15} /></button>
+              <button onClick={() => setShowUsers(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.users')} data-tooltip={t('app.users')}><Users size={15} /></button>
+              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t('app.journalTooltip')}><BookOpen size={15} /></button>
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
                 aria-label={t('app.toggleTheme')}
+                data-tooltip={isDark ? t('app.lightMode') : t('app.darkMode')}
               >
                 {isDark ? <Sun size={15} /> : <Moon size={15} />}
               </button>
-              <button onClick={() => setShowBackup(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.backupRestore')}><Archive size={15} /></button>
-              <button onClick={() => setShowHelp(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.helpFeedback')}><HelpCircle size={15} /></button>
+              <button onClick={() => setShowBackup(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.backupRestore')} data-tooltip={t('app.backupRestore')}><Archive size={15} /></button>
+              <button onClick={() => setShowHelp(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.helpFeedback')} data-tooltip={t('app.helpFeedback')}><HelpCircle size={15} /></button>
             </div>
           </div>
 
@@ -741,6 +745,8 @@ function AppInner() {
       {billing.isReviewerUnlocked && (
         <ReviewerBanner onExit={exitReviewerMode} />
       )}
+
+      <TooltipHost />
 
       {/* Hard paywall — last in the tree and z-[80], above every other surface.
           Only ever true on the Play channel; the engine's provisional unlock

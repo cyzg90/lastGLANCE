@@ -282,7 +282,7 @@ function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
             {week.map((day, di) => (
               <div
                 key={di}
-                title={day.isFuture ? '' : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
+                data-tooltip={day.isFuture ? undefined : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
                 className="w-[11px] h-[11px] rounded-[2px]"
                 style={{ backgroundColor: cellColor(day, today) }}
               />
