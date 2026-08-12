@@ -281,6 +281,11 @@
   },
   "sync": {
     "title": "Cloud-Sync",
+    "backoff": {
+      "transport": "Der Sync-Server ist nicht erreichbar. Neuer Versuch in {{seconds}} s.",
+      "auth": "Der Sync-Server hat die Anmeldung abgelehnt. Nächster Versuch in etwa einer Stunde. Überprüfe den Geräte-Token in den Sync-Einstellungen.",
+      "retrying": "Neuer Versuch bei der nächsten Synchronisierung …"
+    },
     "errors": {
       "APP_ID_MISMATCH": "Dieser Sync-Ordner gehört zu einer anderen App. Wähle einen von lastGLANCE erstellten Ordner.",
       "SCHEMA_FORWARD_INCOMPATIBLE": "Diese Daten wurden von einer neueren Version von lastGLANCE gespeichert. Aktualisiere die App, um zu synchronisieren.",
