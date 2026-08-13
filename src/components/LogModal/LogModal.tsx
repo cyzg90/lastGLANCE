@@ -4,7 +4,8 @@ import dayjs from 'dayjs'
 import type { ChoreWithLastCompletion, CompletionEvent } from '@/types'
 import { logCompletion, getCompletionHistory, deleteCompletion, updateCompletionNote } from '@/db/queries'
 import { CompletionRow } from '@/components/CompletionRow/CompletionRow'
-import { formatMonthShort, weekdayAtOffset } from '@/utils/datetime'
+import { formatDate, formatMonthShort, weekdayAtOffset } from '@/utils/datetime'
+import { completionsLabel } from '@/utils/completionsLabel'
 import { getMeUserSyncId } from '@/multiuser/settings'
 import { useUsersContext } from '@/multiuser/UsersContext'
 import { formatElapsed } from '@/utils/cadence'
@@ -259,6 +260,7 @@ function GapMarker({ days, target }: { days: number; target: number | null }) {
 type HeatDay = { date: string; count: number; isFuture: boolean }
 
 function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
+  const { t } = useTranslation()
   const today = dayjs().format('YYYY-MM-DD')
   const months = getMonthLabels(weeks)
   // Rows are weekdays in the locale's own week order — Sunday-first in en,
@@ -290,7 +292,8 @@ function Heatmap({ weeks }: { weeks: HeatDay[][] }) {
             {week.map((day, di) => (
               <div
                 key={di}
-                data-tooltip={day.isFuture ? undefined : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
+                data-tooltip={day.isFuture ? undefined : formatDate(day.date)}
+                data-tooltip-detail={day.isFuture ? undefined : completionsLabel(t, day.count)}
                 className="w-[11px] h-[11px] rounded-[2px]"
                 style={{ backgroundColor: cellColor(day, today) }}
               />

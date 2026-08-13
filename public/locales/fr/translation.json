@@ -159,6 +159,11 @@
     "today": "Aujourd'hui",
     "noTimeHint": "Aucune heure — midi sera utilisé"
   },
+  "heatmap": {
+    "completions_one": "{{count}} réalisation",
+    "completions_other": "{{count}} réalisations",
+    "noCompletions": "Aucune réalisation"
+  },
   "help": {
     "title": "Aide & Retours",
     "contactIssues": "Contact & Problèmes",

@@ -11,7 +11,8 @@ import { createPortal } from 'react-dom'
  * hover state, so there is nothing to reveal; the element's aria-label still
  * carries the meaning for assistive tech).
  *
- * Usage is a single attribute — `data-tooltip="…"` on any element, anywhere.
+ * Usage is an attribute — `data-tooltip="…"` on any element, anywhere, with an
+ * optional `data-tooltip-detail="…"` for a quieter second line beneath it.
  * <TooltipHost/> is mounted once at the app root and delegates from `document`,
  * so one set of listeners serves every surface, including modals that portal
  * out of the React tree and grids of hundreds of cells (the heatmaps, the icon
@@ -25,7 +26,7 @@ const SHOW_DELAY = 120
 const GAP = 8
 const MARGIN = 6
 
-interface Anchor { rect: DOMRect; label: string }
+interface Anchor { rect: DOMRect; label: string; detail?: string }
 
 function TooltipBubble({ anchor }: { anchor: Anchor }) {
   const ref = useRef<HTMLDivElement>(null)
@@ -59,7 +60,7 @@ function TooltipBubble({ anchor }: { anchor: Anchor }) {
       aria-hidden="true"
       className={`
         fixed z-[70] pointer-events-none max-w-[16rem] px-2 py-1 rounded-md
-        text-xs font-medium leading-snug
+        text-xs font-medium leading-snug text-center
         bg-slate-800 text-slate-100 dark:bg-slate-700 dark:text-slate-100
         border border-slate-700 dark:border-slate-600 shadow-lg
         transition-opacity duration-100 ${pos ? 'opacity-100' : 'opacity-0'}
@@ -67,6 +68,11 @@ function TooltipBubble({ anchor }: { anchor: Anchor }) {
       style={{ left: pos?.left ?? 0, top: pos?.top ?? 0 }}
     >
       {anchor.label}
+      {anchor.detail && (
+        <span className="block font-normal text-slate-400 dark:text-slate-400">
+          {anchor.detail}
+        </span>
+      )}
     </div>,
     document.body,
   )
@@ -89,11 +95,12 @@ export function TooltipHost() {
 
   const hide = useCallback(() => { clear(); setAnchor(null) }, [clear])
 
-  const show = useCallback((el: Element, label: string, delay: number) => {
+  const show = useCallback((el: HTMLElement, label: string, delay: number) => {
     if (!label) { hide(); return }
     clear()
+    const detail = el.dataset.tooltipDetail || undefined
     timer.current = window.setTimeout(
-      () => setAnchor({ rect: el.getBoundingClientRect(), label }),
+      () => setAnchor({ rect: el.getBoundingClientRect(), label, detail }),
       delay,
     )
   }, [clear, hide])

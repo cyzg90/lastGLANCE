@@ -31,6 +31,8 @@ import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
 import { getAllCompletionCounts } from '@/db/queries'
+import { formatDate } from '@/utils/datetime'
+import { completionsLabel } from '@/utils/completionsLabel'
 import { createEngine, initSessionKey, setupEncryptionKey, runAutoBackups, ensureSyncFolder, CRYPTO_CONFIG, DB_CRYPTO_CONFIG, getSyncWebdavConfig } from '@/sync/engine'
 import { createDbEngine } from '@/sync/dbEngine'
 import { registerDbEngine } from '@/sync/dirtyTracker'
@@ -90,6 +92,7 @@ function getWaveColor(wi: number, di: number, day: HeatDay, wavePos: number): st
 }
 
 function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay: (date: string) => void }) {
+  const { t } = useTranslation()
   const [wavePos, setWavePos] = useState(-WAVE_WIDTH)
 
   useEffect(() => {
@@ -117,8 +120,9 @@ function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay
               type="button"
               disabled={day.isFuture}
               onClick={() => onSelectDay(day.date)}
-              data-tooltip={day.isFuture ? undefined : `${day.date}${day.count > 0 ? ` · ${day.count}` : ''}`}
-              aria-label={day.date}
+              data-tooltip={day.isFuture ? undefined : formatDate(day.date)}
+              data-tooltip-detail={day.isFuture ? undefined : completionsLabel(t, day.count)}
+              aria-label={`${formatDate(day.date)}, ${completionsLabel(t, day.count)}`}
               className="w-[9px] h-[9px] rounded-[2px] transition-transform hover:scale-150 disabled:cursor-default disabled:hover:scale-100"
               style={{ backgroundColor: getWaveColor(wi, di, day, wavePos) }}
             />
