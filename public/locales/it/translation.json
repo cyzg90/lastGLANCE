@@ -159,6 +159,11 @@
     "today": "Oggi",
     "noTimeHint": "Nessun orario — verrà usato mezzogiorno"
   },
+  "heatmap": {
+    "completions_one": "{{count}} completamento",
+    "completions_other": "{{count}} completamenti",
+    "noCompletions": "Nessun completamento"
+  },
   "help": {
     "title": "Aiuto e feedback",
     "contactIssues": "Contatti e problemi",

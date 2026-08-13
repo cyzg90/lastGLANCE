@@ -164,6 +164,11 @@
     "today": "Today",
     "noTimeHint": "No time set — will use noon"
   },
+  "heatmap": {
+    "completions_one": "{{count}} completion",
+    "completions_other": "{{count}} completions",
+    "noCompletions": "No completions"
+  },
   "help": {
     "title": "Help & Feedback",
     "contactIssues": "Contact & Issues",
