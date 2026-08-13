@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Search, X } from 'lucide-react'
+import { Search, X, Plus } from 'lucide-react'
 import type { ChoreWithLastCompletion, Category } from '@/types'
 import type { CategoryWithChores } from '@/hooks/useChores'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
@@ -15,6 +15,10 @@ interface SearchResult {
 interface Props {
   data: CategoryWithChores[]
   onSelect: (chore: ChoreWithLastCompletion) => void
+  // Searching for something that isn't there is the clearest signal that the
+  // user wants to create it, and the name is already typed — so the list always
+  // ends with a create row rather than dead-ending on "no results".
+  onCreate: (name: string) => void
   onClose: () => void
 }
 
@@ -31,7 +35,7 @@ function highlight(text: string, query: string) {
   )
 }
 
-export function SearchModal({ data, onSelect, onClose }: Props) {
+export function SearchModal({ data, onSelect, onCreate, onClose }: Props) {
   const { t } = useTranslation()
   const [query, setQuery] = useState('')
   const [activeIdx, setActiveIdx] = useState(0)
@@ -44,6 +48,8 @@ export function SearchModal({ data, onSelect, onClose }: Props) {
   }, [])
 
   const q = query.trim().toLowerCase()
+
+  useEffect(() => { setActiveIdx(0) }, [query])
 
   const results: SearchResult[] = q === ''
     ? []
@@ -64,16 +70,22 @@ export function SearchModal({ data, onSelect, onClose }: Props) {
         return a.chore.name.localeCompare(b.chore.name)
       })
 
+  // The create row is the last entry, so it is reachable by arrow keys and is
+  // what Enter picks when nothing matched.
+  const createIdx = results.length
+  const lastIdx = createIdx
+
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === 'ArrowDown') {
       e.preventDefault()
-      setActiveIdx(i => Math.min(i + 1, results.length - 1))
+      setActiveIdx(i => Math.min(i + 1, lastIdx))
     } else if (e.key === 'ArrowUp') {
       e.preventDefault()
       setActiveIdx(i => Math.max(i - 1, 0))
-    } else if (e.key === 'Enter' && results.length > 0) {
+    } else if (e.key === 'Enter' && q !== '') {
       e.preventDefault()
-      onSelect(results[activeIdx].chore)
+      if (activeIdx === createIdx) onCreate(query.trim())
+      else onSelect(results[activeIdx].chore)
     }
   }
 
@@ -115,10 +127,10 @@ export function SearchModal({ data, onSelect, onClose }: Props) {
         {/* Results */}
         {q !== '' && (
           <div className="max-h-72 overflow-y-auto">
-            {results.length === 0 ? (
-              <p className="text-center text-sm text-slate-400 dark:text-slate-500 py-8">{t('search.noResults')}</p>
-            ) : (
-              <ul ref={listRef}>
+            {results.length === 0 && (
+              <p className="text-center text-sm text-slate-400 dark:text-slate-500 pt-6 pb-2">{t('search.noResults')}</p>
+            )}
+            <ul ref={listRef}>
                 {results.map(({ chore, category }, idx) => {
                   const Icon = chore.icon ? ICON_REGISTRY[chore.icon] : null
                   return (
@@ -143,8 +155,28 @@ export function SearchModal({ data, onSelect, onClose }: Props) {
                     </li>
                   )
                 })}
+              <li>
+                <button
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 text-sm transition-colors border-t border-slate-100 dark:border-slate-700/60 ${
+                    activeIdx === createIdx
+                      ? 'bg-slate-50 dark:bg-slate-700/60'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-700/40'
+                  }`}
+                  onClick={() => onCreate(query.trim())}
+                  onMouseEnter={() => setActiveIdx(createIdx)}
+                >
+                  <Plus size={14} className="shrink-0 text-green-500 dark:text-green-400" />
+                  <span className="flex-1 min-w-0 truncate text-slate-700 dark:text-slate-200">
+                    {t('search.createChore', { name: query.trim() })}
+                  </span>
+                  {activeIdx === createIdx && (
+                    <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono text-slate-400 dark:text-slate-500 bg-slate-100 dark:bg-slate-700/60 border border-slate-200 dark:border-slate-600">
+                      ⏎
+                    </kbd>
+                  )}
+                </button>
+              </li>
               </ul>
-            )}
           </div>
         )}
 

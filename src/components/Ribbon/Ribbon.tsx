@@ -479,6 +479,9 @@ export function Ribbon({ editMode, onLogged }: Props) {
   function closeChore() { setSelectedChore(null) }
   function afterLog() { refresh(); onLogged?.() }
   function selectSearchResult(chore: ChoreWithLastCompletion) { setShowSearch(false); setSelectedChore(chore) }
+  // Hand the typed query straight to the new-chore form, pre-filled and filed
+  // into the Inbox — the same destination every other undirected add uses.
+  function createFromSearch(name: string) { setShowSearch(false); openNewChore(name) }
 
   if (loading) {
     return (
@@ -683,10 +686,18 @@ export function Ribbon({ editMode, onLogged }: Props) {
         )}
       </div>
 
-      {/* Mobile FABs — hidden on desktop, hidden in edit mode. The action FABs
-          collapse into the handle below them with a staggered fade/slide. */}
-      {!editMode && !showEmpty && (
-        <div className="min-[1060px]:hidden fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3 pointer-events-none">
+      {/* Floating actions, hidden in edit mode (which has its own per-category
+          controls). Two tiers:
+            • the filter/search tools, mobile only — desktop has them in the
+              header — which collapse into the handle beneath them;
+            • Add, at every breakpoint, anchoring the stack below that handle.
+          Add sits outside the collapsible group deliberately: it creates rather
+          than filters, and the primary action should stay put — and nearest the
+          thumb — when the tools are put away. */}
+      {!editMode && (
+        <div className="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3 pointer-events-none">
+        {!showEmpty && (
+        <div className="min-[1060px]:hidden flex flex-col items-center gap-3">
           <button
             onClick={() => setAttentionOnly(!attentionOnly)}
             style={{ transitionDelay: `${fabsCollapsed ? 0 : 100}ms` }}
@@ -739,6 +750,16 @@ export function Ribbon({ editMode, onLogged }: Props) {
             {fabsCollapsed ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
           </button>
         </div>
+        )}
+          <button
+            onClick={() => openNewChore()}
+            className="pointer-events-auto flex items-center justify-center w-16 h-16 rounded-full bg-green-500 dark:bg-green-600 text-white shadow-lg border border-green-400/50 hover:bg-green-400 dark:hover:bg-green-500 active:scale-95 transition-all"
+            aria-label={t('ribbon.addChoreAriaLabel')}
+            data-tooltip={t('ribbon.addChoreTitle')}
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       )}
 
       {selectedChore && !editMode && (
@@ -753,6 +774,7 @@ export function Ribbon({ editMode, onLogged }: Props) {
         <SearchModal
           data={localData}
           onSelect={selectSearchResult}
+          onCreate={createFromSearch}
           onClose={() => setShowSearch(false)}
         />
       )}

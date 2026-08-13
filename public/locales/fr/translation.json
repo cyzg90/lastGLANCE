@@ -292,6 +292,8 @@
     "addFirstCategory": "Ajouter votre première catégorie",
     "addCategory": "Ajouter une catégorie",
     "addCategoryAriaLabel": "Ajouter une catégorie",
+    "addChoreAriaLabel": "Ajouter une tâche",
+    "addChoreTitle": "Ajouter une tâche",
     "searchChoresAriaLabel": "Rechercher des tâches",
     "searchTitle": "Rechercher (/)",
     "toggleMyTasksAriaLabel": "Filtrer mes tâches",
@@ -306,6 +308,7 @@
     "placeholder": "Rechercher des tâches…",
     "clearSearch": "Effacer la recherche",
     "noResults": "Aucune tâche ne correspond",
+    "createChore": "Créer « {{name}} »",
     "startTyping": "Commencez à taper pour rechercher des tâches"
   },
   "shortcuts": {

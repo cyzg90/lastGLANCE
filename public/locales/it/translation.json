@@ -292,6 +292,8 @@
     "addFirstCategory": "Aggiungi la tua prima categoria",
     "addCategory": "Aggiungi categoria",
     "addCategoryAriaLabel": "Aggiungi categoria",
+    "addChoreAriaLabel": "Aggiungi attività",
+    "addChoreTitle": "Aggiungi attività",
     "searchChoresAriaLabel": "Cerca attività",
     "searchTitle": "Cerca (/)",
     "toggleMyTasksAriaLabel": "Filtra le mie attività",
@@ -306,6 +308,7 @@
     "placeholder": "Cerca attività…",
     "clearSearch": "Cancella ricerca",
     "noResults": "Nessuna attività trovata",
+    "createChore": "Crea «{{name}}»",
     "startTyping": "Inizia a digitare per cercare attività"
   },
   "shortcuts": {

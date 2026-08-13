@@ -292,6 +292,8 @@
     "addFirstCategory": "Añade tu primera categoría",
     "addCategory": "Añadir categoría",
     "addCategoryAriaLabel": "Añadir categoría",
+    "addChoreAriaLabel": "Añadir tarea",
+    "addChoreTitle": "Añadir tarea",
     "searchChoresAriaLabel": "Buscar tareas",
     "searchTitle": "Buscar (/)",
     "toggleMyTasksAriaLabel": "Filtrar mis tareas",
@@ -306,6 +308,7 @@
     "placeholder": "Buscar tareas…",
     "clearSearch": "Borrar búsqueda",
     "noResults": "No hay tareas que coincidan",
+    "createChore": "Crear «{{name}}»",
     "startTyping": "Escribe para buscar tareas"
   },
   "shortcuts": {
