@@ -341,7 +341,12 @@ export function JournalModal({ onClose, initialDate, onChanged }: Props) {
             <>
               {groups.map(group => (
                 <div key={group.day}>
-                  <div className="sticky top-0 z-10 flex items-baseline justify-between gap-3 py-2 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-sm">
+                  {/* The tint bleeds out to the modal edges (-mx cancels the
+                      scroller's padding) and the text is padded back in, so the
+                      band reads as a full-width divider with its label inset
+                      rather than as a bar with the text jammed against its
+                      ends — while the label stays aligned with the rows below. */}
+                  <div className="sticky top-0 z-10 -mx-5 sm:-mx-6 px-5 sm:px-6 flex items-baseline justify-between gap-3 py-2 bg-slate-50 dark:bg-slate-900/95 backdrop-blur-sm">
                     <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 truncate">
                       {dayLabel(group.day)}
                     </p>
