@@ -46,6 +46,14 @@ describe('webdavFetch transport selection (browser)', () => {
     expect(init.headers.Authorization).toBeUndefined()
   })
 
+  it('routes only the managed placeholder origin through the restricted proxy', async () => {
+    const { testConnection } = await loadWebdav({ isNativePlatform: false, webdavDirect: false })
+    await testConnection('https://internal.lastglance.invalid', 'GLANCE/lastglance', 'managed', 'managed')
+
+    const [url] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(url).toBe('/api/internal-webdav/sync-directory')
+  })
+
   it('direct mode: hits the target URL directly with a standard Authorization header', async () => {
     const { testConnection } = await loadWebdav({ isNativePlatform: false, webdavDirect: true })
     await testConnection('https://dav.example.com', 'chores', 'user', 'pass')

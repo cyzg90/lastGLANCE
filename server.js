@@ -1,6 +1,6 @@
 import http from 'http'
 import { URL } from 'url'
-import handler from './api/webdav-proxy.js'
+import internalWebdavHandler from './api/internal-webdav-proxy.js'
 
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://localhost')
@@ -14,6 +14,15 @@ const server = http.createServer((req, res) => {
       send:  (body) => res.end(body),
       end:   ()     => res.end(),
     }
+  }
+
+  const handler = u.pathname === '/api/internal-webdav' || u.pathname.startsWith('/api/internal-webdav/')
+    ? internalWebdavHandler
+    : null
+  if (!handler) {
+    res.statusCode = 404
+    res.end('Not Found')
+    return
   }
 
   handler(req, res).catch((err) => {

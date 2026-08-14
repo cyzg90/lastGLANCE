@@ -5,6 +5,7 @@ dist
 .env
 .env.*
 !.env.example
+.idea
 
 # Mobile build outputs & signing secrets
 outputs

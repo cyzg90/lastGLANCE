@@ -260,32 +260,12 @@ class LastGlanceDB extends Dexie {
           }
         })
       )
-
-    this.on('populate', async () => {
-      const catIds = (await this.categories.bulkAdd(
-        SEED_CATEGORIES.map((cat) => ({
-          ...cat,
-          parent_sync_id: null,
-          assigned_user_sync_ids: [],
-          updated_at: SEED_TIMESTAMP,
-        })) as unknown as Category[],
-        { allKeys: true }
-      )) as unknown as number[]
-
-      await this.chores.bulkAdd(
-        SEED_CHORES.map(({ _catIndex, ...rest }, i) => ({
-          ...rest,
-          sort_order: i,
-          category_id: catIds[_catIndex],
-          category_sync_id: SEED_CATEGORIES[_catIndex].sync_id,
-        })) as unknown as Chore[]
-      )
-    })
   }
 }
 
-// Stable timestamp and sync_ids for seed data — every fresh install produces
-// identical records so cross-device merges deduplicate instead of doubling.
+// Legacy sample-data identifiers retained for compatibility with databases and
+// sync payloads created by earlier builds. Managed builds no longer generate
+// these records for a fresh database.
 export const SEED_TIMESTAMP = '2024-01-01T00:00:00.000Z'
 
 export const SEED_CAT_SYNC_IDS = [
@@ -322,27 +302,5 @@ const SEED_SYNC_IDS = new Set<string>([...SEED_CAT_SYNC_IDS, ...SEED_CHORE_SYNC_
 export function isPristineSeed(row: { sync_id?: string; updated_at?: string }): boolean {
   return !!row.sync_id && SEED_SYNC_IDS.has(row.sync_id) && row.updated_at === SEED_TIMESTAMP
 }
-
-const SEED_CATEGORIES: Omit<Category, 'id' | 'parent_sync_id' | 'updated_at' | 'assigned_user_sync_ids'>[] = [
-  { name: 'Home',     sort_order: 0, icon: 'Home',       sync_id: '00000000-0000-0000-0000-000000000001' },
-  { name: 'Health',   sort_order: 1, icon: 'HeartPulse', sync_id: '00000000-0000-0000-0000-000000000002' },
-  { name: 'Vehicle',  sort_order: 2, icon: 'Car',        sync_id: '00000000-0000-0000-0000-000000000003' },
-  { name: 'Finances', sort_order: 3, icon: 'Coins',      sync_id: '00000000-0000-0000-0000-000000000004' },
-]
-
-const SEED_CHORES: (Omit<Chore, 'id' | 'category_id' | 'sort_order' | 'category_sync_id'> & { _catIndex: number })[] = [
-  { name: 'Mop kitchen',        _catIndex: 0, icon: 'Droplets',   sync_id: '00000000-0000-0000-0000-000000000011', target_cadence_days: 14,  notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Clean bathrooms',    _catIndex: 0, icon: 'Bath',      sync_id: '00000000-0000-0000-0000-000000000012', target_cadence_days: 7,   notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Vacuum',             _catIndex: 0, icon: 'BrushCleaning', sync_id: '00000000-0000-0000-0000-000000000013', target_cadence_days: 7,   notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Take out trash',     _catIndex: 0, icon: 'Container',  sync_id: '00000000-0000-0000-0000-000000000014', target_cadence_days: 3,   notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Dentist cleaning',   _catIndex: 1, icon: 'Cross',      sync_id: '00000000-0000-0000-0000-000000000021', target_cadence_days: 180, notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Annual physical',    _catIndex: 1, icon: 'Activity',   sync_id: '00000000-0000-0000-0000-000000000022', target_cadence_days: 365, notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Eye exam',           _catIndex: 1, icon: 'Eye',        sync_id: '00000000-0000-0000-0000-000000000023', target_cadence_days: 365, notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Oil change',         _catIndex: 2, icon: 'Gauge',      sync_id: '00000000-0000-0000-0000-000000000031', target_cadence_days: 90,  notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Wash car',           _catIndex: 2, icon: 'Droplets',   sync_id: '00000000-0000-0000-0000-000000000032', target_cadence_days: 30,  notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Review budget',      _catIndex: 3, icon: 'DollarSign', sync_id: '00000000-0000-0000-0000-000000000041', target_cadence_days: 30,  notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Check bank statements', _catIndex: 3, icon: 'Banknote', sync_id: '00000000-0000-0000-0000-000000000042', target_cadence_days: 30, notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-  { name: 'Check credit score',  _catIndex: 3, icon: 'CreditCard', sync_id: '00000000-0000-0000-0000-000000000043', target_cadence_days: 90,  notify_when_overdue: false, auto_schedule_to_dayglance: false, preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null, details: null, assigned_user_sync_ids: [], created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP },
-]
 
 export const db = new LastGlanceDB()
