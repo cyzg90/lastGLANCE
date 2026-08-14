@@ -15,6 +15,7 @@ import { browserDirectFetch, isNativePlatform, nativeHttpFetch, webdavDirect } f
 import { DB_ROOT_KEY_HOOKS, FILE_SYNC_KEY_HOOKS } from './nativeKeyHooks'
 import type { SyncPayload, SyncSettings } from './types'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
+import { MANAGED_SYNC_FOLDER, MANAGED_WEBDAV, managedWebdavFetch } from './managedWebdav'
 
 // On Android the spread hooks route key storage to the Keystore-backed
 // SecureStore instead of IndexedDB (issue #210); elsewhere they spread to
@@ -508,7 +509,9 @@ interface EngineCallbacks {
 }
 
 export function createEngine(proxyUrl: string | undefined, callbacks: EngineCallbacks): SyncEngine {
-  const appFolderName = localStorage.getItem(SYNC_FOLDER_KEY) || DEFAULT_SYNC_FOLDER
+  const appFolderName = MANAGED_WEBDAV
+    ? MANAGED_SYNC_FOLDER
+    : localStorage.getItem(SYNC_FOLDER_KEY) || DEFAULT_SYNC_FOLDER
   // If this device has never synced, seed the last-synced timestamp so the
   // engine skips the conflict-dialog path (which lastGLANCE doesn't implement)
   // and goes straight to the normal CRDT merge on first contact with the server.
@@ -531,7 +534,11 @@ export function createEngine(proxyUrl: string | undefined, callbacks: EngineCall
     // works without the CORS proxy. In the browser use a direct fetch when
     // VITE_WEBDAV_DIRECT is enabled. Takes priority over proxyUrl in the engine,
     // so leaving it undefined keeps the proxy path.
-    electronProxyFetch: isNativePlatform ? nativeHttpFetch : webdavDirect ? browserDirectFetch : undefined,
+    electronProxyFetch: isNativePlatform
+      ? nativeHttpFetch
+      : MANAGED_WEBDAV
+        ? managedWebdavFetch
+        : webdavDirect ? browserDirectFetch : undefined,
     buildPayload,
     buildBackupPayload: buildPayload,
     applyPayload,

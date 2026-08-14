@@ -47,6 +47,7 @@ import { getUsersPath, getMultiUserEnabled } from '@/multiuser/settings'
 import dayjs from 'dayjs'
 import i18n from 'i18next'
 import { useTranslation } from 'react-i18next'
+import { bootstrapManagedWebdav, MANAGED_WEBDAV } from '@/sync/managedWebdav'
 
 // ── Header heatmap ─────────────────────────────────────────────────────────────
 
@@ -155,7 +156,7 @@ function AppInner() {
   const billing = useSubscription()
   const [showBillingStatus, setShowBillingStatus] = useState(false)
   const [editMode, setEditMode] = useState(false)
-  const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem('lg-welcome-dismissed'))
+  const [showWelcome, setShowWelcome] = useState(() => !MANAGED_WEBDAV && !localStorage.getItem('lg-welcome-dismissed'))
   const [welcomeClearing, setWelcomeClearing] = useState(false)
   const [showBackup, setShowBackup] = useState(false)
   const [showIntegration, setShowIntegration] = useState(false)
@@ -308,8 +309,8 @@ function AppInner() {
     dbEngineRef.current = dbEngine
     registerDbEngine(dbEngine)
 
-    deduplicateUsers()
-      .catch(() => {})
+    bootstrapManagedWebdav(engine)
+      .then(() => deduplicateUsers().catch(() => {}))
       .then(() => ensureSyncFolder(engine))
       .then(() => engine.sync())
       .catch(() => {/* errors surfaced via onError */})

@@ -41,6 +41,26 @@ const EVENT_ID = '44444444-4444-4444-4444-444444444444'
 let choreSyncIdForEvent = ''
 
 beforeAll(async () => {
+  // Custom managed builds start with an empty database. Add one pristine seed
+  // row explicitly so the legacy-data compatibility checks below remain
+  // covered without relying on application startup to generate sample data.
+  expect(await db.categories.where('sync_id').anyOf(SEED_CAT_SYNC_IDS).count()).toBe(0)
+  expect(await db.chores.where('sync_id').anyOf(SEED_CHORE_SYNC_IDS).count()).toBe(0)
+
+  const seedCatKey = await db.categories.add({
+    name: 'Legacy sample', sort_order: 0, icon: 'Home', sync_id: SEED_CAT_SYNC_IDS[0],
+    parent_sync_id: null, assigned_user_sync_ids: [], updated_at: SEED_TIMESTAMP,
+  } as unknown as Category)
+  await db.chores.add({
+    name: 'Legacy sample chore', category_id: seedCatKey as number,
+    category_sync_id: SEED_CAT_SYNC_IDS[0], sort_order: 0,
+    target_cadence_days: 7, notify_when_overdue: false,
+    auto_schedule_to_dayglance: false, preferred_schedule_behavior: null,
+    seasonal_start: null, seasonal_end: null, icon: 'Home', assigned_user_sync_ids: [],
+    created_at: SEED_TIMESTAMP, updated_at: SEED_TIMESTAMP,
+    sync_id: SEED_CHORE_SYNC_IDS[0],
+  } as unknown as Chore)
+
   const userKey = await db.users.add({
     name: 'Alice', sync_id: USER_ID, updated_at: '2026-01-01T00:00:00.000Z',
   } as unknown as User)
@@ -151,8 +171,8 @@ describe('markAllLocalEntitiesDirty', () => {
     const marked: string[] = []
     const fakeEngine = { markDirty: (id: string) => { marked.push(id) } } as unknown as DbSyncEngine
     await markAllLocalEntitiesDirty(fakeEngine)
-    // Seed categories/chores populated on first open still carry SEED_TIMESTAMP,
-    // so none of their fixed sync_ids should be in the snapshot.
+    // Legacy sample rows still carry SEED_TIMESTAMP, so none of their fixed
+    // sync_ids should be in the snapshot.
     for (const id of [...SEED_CAT_SYNC_IDS, ...SEED_CHORE_SYNC_IDS]) {
       expect(marked).not.toContain(id)
     }

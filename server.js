@@ -1,12 +1,6 @@
 import http from 'http'
 import { URL } from 'url'
-import handler, { defaultAllowPrivate } from './api/webdav-proxy.js'
-
-// This server IS the self-hosted deployment (Dockerfile runs it beside nginx),
-// so it takes the self-host posture: WebDAV targets on the operator's own
-// network are reachable, while the cloud metadata endpoint and other reserved
-// ranges are refused and every connection is pinned to a validated address.
-// Set WEBDAV_PROXY_BLOCK_PRIVATE=1 for the cloud lock-down instead.
+import internalWebdavHandler from './api/internal-webdav-proxy.js'
 
 const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://localhost')
@@ -20,6 +14,15 @@ const server = http.createServer((req, res) => {
       send:  (body) => res.end(body),
       end:   ()     => res.end(),
     }
+  }
+
+  const handler = u.pathname === '/api/internal-webdav' || u.pathname.startsWith('/api/internal-webdav/')
+    ? internalWebdavHandler
+    : null
+  if (!handler) {
+    res.statusCode = 404
+    res.end('Not Found')
+    return
   }
 
   handler(req, res).catch((err) => {

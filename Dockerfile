@@ -3,6 +3,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ARG VITE_WEBDAV_PROXY_URL=/api/internal-webdav
+ENV VITE_WEBDAV_PROXY_URL=${VITE_WEBDAV_PROXY_URL}
 RUN npm run build
 
 FROM nginx:alpine AS runtime
