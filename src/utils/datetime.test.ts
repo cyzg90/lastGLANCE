@@ -1,4 +1,4 @@
-import { describe, it, expect, afterEach } from 'vitest'
+import { describe, it, expect, afterEach, vi } from 'vitest'
 import dayjs from 'dayjs'
 import {
   applyDateLocale,
@@ -16,7 +16,10 @@ import {
 // A Wednesday, deliberately in the afternoon so the 12-/24-hour split shows.
 const SAMPLE = '2026-08-12T14:05:00'
 
-afterEach(() => applyDateLocale('en'))
+afterEach(() => {
+  vi.unstubAllGlobals()
+  applyDateLocale('en')
+})
 
 describe('applyDateLocale', () => {
   it('accepts the six supported languages', () => {
@@ -96,37 +99,95 @@ describe('display formatting', () => {
 })
 
 describe('week start', () => {
-  it('starts the week on Sunday in English and Monday in the others', () => {
+  // The region the browser reports, which is what actually decides this.
+  function inRegion(tag: string | undefined): void {
+    vi.stubGlobal('navigator', tag === undefined ? {} : { languages: [tag], language: tag })
+  }
+
+  it('follows the region, not the UI language (issue #272)', () => {
+    // English UI in a Monday-first country: the reported case.
+    inRegion('en-DE')
+    applyDateLocale('en')
+    expect(firstDayOfWeek()).toBe(1)
+
+    // And the inverse: Spanish UI in a Sunday-first country.
+    inRegion('es-MX')
+    applyDateLocale('es')
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('keeps the familiar answer where region and language agree', () => {
+    inRegion('en-US')
     applyDateLocale('en')
     expect(firstDayOfWeek()).toBe(0)
-    for (const lng of ['de', 'es', 'fr', 'it', 'pt']) {
-      applyDateLocale(lng)
-      expect(firstDayOfWeek()).toBe(1)
-    }
+    inRegion('de-DE')
+    applyDateLocale('de')
+    expect(firstDayOfWeek()).toBe(1)
+  })
+
+  it('falls back to the language default when the tag carries no region', () => {
+    inRegion('de')
+    applyDateLocale('de')
+    expect(firstDayOfWeek()).toBe(1)
+    inRegion('en')
+    applyDateLocale('en')
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('falls back to the language default when the platform reports nothing at all', () => {
+    inRegion(undefined)
+    applyDateLocale('fr')
+    expect(firstDayOfWeek()).toBe(1)
+    applyDateLocale('en')
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('does not let one region leak into the next locale switch', () => {
+    // updateLocale mutates the shared locale object, so a Sunday-first region
+    // must not still be in force after moving to a locale it never applied to.
+    inRegion('en-US')
+    applyDateLocale('fr')
+    expect(firstDayOfWeek()).toBe(0)
+    inRegion(undefined)
+    applyDateLocale('fr')
+    expect(firstDayOfWeek()).toBe(1)
   })
 
   it('moves dayjs arithmetic with it, which is what the grids are built from', () => {
+    inRegion('en-US')
     applyDateLocale('en')
     expect(dayjs(SAMPLE).startOf('week').day()).toBe(0)
+    inRegion('fr-FR')
     applyDateLocale('fr')
     expect(dayjs(SAMPLE).startOf('week').day()).toBe(1)
   })
 
   it('rotates the weekday labels to match that week order', () => {
+    inRegion('en-US')
     applyDateLocale('en')
     expect(weekdayMinLabels()).toHaveLength(7)
     expect(weekdayMinLabels()[0]).toBe('Su')
+    inRegion('fr-FR')
     applyDateLocale('fr')
     const fr = weekdayMinLabels()
     expect(fr).toHaveLength(7)
     expect(fr[0]).toBe('lu') // Monday leads, and the label is French
     expect(fr[6]).toBe('di')
+
+    // The English labels rotate too when the region says Monday — the header
+    // has to line up with the grid, whatever language it is written in.
+    inRegion('en-GB')
+    applyDateLocale('en')
+    expect(weekdayMinLabels()[0]).toBe('Mo')
+    expect(weekdayMinLabels()[6]).toBe('Su')
   })
 
   it('reports the real weekday for a row offset, so labels land on the right rows', () => {
+    inRegion('en-US')
     applyDateLocale('en')
     // Sunday-start: row 1 is Monday.
     expect(weekdayAtOffset(1).weekday).toBe(1)
+    inRegion('fr-FR')
     applyDateLocale('fr')
     // Monday-start: Monday is row 0 instead.
     expect(weekdayAtOffset(0).weekday).toBe(1)
