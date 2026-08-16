@@ -1,5 +1,6 @@
 import dayjs from 'dayjs'
 import localeData from 'dayjs/plugin/localeData'
+import updateLocale from 'dayjs/plugin/updateLocale'
 
 // Locales are imported statically rather than on demand. They are ~1KB each,
 // and a dynamic import would land after i18next has already told React to
@@ -12,13 +13,15 @@ import 'dayjs/locale/it'
 import 'dayjs/locale/pt'
 
 dayjs.extend(localeData)
+dayjs.extend(updateLocale)
 
 /**
  * Locale-aware date handling, split by responsibility:
  *
  *   • dayjs owns date *arithmetic*. Its locale decides where a week starts,
- *     which every calendar grid and heatmap column depends on — Sunday in
- *     en, Monday in the five others.
+ *     which every calendar grid and heatmap column depends on — but the week
+ *     start itself comes from the *region*, not the language (see
+ *     regionWeekStart below), and is written into the locale on every switch.
  *   • Intl.DateTimeFormat owns date *display*. It is CLDR-correct in every
  *     locale for free, including things a hand-written dayjs token cannot get
  *     right: field order ("Aug 12" vs "12 août"), whether a comma belongs
@@ -27,6 +30,20 @@ dayjs.extend(localeData)
  * Formatting a date anywhere in the app goes through this module, so no
  * component has to know which locale is active.
  */
+
+// Week info reached ES2020's lib typings after this project's target, and the
+// two engine spellings of it are both still in the wild, so declare what we
+// probe for rather than casting at the call site.
+interface WeekInfo { firstDay: number }
+declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
+  namespace Intl {
+    interface Locale {
+      getWeekInfo?: () => WeekInfo
+      weekInfo?: WeekInfo
+    }
+  }
+}
 
 const SUPPORTED = ['de', 'es', 'fr', 'it', 'pt'] as const
 
@@ -49,7 +66,61 @@ export function applyDateLocale(lng: string | undefined): void {
   const supported = (SUPPORTED as readonly string[]).includes(base)
   activeLocale = supported ? base : 'en'
   dayjs.locale(activeLocale)
+  // Read the language's own week start before overwriting it, so the first
+  // switch into a locale always sees the pristine value.
+  const languageDefault = localeDefaultWeekStart(activeLocale)
+  // Written every time, and always to an explicit value: updateLocale mutates
+  // the shared locale object permanently, so a later switch that fell through
+  // to "leave it alone" would inherit whatever the previous one wrote.
+  dayjs.updateLocale(activeLocale, { weekStart: regionWeekStart() ?? languageDefault })
   formatterCache.clear()
+}
+
+/**
+ * Where the user's *region* starts the week, as a dayjs weekday (0 = Sunday).
+ * Null when the platform cannot say — no region in the language tag, or an
+ * engine without Intl week info — leaving the language's own default to stand.
+ *
+ * The region is what people actually mean by "my weeks start on Monday": the
+ * UI language does not decide it, and using the language as a proxy gets it
+ * wrong in both directions. Someone in Germany running the app in English was
+ * shown Sunday-first weeks (issue #272), and every es/pt user was shown
+ * Monday-first even in Mexico and Brazil, which are Sunday-first.
+ */
+function regionWeekStart(): number | null {
+  const tag = typeof navigator !== 'undefined'
+    ? (navigator.languages?.[0] ?? navigator.language)
+    : undefined
+  if (!tag) return null
+  try {
+    const locale = new Intl.Locale(tag)
+    // The region alone decides this, so a tag without one ("de", "en") has
+    // nothing to say and must not be answered from the language default —
+    // Intl would happily invent a region for it.
+    if (!locale.region) return null
+    // getWeekInfo() is the current spec; older engines (and Node) expose the
+    // same object as a `weekInfo` property.
+    const info = typeof locale.getWeekInfo === 'function' ? locale.getWeekInfo() : locale.weekInfo
+    const firstDay = info?.firstDay
+    if (typeof firstDay !== 'number') return null
+    // Intl numbers days 1 = Monday … 7 = Sunday; dayjs uses 0 = Sunday.
+    return firstDay % 7
+  } catch {
+    return null
+  }
+}
+
+// A locale's own week start, captured before anything overwrites it. Read on
+// the first switch into each locale — while dayjs still holds the pristine
+// value — so the fallback above stays truthful for the rest of the session.
+const localeDefaults = new Map<string, number>()
+
+function localeDefaultWeekStart(locale: string): number {
+  const known = localeDefaults.get(locale)
+  if (known !== undefined) return known
+  const value = dayjs.localeData().firstDayOfWeek()
+  localeDefaults.set(locale, value)
+  return value
 }
 
 // Intl.DateTimeFormat construction is comparatively expensive and these run per
@@ -112,7 +183,7 @@ export function formatMonthShort(value: DateInput): string {
   return formatter({ month: 'short' }).format(toDate(value))
 }
 
-/** 0 for Sunday-start locales (en), 1 for Monday-start (the other five). */
+/** 0 when the week starts on Sunday, 1 when it starts on Monday. */
 export function firstDayOfWeek(): number {
   return dayjs.localeData().firstDayOfWeek()
 }
