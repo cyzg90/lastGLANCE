@@ -41,8 +41,8 @@ export function PassphraseModal({ onSubmit, onClose }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center app-safe-bottom bg-black/40 dark:bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full sm:max-w-sm bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700/50">
-        <div className="flex items-center justify-between mb-5">
+      <div className="w-full sm:max-w-sm max-h-[90svh] flex flex-col bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50">
+        <div className="shrink-0 flex items-center justify-between px-6 pt-6 pb-5">
           <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">{t('passphrase.title')}</h2>
           <button
             onClick={onClose}
@@ -52,6 +52,7 @@ export function PassphraseModal({ onSubmit, onClose }: Props) {
           </button>
         </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
         {cryptoAvailable ? (
           <>
             <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
@@ -92,6 +93,7 @@ export function PassphraseModal({ onSubmit, onClose }: Props) {
             </p>
           </div>
         )}
+        </div>
       </div>
     </div>,
     document.body
