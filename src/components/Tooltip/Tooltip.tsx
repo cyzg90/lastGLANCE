@@ -20,6 +20,10 @@ import { createPortal } from 'react-dom'
  *
  * Placement is automatic: above the anchor, flipping below when it would clip
  * the top of the viewport, and clamped horizontally to stay on screen.
+ *
+ * Line breaks in the label survive (`whitespace-pre-line`), so a multi-line
+ * value such as a chore's details keeps its own bullet lines instead of
+ * collapsing into one run-on sentence. Single-line labels are unaffected.
  */
 
 const SHOW_DELAY = 120
@@ -60,7 +64,7 @@ function TooltipBubble({ anchor }: { anchor: Anchor }) {
       aria-hidden="true"
       className={`
         fixed z-[70] pointer-events-none max-w-[16rem] px-2 py-1 rounded-md
-        text-xs font-medium leading-snug text-center
+        text-xs font-medium leading-snug text-center whitespace-pre-line
         bg-slate-800 text-slate-100 dark:bg-slate-700 dark:text-slate-100
         border border-slate-700 dark:border-slate-600 shadow-lg
         transition-opacity duration-100 ${pos ? 'opacity-100' : 'opacity-0'}

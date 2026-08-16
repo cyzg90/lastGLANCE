@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Check, Pencil, Trash2, GripVertical, Bell, Leaf } from 'lucide-react'
+import { Check, Pencil, Trash2, GripVertical, Bell, Leaf, FileText } from 'lucide-react'
 import type { ChoreWithLastCompletion } from '@/types'
 import { getFillRatio, getCadenceColor, formatElapsed } from '@/utils/cadence'
 import { logCompletion } from '@/db/queries'
@@ -147,6 +147,13 @@ export function ChoreRow({ chore, editMode, onTap, onEdit, onDelete, onRefresh, 
           <p className="text-sm font-medium text-slate-800 dark:text-slate-100 group-hover:text-slate-900 dark:group-hover:text-white transition-colors leading-snug flex items-center gap-1.5 flex-wrap">
             <span className="truncate min-w-0">{chore.name}</span>
             {chore.notify_when_overdue && <Bell size={10} className="shrink-0 text-slate-400 dark:text-slate-500 opacity-50" />}
+            {/* Details live behind a tap on the row, so the marker is what says
+                there is anything to find; hovering reads it without the trip. */}
+            {chore.details && (
+              <span className="shrink-0 inline-flex" data-tooltip={chore.details}>
+                <FileText size={10} className="text-slate-400 dark:text-slate-500 opacity-50" />
+              </span>
+            )}
             {multiUserEnabled && chore.assigned_user_sync_ids.length > 0 && chore.assigned_user_sync_ids.map(sid => {
               const u = users.find(u => u.sync_id === sid)
               return u ? (

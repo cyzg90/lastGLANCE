@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Smile, Bell, ArrowUpRight, Leaf, Users } from 'lucide-react'
 import type { Chore, Category } from '@/types'
-import { createChore, updateChore } from '@/db/queries'
+import { createChore, updateChore, CHORE_DETAILS_MAX_LENGTH } from '@/db/queries'
 import { useUsersContext } from '@/multiuser/UsersContext'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { IconPicker } from '@/components/IconPicker/IconPicker'
@@ -60,6 +60,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
   const [cadence, setCadence] = useState(
     chore?.target_cadence_days != null ? String(chore.target_cadence_days) : ''
   )
+  const [details, setDetails] = useState(chore?.details ?? '')
   const [icon, setIcon] = useState<string | undefined>(chore ? chore.icon : category.icon)
   const [notify, setNotify] = useState(chore?.notify_when_overdue ?? false)
   const [autoSchedule, setAutoSchedule] = useState(chore?.auto_schedule_to_dayglance ?? false)
@@ -107,10 +108,11 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
     }
     const seasonal_start = isSeasonal ? `${startMonth}-${startDay}` : null
     const seasonal_end = isSeasonal ? `${endMonth}-${endDay}` : null
+    const trimmedDetails = details.trim() || null
     setSaving(true)
     try {
       if (isEdit && chore) {
-        await updateChore(chore.id, { name: trimmed, target_cadence_days: cadenceDays, notify_when_overdue: notify, auto_schedule_to_dayglance: autoSchedule, icon, category_id: selectedCategoryId, seasonal_start, seasonal_end, assigned_user_sync_ids: assignedIds })
+        await updateChore(chore.id, { name: trimmed, target_cadence_days: cadenceDays, notify_when_overdue: notify, auto_schedule_to_dayglance: autoSchedule, icon, category_id: selectedCategoryId, seasonal_start, seasonal_end, details: trimmedDetails, assigned_user_sync_ids: assignedIds })
       } else {
         await createChore({
           name: trimmed,
@@ -121,6 +123,7 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
           preferred_schedule_behavior: null,
           seasonal_start,
           seasonal_end,
+          details: trimmedDetails,
           icon,
           assigned_user_sync_ids: assignedIds,
         })
@@ -174,6 +177,23 @@ export function ChoreFormModal({ category, allCategories, chore, initialName, on
                   {SelectedIcon ? <SelectedIcon size={18} className="text-green-400" /> : <Smile size={16} />}
                 </button>
               </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                {t('choreForm.detailsLabel')} <span className="text-slate-400 dark:text-slate-500">{t('choreForm.detailsOptional')}</span>
+              </label>
+              <textarea
+                value={details}
+                onChange={e => setDetails(e.target.value)}
+                placeholder={t('choreForm.detailsPlaceholder')}
+                rows={3}
+                maxLength={CHORE_DETAILS_MAX_LENGTH}
+                className="w-full bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400 resize-y"
+              />
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                {t('choreForm.detailsHint')}
+              </p>
             </div>
 
             {categoryOptions.length > 1 && (

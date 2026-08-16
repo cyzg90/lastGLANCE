@@ -15,6 +15,7 @@ export interface SyncChore {
   preferredScheduleBehavior: 'today' | 'next_weekend' | 'next_free_day' | null
   seasonalStart: string | null | undefined
   seasonalEnd: string | null | undefined
+  details: string | null | undefined
   icon: string | undefined
   assignedUserSyncIds: string[]
   createdAt: string

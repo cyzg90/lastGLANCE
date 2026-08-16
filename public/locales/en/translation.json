@@ -119,6 +119,10 @@
     "nameLabel": "Name",
     "iconLabel": "Icon",
     "pickIcon": "Pick icon",
+    "detailsLabel": "Details",
+    "detailsOptional": "(optional)",
+    "detailsPlaceholder": "e.g. tomato feed for fruit and veg",
+    "detailsHint": "Notes and tips for this chore, shown when you open it.",
     "categoryLabel": "Category",
     "cadenceLabel": "Cadence",
     "cadenceOptional": "(days, optional)",
@@ -266,6 +270,7 @@
   },
   "logModal": {
     "lastDone": "Last done: {{elapsed}}",
+    "detailsLabel": "Details",
     "noteLabel": "Note (optional)",
     "notePlaceholder": "e.g. only the front bathroom",
     "backdateLabel": "Done earlier? (optional)",

@@ -59,6 +59,7 @@ async function createChore(input: { name: string; categoryId: number }): Promise
     preferred_schedule_behavior: null,
     seasonal_start: null,
     seasonal_end: null,
+    details: null,
     assigned_user_sync_ids: [],
   })
   const created = await db.chores.get(id)
