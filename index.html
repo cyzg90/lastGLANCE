@@ -2,7 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <!-- interactive-widget=resizes-content makes the on-screen keyboard shrink the
+         layout viewport instead of only the visual one. Without it, edge-to-edge
+         Android (targetSdk 35+, which no longer resizes the window for the IME)
+         leaves every `fixed inset-0` overlay at full screen height behind the
+         keyboard, so the bottom of a modal sheet cannot be reached. With it,
+         svh/dvh units and fixed overlays follow the keyboard down. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
     <meta name="theme-color" content="#05081A" />
     <meta name="color-scheme" content="dark" />
     <meta name="description" content="When did you last...? A last-done tracker for the things that matter. No deadlines, no nagging, just information." />
