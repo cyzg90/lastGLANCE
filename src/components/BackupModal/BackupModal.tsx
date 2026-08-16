@@ -161,10 +161,10 @@ export function BackupModal({ engine, onClose, onImported }: Props) {
       className="fixed inset-0 z-50 flex items-end sm:items-center justify-center app-safe-bottom bg-black/40 dark:bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full sm:max-w-sm bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl border border-slate-200 dark:border-slate-700/50">
+      <div className="w-full sm:max-w-sm max-h-[90svh] flex flex-col bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50">
         {/* Archive matches the toolbar button and settings-sheet row that open
             this modal; the heading follows the Journal/Help/Shortcuts pattern. */}
-        <div className="flex items-center gap-3 mb-5">
+        <div className="shrink-0 flex items-center gap-3 px-6 pt-6 pb-5">
           <Archive size={18} className="text-green-400 shrink-0" />
           <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">{t('backup.title')}</h2>
           <button
@@ -175,6 +175,7 @@ export function BackupModal({ engine, onClose, onImported }: Props) {
           </button>
         </div>
 
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-6">
         {state === 'confirm' && pending ? (
           <div className="space-y-4">
             <p className="text-sm text-slate-700 dark:text-slate-300"
@@ -341,6 +342,7 @@ export function BackupModal({ engine, onClose, onImported }: Props) {
             <input ref={fileRef} type="file" accept=".json,application/json" className="hidden" onChange={handleFileChange} />
           </div>
         )}
+        </div>
       </div>
     </div>
   )

@@ -46,7 +46,7 @@ export function ShortcutsModal({ onClose }: Props) {
       className="fixed inset-0 z-60 flex items-end sm:items-center justify-center app-safe-bottom bg-black/40 dark:bg-black/60 backdrop-blur-sm"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full sm:max-w-sm bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col">
+      <div className="w-full sm:max-w-sm max-h-[90svh] bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col">
         {/* Header */}
         <div className="flex items-center gap-3 px-6 pt-5 pb-4 border-b border-slate-100 dark:border-slate-700/40">
           <Keyboard size={18} className="text-green-400 shrink-0" />
@@ -61,7 +61,7 @@ export function ShortcutsModal({ onClose }: Props) {
           </button>
         </div>
 
-        <div className="px-6 py-4 space-y-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-4">
           {/* Navigation */}
           <div>
             <p className="text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
