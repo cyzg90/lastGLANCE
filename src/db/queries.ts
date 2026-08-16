@@ -4,6 +4,11 @@ import { markDirty, markDeleted } from '@/sync/dirtyTracker'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 import dayjs from 'dayjs'
 
+// Upper bound on a chore's free-text details, enforced both by the form's
+// maxLength and by backup validation so an edited file can't smuggle in a
+// megabyte of text that every sync would then carry.
+export const CHORE_DETAILS_MAX_LENGTH = 2000
+
 // Tombstone helpers
 
 async function writeTombstone(syncId: string): Promise<void> {
@@ -534,7 +539,7 @@ interface NormalizedChore {
   sync_id: string; name: string; category_sync_id: string | null; sort_order: number
   target_cadence_days: number | null; notify_when_overdue: boolean; auto_schedule_to_dayglance: boolean
   preferred_schedule_behavior: Chore['preferred_schedule_behavior']
-  seasonal_start: string | null; seasonal_end: string | null; icon?: string
+  seasonal_start: string | null; seasonal_end: string | null; details: string | null; icon?: string
   assigned_user_sync_ids: string[]; created_at: string
 }
 interface NormalizedEvent { sync_id: string; chore_sync_id: string; completed_at: string; note: string | null; source: 'manual' | 'dayglance'; completed_by_user_sync_id: string | null }
@@ -618,6 +623,7 @@ function normalizeBackup(raw: unknown, now: string): NormalizedBackup {
     preferred_schedule_behavior: (c.preferred_schedule_behavior ?? c.preferredScheduleBehavior ?? null) as Chore['preferred_schedule_behavior'],
     seasonal_start: typeof (c.seasonal_start ?? c.seasonalStart) === 'string' ? (c.seasonal_start ?? c.seasonalStart) as string : null,
     seasonal_end: typeof (c.seasonal_end ?? c.seasonalEnd) === 'string' ? (c.seasonal_end ?? c.seasonalEnd) as string : null,
+    details: typeof c.details === 'string' ? c.details : null,
     icon: typeof c.icon === 'string' ? c.icon : undefined,
     assigned_user_sync_ids: asArr(c.assigned_user_sync_ids ?? c.assignedUserSyncIds),
     created_at: asStr(c.created_at ?? c.createdAt, now),
@@ -660,6 +666,7 @@ function validateNormalizedBackup(b: NormalizedBackup): void {
     if (!isoRe.test(c.created_at)) throw new Error('invalid chore created_at')
     if (c.seasonal_start !== null && !mmddRe.test(c.seasonal_start)) throw new Error('invalid chore seasonal_start')
     if (c.seasonal_end !== null && !mmddRe.test(c.seasonal_end)) throw new Error('invalid chore seasonal_end')
+    if (c.details !== null && c.details.length > CHORE_DETAILS_MAX_LENGTH) throw new Error('invalid chore details')
   }
   for (const e of b.completionEvents) {
     if (!BACKUP_UUID_RE.test(e.sync_id)) throw new Error('invalid completionEvent sync_id')
@@ -747,7 +754,7 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
           sort_order: ch.sort_order, target_cadence_days: ch.target_cadence_days,
           notify_when_overdue: ch.notify_when_overdue, auto_schedule_to_dayglance: ch.auto_schedule_to_dayglance,
           preferred_schedule_behavior: ch.preferred_schedule_behavior,
-          seasonal_start: ch.seasonal_start, seasonal_end: ch.seasonal_end, icon: ch.icon,
+          seasonal_start: ch.seasonal_start, seasonal_end: ch.seasonal_end, details: ch.details, icon: ch.icon,
           assigned_user_sync_ids: ch.assigned_user_sync_ids, created_at: ch.created_at, updated_at: now,
         } as Chore
       })

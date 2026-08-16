@@ -114,6 +114,10 @@
     "nameLabel": "Name",
     "iconLabel": "Symbol",
     "pickIcon": "Symbol auswählen",
+    "detailsLabel": "Details",
+    "detailsOptional": "(optional)",
+    "detailsPlaceholder": "z. B. Tomatendünger für Obst und Gemüse",
+    "detailsHint": "Notizen und Tipps zu dieser Aufgabe, sichtbar beim Öffnen.",
     "categoryLabel": "Kategorie",
     "cadenceLabel": "Rhythmus",
     "cadenceOptional": "(Tage, optional)",
@@ -258,6 +262,7 @@
   },
   "logModal": {
     "lastDone": "Zuletzt erledigt: {{elapsed}}",
+    "detailsLabel": "Details",
     "noteLabel": "Notiz (optional)",
     "notePlaceholder": "z. B. nur das vordere Bad",
     "backdateLabel": "Früher erledigt? (optional)",

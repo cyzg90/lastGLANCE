@@ -114,6 +114,10 @@
     "nameLabel": "Nombre",
     "iconLabel": "Icono",
     "pickIcon": "Elegir icono",
+    "detailsLabel": "Detalles",
+    "detailsOptional": "(opcional)",
+    "detailsPlaceholder": "ej. abono de tomate para fruta y verdura",
+    "detailsHint": "Notas y consejos para esta tarea, visibles al abrirla.",
     "categoryLabel": "Categoría",
     "cadenceLabel": "Frecuencia",
     "cadenceOptional": "(días, opcional)",
@@ -258,6 +262,7 @@
   },
   "logModal": {
     "lastDone": "Última vez: {{elapsed}}",
+    "detailsLabel": "Detalles",
     "noteLabel": "Nota (opcional)",
     "notePlaceholder": "ej. solo el baño delantero",
     "backdateLabel": "¿Hecho antes? (opcional)",

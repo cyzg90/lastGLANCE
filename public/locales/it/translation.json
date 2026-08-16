@@ -114,6 +114,10 @@
     "nameLabel": "Nome",
     "iconLabel": "Icona",
     "pickIcon": "Scegli icona",
+    "detailsLabel": "Dettagli",
+    "detailsOptional": "(facoltativo)",
+    "detailsPlaceholder": "es. concime per pomodori da frutta e verdura",
+    "detailsHint": "Note e consigli per questa attività, mostrati all'apertura.",
     "categoryLabel": "Categoria",
     "cadenceLabel": "Frequenza",
     "cadenceOptional": "(giorni, facoltativo)",
@@ -258,6 +262,7 @@
   },
   "logModal": {
     "lastDone": "Ultima volta: {{elapsed}}",
+    "detailsLabel": "Dettagli",
     "noteLabel": "Nota (facoltativo)",
     "notePlaceholder": "es. solo il bagno sul davanti",
     "backdateLabel": "Fatto prima? (facoltativo)",

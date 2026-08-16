@@ -202,7 +202,7 @@ describe('applyRemoteEntity out-of-order chore and category', () => {
     id: DCHORE_ID, name: 'Oil the bench', categorySyncId: DCAT_ID, sortOrder: 0,
     targetCadenceDays: 30, notifyWhenOverdue: false, autoScheduleToDayglance: false,
     preferredScheduleBehavior: null, seasonalStart: null, seasonalEnd: null,
-    icon: 'Droplet', assignedUserSyncIds: [],
+    details: null, icon: 'Droplet', assignedUserSyncIds: [],
     createdAt: '2026-05-02T00:00:00.000Z', updatedAt: '2026-05-02T00:00:00.000Z',
   }
 
@@ -219,6 +219,54 @@ describe('applyRemoteEntity out-of-order chore and category', () => {
     const cat = await db.categories.where('sync_id').equals(DCAT_ID).first()
     expect(landed!.category_id).toBe(cat!.id)
     expect(getDeferredChores().map(c => c.id)).not.toContain(DCHORE_ID)
+  })
+})
+
+describe('chore details across the sync boundary (#271)', () => {
+  const FCAT_ID = 'f1f1f1f1-f1f1-f1f1-f1f1-f1f1f1f1f1f1'
+  const FCHORE_ID = 'f2f2f2f2-f2f2-f2f2-f2f2-f2f2f2f2f2f2'
+  const DETAILS = 'Tomato feed (fruit, veg)\nAll-purpose (flowers & pots)'
+
+  const remoteCategory: SyncCategory = {
+    id: FCAT_ID, name: 'Garden', sortOrder: 8, icon: 'Leaf',
+    parentId: null, assignedUserSyncIds: [], updatedAt: '2026-07-01T00:00:00.000Z',
+  }
+  const remoteChore: SyncChore = {
+    id: FCHORE_ID, name: 'Garden feeding', categorySyncId: FCAT_ID, sortOrder: 0,
+    targetCadenceDays: 14, notifyWhenOverdue: false, autoScheduleToDayglance: false,
+    preferredScheduleBehavior: null, seasonalStart: null, seasonalEnd: null,
+    details: DETAILS, icon: 'Leaf', assignedUserSyncIds: [],
+    createdAt: '2026-07-02T00:00:00.000Z', updatedAt: '2026-07-02T00:00:00.000Z',
+  }
+
+  it('reads a pre-#271 local row as details: null rather than undefined', async () => {
+    // The chore seeded in beforeAll was written without the field, exactly like a
+    // row that predates the migration.
+    const e = await getLocalEntity(CHORE_ID) as Record<string, unknown>
+    expect(e.details).toBeNull()
+  })
+
+  it('applies details on insert and on a later update, and clears them when the remote drops them', async () => {
+    await applyRemoteEntity(FCAT_ID, remoteCategory)
+    await applyRemoteEntity(FCHORE_ID, remoteChore)
+    expect((await db.chores.where('sync_id').equals(FCHORE_ID).first())!.details).toBe(DETAILS)
+
+    // Round-trips back out in the payload shape.
+    const out = await getLocalEntity(FCHORE_ID) as Record<string, unknown>
+    expect(out.details).toBe(DETAILS)
+
+    // An edit that empties the field propagates as null, not as a stale value.
+    await applyRemoteEntity(FCHORE_ID, {
+      ...remoteChore, details: null, updatedAt: '2026-07-03T00:00:00.000Z',
+    })
+    expect((await db.chores.where('sync_id').equals(FCHORE_ID).first())!.details).toBeNull()
+  })
+
+  it('stores null when an older client sends a chore with no details key at all', async () => {
+    const legacy = { ...remoteChore, updatedAt: '2026-07-04T00:00:00.000Z' } as Partial<SyncChore>
+    delete legacy.details
+    await applyRemoteEntity(FCHORE_ID, legacy as SyncChore)
+    expect((await db.chores.where('sync_id').equals(FCHORE_ID).first())!.details).toBeNull()
   })
 })
 
@@ -240,7 +288,7 @@ describe('applyRemoteEntity completion before its chore', () => {
     id: ECHORE_ID, name: 'Mow', categorySyncId: ECAT_ID, sortOrder: 0,
     targetCadenceDays: 14, notifyWhenOverdue: false, autoScheduleToDayglance: false,
     preferredScheduleBehavior: null, seasonalStart: null, seasonalEnd: null,
-    icon: 'Scissors', assignedUserSyncIds: [],
+    details: null, icon: 'Scissors', assignedUserSyncIds: [],
     createdAt: '2026-06-11T00:00:00.000Z', updatedAt: '2026-06-12T00:00:00.000Z',
   }
   const remoteEvent: SyncCompletionEvent = {

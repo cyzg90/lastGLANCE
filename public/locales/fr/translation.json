@@ -114,6 +114,10 @@
     "nameLabel": "Nom",
     "iconLabel": "Icône",
     "pickIcon": "Choisir une icône",
+    "detailsLabel": "Détails",
+    "detailsOptional": "(optionnel)",
+    "detailsPlaceholder": "ex. engrais tomates pour fruits et légumes",
+    "detailsHint": "Notes et astuces pour cette tâche, affichées à l'ouverture.",
     "categoryLabel": "Catégorie",
     "cadenceLabel": "Fréquence",
     "cadenceOptional": "(jours, optionnel)",
@@ -258,6 +262,7 @@
   },
   "logModal": {
     "lastDone": "Dernière fois : {{elapsed}}",
+    "detailsLabel": "Détails",
     "noteLabel": "Note (optionnel)",
     "notePlaceholder": "ex. seulement la salle de bain du fond",
     "backdateLabel": "Fait plus tôt ? (optionnel)",

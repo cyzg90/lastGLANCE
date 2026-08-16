@@ -114,6 +114,10 @@
     "nameLabel": "Nome",
     "iconLabel": "Ícone",
     "pickIcon": "Escolher ícone",
+    "detailsLabel": "Detalhes",
+    "detailsOptional": "(opcional)",
+    "detailsPlaceholder": "ex. adubo de tomate para fruta e legumes",
+    "detailsHint": "Notas e dicas para esta tarefa, visíveis ao abri-la.",
     "categoryLabel": "Categoria",
     "cadenceLabel": "Frequência",
     "cadenceOptional": "(dias, opcional)",
@@ -258,6 +262,7 @@
   },
   "logModal": {
     "lastDone": "Última vez: {{elapsed}}",
+    "detailsLabel": "Detalhes",
     "noteLabel": "Nota (opcional)",
     "notePlaceholder": "ex. apenas a casa de banho da frente",
     "backdateLabel": "Feito antes? (opcional)",

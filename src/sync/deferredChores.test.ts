@@ -19,7 +19,7 @@ function makeChore(id: string): SyncChore {
     id, name: 'Chore ' + id, categorySyncId: 'cat-' + id, sortOrder: 0,
     targetCadenceDays: 7, notifyWhenOverdue: false, autoScheduleToDayglance: false,
     preferredScheduleBehavior: null, seasonalStart: null, seasonalEnd: null,
-    icon: undefined, assignedUserSyncIds: [],
+    details: null, icon: undefined, assignedUserSyncIds: [],
     createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z',
   }
 }

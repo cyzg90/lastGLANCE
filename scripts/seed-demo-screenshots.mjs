@@ -169,7 +169,7 @@ async function seedRichData(page) {
         sync_id: uuid(), name, category_id: catId[catKey], category_sync_id: catSync[catKey],
         sort_order: order++, target_cadence_days: cadence, notify_when_overdue: true,
         auto_schedule_to_dayglance: false, preferred_schedule_behavior: null,
-        seasonal_start: null, seasonal_end: null, icon: icon ?? undefined,
+        seasonal_start: null, seasonal_end: null, details: null, icon: icon ?? undefined,
         assigned_user_sync_ids: [], created_at: iso(now - 400 * DAY), updated_at: iso(now),
       }))
       // Day-by-day history so density fluctuates: genuine gaps (0), single days (1),

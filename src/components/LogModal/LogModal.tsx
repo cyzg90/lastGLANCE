@@ -112,6 +112,17 @@ export function LogModal({ chore, onClose, onLogged }: Props) {
             </button>
           </div>
 
+          {chore.details && (
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 dark:text-slate-500 mb-1.5">{t('logModal.detailsLabel')}</p>
+              {/* pre-wrap keeps the author's own line breaks and bullet lines; the
+                  cap stops a long detail from crowding out the log form. */}
+              <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap break-words max-h-32 overflow-y-auto rounded-lg bg-slate-50 dark:bg-slate-700/40 border border-slate-100 dark:border-slate-700/60 px-3 py-2">
+                {chore.details}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-3">
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">{t('logModal.noteLabel')}</label>

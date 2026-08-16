@@ -5,6 +5,8 @@ import {
   createCategory,
   createChore,
   updateCategory,
+  updateChore,
+  CHORE_DETAILS_MAX_LENGTH,
   getCategories,
   exportBackup,
   restoreFromBackup,
@@ -196,6 +198,72 @@ describe('#192 — restoreFromBackup', () => {
     ).rejects.toThrow(/empty backup/)
     // Data untouched.
     expect(await db.categories.count()).toBe(1)
+  })
+})
+
+describe('#271 — chore details', () => {
+  const DETAILS = 'Tomato feed (fruit, veg)\nAll-purpose (flowers & pots)'
+
+  async function seedWithDetails(details: string | null) {
+    const catId = await createCategory('Garden')
+    const choreId = await createChore({
+      name: 'Garden feeding', category_id: catId, target_cadence_days: 14,
+      notify_when_overdue: false, auto_schedule_to_dayglance: false,
+      preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null,
+      details, assigned_user_sync_ids: [],
+    } as unknown as Parameters<typeof createChore>[0])
+    return { catId, choreId }
+  }
+
+  it('persists details on create and lets an edit rewrite or clear them', async () => {
+    const { choreId } = await seedWithDetails(DETAILS)
+    expect((await db.chores.get(choreId))!.details).toBe(DETAILS)
+
+    await updateChore(choreId, { details: 'Chilli feed' })
+    expect((await db.chores.get(choreId))!.details).toBe('Chilli feed')
+
+    await updateChore(choreId, { details: null })
+    expect((await db.chores.get(choreId))!.details).toBeNull()
+  })
+
+  it('survives an export → restore round-trip, line breaks and all', async () => {
+    await seedWithDetails(DETAILS)
+    const backup = await exportBackup()
+    expect(backup.chores[0].details).toBe(DETAILS)
+
+    await restoreFromBackup(backup)
+
+    const chores = await db.chores.toArray()
+    expect(chores).toHaveLength(1)
+    expect(chores[0].details).toBe(DETAILS)
+  })
+
+  it('restores a pre-#271 backup whose chores carry no details key as null', async () => {
+    await seedWithDetails(null)
+    const backup = await exportBackup()
+    const legacy = {
+      ...backup,
+      chores: backup.chores.map(c => {
+        const legacyChore: Partial<Chore> = { ...c }
+        delete legacyChore.details
+        return legacyChore
+      }),
+    }
+    await wipe()
+
+    await restoreFromBackup(legacy)
+
+    expect((await db.chores.toArray())[0].details).toBeNull()
+  })
+
+  it('rejects a backup whose details exceed the length cap instead of importing it', async () => {
+    await seedWithDetails(null)
+    const backup = await exportBackup()
+    backup.chores[0].details = 'x'.repeat(CHORE_DETAILS_MAX_LENGTH + 1)
+
+    await expect(restoreFromBackup(backup)).rejects.toThrow(/invalid chore details/)
+    // The oversized import was refused before it touched anything.
+    expect((await db.chores.toArray())[0].details).toBeNull()
   })
 })
 
