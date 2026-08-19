@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert, Cloud } from 'lucide-react'
-import type { SyncEngine, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
+import type { SyncEngine, DbSyncEngine, SyncErrorCode, SyncStatus } from '@glance-apps/sync'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
 import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
@@ -13,6 +13,8 @@ import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { useTranslation } from 'react-i18next'
 import { isWebCryptoAvailable } from '@/utils/secureContext'
 import { buildSyncConfigToSave } from './buildSyncConfig'
+import { MANAGED_WEBDAV } from '@/sync/managedWebdav'
+import { ManagedSyncStatus } from './ManagedSyncStatus'
 
 interface Props {
   engine: SyncEngine | null
@@ -23,12 +25,15 @@ interface Props {
   // sent none) is localized here at render time via syncErrorText.
   syncError: string | null
   syncErrorCode: SyncErrorCode | null
+  syncStatus: SyncStatus
+  syncHalted: boolean
   vaultSyncError: string | null
   vaultSyncErrorCode: SyncErrorCode | null
   // Count of rows the last vault cycle could not decrypt (1.5.0 per-row
   // quarantine). Shown as a durable amber note so a key mismatch on some rows is
   // visible after the transient toast dismisses.
   vaultSkipped: number
+  onClearSyncHalt: () => void
   onClose: () => void
 }
 
@@ -43,7 +48,25 @@ const VAULT_TEST_FAIL_TEXT: Record<'AUTH_FAILURE' | 'FORBIDDEN' | 'NETWORK_ERROR
   NETWORK_ERROR: 'Could not reach the vault at this URL.',
 }
 
-export function SyncSettingsModal({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, onClose }: Props) {
+export function SyncSettingsModal(props: Props) {
+  if (MANAGED_WEBDAV) {
+    return (
+      <ManagedSyncStatus
+        engine={props.engine}
+        syncStatus={props.syncStatus}
+        syncError={props.syncError}
+        syncErrorCode={props.syncErrorCode}
+        syncHalted={props.syncHalted}
+        onClearSyncHalt={props.onClearSyncHalt}
+        onClose={props.onClose}
+      />
+    )
+  }
+
+  return <ConfigurableSyncSettingsView {...props} />
+}
+
+function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, onClose }: Props) {
   const { t } = useTranslation()
   const existingConfig = engine?.getConfig() ?? null
   const initFolder = localStorage.getItem(SYNC_FOLDER_KEY) ?? DEFAULT_SYNC_FOLDER
