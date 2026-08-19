@@ -1,7 +1,29 @@
 services:
-  app:
-    build: .
-    image: ghcr.io/krelltunez/lastglance:latest
+  lastglance:
+    image: lastglance-managed-webdav:1.0
+    container_name: lastglance
     ports:
-      - "3000:80"
+      - "3020:80"
+    environment:
+      INTERNAL_WEBDAV_ROOT_URL: http://webdav:6065
+      INTERNAL_WEBDAV_USERNAME: ${WEBDAV_USERNAME}
+      INTERNAL_WEBDAV_PASSWORD: ${WEBDAV_PASSWORD}
+    depends_on:
+      - webdav
+    restart: unless-stopped
+
+  webdav:
+    image: ghcr.io/hacdias/webdav:latest
+    container_name: lastglance-webdav
+    command:
+      - -c
+      - /config.yml
+    environment:
+      ENV_USERNAME: ${WEBDAV_USERNAME}
+      ENV_PASSWORD: ${WEBDAV_PASSWORD}
+    volumes:
+      - ./webdav/config.yml:/config.yml:ro
+      - ./webdav/data:/data
+    expose:
+      - "6065"
     restart: unless-stopped
