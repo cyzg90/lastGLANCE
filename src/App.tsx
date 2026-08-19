@@ -309,7 +309,8 @@ function AppInner() {
     dbEngineRef.current = dbEngine
     registerDbEngine(dbEngine)
 
-    bootstrapManagedWebdav(engine)
+    const managedBootstrap = MANAGED_WEBDAV ? bootstrapManagedWebdav(engine) : Promise.resolve()
+    managedBootstrap
       .then(() => deduplicateUsers().catch(() => {}))
       .then(() => ensureSyncFolder(engine))
       .then(() => engine.sync())
@@ -728,9 +729,12 @@ function AppInner() {
           dbEngine={dbEngineRef.current}
           syncError={syncError}
           syncErrorCode={syncErrorCode}
+          syncStatus={syncStatus}
+          syncHalted={syncHalted}
           vaultSyncError={vaultSyncError}
           vaultSyncErrorCode={vaultSyncErrorCode}
           vaultSkipped={vaultSkipped}
+          onClearSyncHalt={() => setSyncHalted(false)}
           onClose={() => { setShowSyncSettings(false); runSharedUserSync() }}
         />
       )}

@@ -445,7 +445,16 @@
     "lastSynced": "Last synced: {{date}}",
     "neverSynced": "Never",
     "saveClose": "Save & Close",
-    "provider": "Provider"
+    "provider": "Provider",
+    "managedDescription": "Cloud synchronization is managed by this server. Connection settings and credentials are configured by the host.",
+    "managedStorage": "Storage",
+    "managedWebdav": "Managed WebDAV",
+    "managedFolder": "Sync folder",
+    "status": "Status",
+    "statusIdle": "Idle",
+    "statusConnected": "Connected",
+    "statusSyncing": "Syncing",
+    "close": "Close"
   },
   "users": {
     "title": "Users",

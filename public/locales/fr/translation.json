@@ -445,7 +445,16 @@
     "lastSynced": "Dernière sync : {{date}}",
     "neverSynced": "Jamais",
     "saveClose": "Enregistrer & Fermer",
-    "provider": "Fournisseur"
+    "provider": "Fournisseur",
+    "managedDescription": "La synchronisation cloud est gérée par ce serveur. Les paramètres de connexion et les identifiants sont configurés par l’hébergeur.",
+    "managedStorage": "Stockage",
+    "managedWebdav": "WebDAV géré",
+    "managedFolder": "Dossier de synchronisation",
+    "status": "État",
+    "statusIdle": "Inactif",
+    "statusConnected": "Connecté",
+    "statusSyncing": "Synchronisation en cours",
+    "close": "Fermer"
   },
   "users": {
     "title": "Utilisateurs",

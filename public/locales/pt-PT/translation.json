@@ -445,7 +445,16 @@
     "lastSynced": "Última sincronização: {{date}}",
     "neverSynced": "Nunca",
     "saveClose": "Guardar e fechar",
-    "provider": "Fornecedor"
+    "provider": "Fornecedor",
+    "managedDescription": "A sincronização na nuvem é gerida por este servidor. As definições de ligação e as credenciais são configuradas pelo alojamento.",
+    "managedStorage": "Armazenamento",
+    "managedWebdav": "WebDAV gerido",
+    "managedFolder": "Pasta de sincronização",
+    "status": "Estado",
+    "statusIdle": "Inativo",
+    "statusConnected": "Ligado",
+    "statusSyncing": "A sincronizar",
+    "close": "Fechar"
   },
   "users": {
     "title": "Utilizadores",
