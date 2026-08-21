@@ -9,6 +9,7 @@ import { emitCreateIntent } from '@/intents/emitter'
 import { getMultiUserEnabled, getMeUserSyncId } from '@/multiuser/settings'
 import { ownedByMe } from '@/utils/choreFilter'
 import { isPastCadence } from '@/utils/cadence'
+import { appPath } from '@/utils/appPath'
 import type { ChoreWithLastCompletion } from '@/types'
 import dayjs from 'dayjs'
 
@@ -56,7 +57,7 @@ async function candidateChores(): Promise<ChoreWithLastCompletion[]> {
 
 async function fireBrowserNotification(title: string, body: string) {
   if (Notification.permission !== 'granted') return
-  const icon = '/icons/icon-192.png'
+  const icon = appPath('icons/icon-192.png')
   if ('serviceWorker' in navigator) {
     try {
       const reg = await navigator.serviceWorker.ready

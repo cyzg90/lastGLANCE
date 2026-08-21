@@ -1,12 +1,13 @@
 import type { SyncEngine } from '@glance-apps/sync'
 import { registerFileSyncRunner } from './fileSyncScheduler'
+import { appPath } from '@/utils/appPath'
 
 export const MANAGED_WEBDAV = true
 export const MANAGED_WEBDAV_URL = 'https://internal.lastglance.invalid'
 export const MANAGED_WEBDAV_USERNAME = 'managed'
 export const MANAGED_WEBDAV_PASSWORD = 'managed'
 export const MANAGED_SYNC_FOLDER = 'GLANCE/lastglance'
-export const MANAGED_WEBDAV_PROXY_URL = '/api/internal-webdav'
+export const MANAGED_WEBDAV_PROXY_URL = appPath('api/internal-webdav')
 
 const MANAGED_ORIGIN = new URL(MANAGED_WEBDAV_URL).origin
 const BACKUP_FILENAME_RE = /^lastglance-backup-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.json$/
