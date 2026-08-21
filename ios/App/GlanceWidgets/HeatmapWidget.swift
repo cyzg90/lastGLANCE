@@ -135,6 +135,20 @@ private struct HeatmapStats {
 struct HeatmapEntry: TimelineEntry {
     let date: Date
     let snapshot: WidgetSnapshot
+    // Non-nil when there is nothing to draw and we know why. Rendered in place
+    // of the grid so the failure names itself instead of looking like a widget
+    // that never finished loading.
+    let problem: String?
+
+    init(date: Date, snapshot: WidgetSnapshot, problem: String? = nil) {
+        self.date = date
+        self.snapshot = snapshot
+        self.problem = problem
+    }
+
+    init(date: Date, load: SnapshotLoad) {
+        self.init(date: date, snapshot: load.snapshot, problem: load.problem)
+    }
 }
 
 struct HeatmapProvider: TimelineProvider {
@@ -144,11 +158,11 @@ struct HeatmapProvider: TimelineProvider {
     }
 
     func getSnapshot(in context: Context, completion: @escaping (HeatmapEntry) -> Void) {
-        completion(HeatmapEntry(date: Date(), snapshot: WidgetSnapshot.load()))
+        completion(HeatmapEntry(date: Date(), load: SnapshotLoad.read()))
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<HeatmapEntry>) -> Void) {
-        let entry = HeatmapEntry(date: Date(), snapshot: WidgetSnapshot.load())
+        let entry = HeatmapEntry(date: Date(), load: SnapshotLoad.read())
         // WidgetKit is not a live process, so the only two things that can change
         // what this widget should show are (a) the app pushing a new snapshot,
         // which calls reloadAllTimelines directly, and (b) the date rolling over,
@@ -379,7 +393,9 @@ struct HeatmapWidgetView: View {
 
     var body: some View {
         Group {
-            if family == .systemExtraLarge {
+            if let problem = entry.problem {
+                diagnostic(problem)
+            } else if family == .systemExtraLarge {
                 extraLarge
             } else {
                 medium
@@ -388,6 +404,22 @@ struct HeatmapWidgetView: View {
         .containerBackground(for: .widget) {
             Color(uiColor: .systemBackground)
         }
+    }
+
+    // Shown instead of an all-empty grid when the snapshot could not be read.
+    // An empty grid is a legitimate render (a user with no completions yet), so
+    // it must not double as the error state.
+    private func diagnostic(_ message: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Spacer(minLength: 0)
+            Wordmark(size: family == .systemExtraLarge ? 26 : 20)
+            Text(message)
+                .font(.system(size: family == .systemExtraLarge ? 15 : 13))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // Unchanged from the original single-size widget. The half-year grid at this

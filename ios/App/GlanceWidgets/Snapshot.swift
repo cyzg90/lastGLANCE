@@ -100,15 +100,43 @@ struct WidgetSnapshot: Decodable {
     private enum CodingKeys: String, CodingKey {
         case version, generatedAt, counts, heatmap, chores
     }
+}
 
-    // The snapshot currently in the App Group, or an empty one. Returns empty
-    // rather than nil so callers have a single render path: before the first
-    // foreground of an updated app there is genuinely no snapshot yet, and that
-    // should look like "no activity", not like an error.
-    static func load() -> WidgetSnapshot {
-        guard let raw = SharedDataStore.readSnapshot(),
-              let decoded = try? JSONDecoder().decode(WidgetSnapshot.self, from: Data(raw.utf8))
-        else { return WidgetSnapshot() }
-        return decoded
+// Why there is nothing to draw. Collapsing these into one empty snapshot made a
+// misprovisioned App Group, a never-opened app and a corrupt payload all look
+// identical on screen — a blank widget with no way to tell which. Two of the
+// three are developer errors and one is a legitimate first-run state, and they
+// want opposite responses, so the widget names which it hit.
+enum SnapshotLoad {
+    case loaded(WidgetSnapshot)
+    /// UserDefaults(suiteName:) returned nil: the entitlement is missing from
+    /// this target, or the provisioning profile does not carry the App Group.
+    case appGroupUnavailable
+    /// The container is readable but empty. Normal on a fresh install until the
+    /// app foregrounds once and pushes.
+    case noSnapshotYet
+    case undecodable
+
+    var snapshot: WidgetSnapshot {
+        if case let .loaded(s) = self { return s }
+        return WidgetSnapshot()
+    }
+
+    /// A short line to render in place of the grid, or nil when all is well.
+    var problem: String? {
+        switch self {
+        case .loaded: return nil
+        case .appGroupUnavailable: return "App Group unavailable.\nCheck the GlanceWidgets entitlement."
+        case .noSnapshotYet: return "Open lastGLANCE once to sync."
+        case .undecodable: return "Snapshot unreadable."
+        }
+    }
+
+    static func read() -> SnapshotLoad {
+        guard SharedDataStore.isAvailable else { return .appGroupUnavailable }
+        guard let raw = SharedDataStore.readSnapshot() else { return .noSnapshotYet }
+        guard let decoded = try? JSONDecoder().decode(WidgetSnapshot.self, from: Data(raw.utf8))
+        else { return .undecodable }
+        return .loaded(decoded)
     }
 }
