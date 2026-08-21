@@ -158,6 +158,16 @@ carry over.
   soon/overdue **list** widget, and a configurable **single-chore** widget.
   A `TimelineProvider` supplies entries; use SwiftUI relative-date text so
   "Xd ago" stays honest between snapshot pushes without a background runtime.
+- **Heatmap families (decided 2026-08, verified on device):** `systemMedium` is
+  26 weeks, bare grid; `systemExtraLarge` is 52 weeks with month/weekday labels
+  and a Less→More legend. **`systemLarge` is deliberately unsupported.** A 52x7
+  grid of square cells is ~7.4:1, so in a square family it renders as a band with
+  two thirds of the height empty and nothing worth putting there; extra-large is
+  ~2:1 and carries it. Cell size works out at ~10.9pt on extra-large versus
+  ~10.1pt for medium's 26 weeks, so the full year is *more* legible, not less.
+  Note extra-large is **iPad-only** — WidgetKit has never offered it on iPhone,
+  so iPhone gets medium alone. Android stays at 26 weeks; the split is accepted
+  (its heatmap has no extra-large analogue to diverge from).
 - **Interactive tap-to-complete via AppIntents (iOS 17+)**: the Done button runs
   an `AppIntent` that writes `{ choreSyncId, syncId, completedAt }` to the
   App-Group completion queue and optimistically mutates the snapshot entry. JS
