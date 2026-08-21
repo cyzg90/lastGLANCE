@@ -162,18 +162,31 @@ struct HeatmapProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<HeatmapEntry>) -> Void) {
-        let entry = HeatmapEntry(date: Date(), load: SnapshotLoad.read())
+        let now = Date()
+        let entry = HeatmapEntry(date: now, load: SnapshotLoad.read())
+
         // WidgetKit is not a live process, so the only two things that can change
         // what this widget should show are (a) the app pushing a new snapshot,
         // which calls reloadAllTimelines directly, and (b) the date rolling over,
         // which shifts the whole grid by one column. Only (b) needs a scheduled
         // refresh, so ask for exactly one, at the next local midnight.
-        let midnight = Calendar.current.nextDate(
-            after: Date(),
-            matching: DateComponents(hour: 0, minute: 0, second: 0),
-            matchingPolicy: .nextTime
-        ) ?? Date().addingTimeInterval(3600)
-        completion(Timeline(entries: [entry], policy: .after(midnight)))
+        //
+        // Computed by adding a day to the start of today, NOT by
+        // Calendar.nextDate(after:matching:matchingPolicy:). That API searches
+        // for a matching date rather than calculating one, and anything that
+        // stalls in here means completion() is never called — WidgetKit then has
+        // no timeline to render and the widget stays completely blank, with no
+        // crash and nothing in the log to explain it. The gallery kept working
+        // throughout because getSnapshot never took this path. Direct arithmetic
+        // has no search to go wrong.
+        let calendar = Calendar.current
+        var refresh = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+            ?? now.addingTimeInterval(3600)
+        // A refresh date must be in the future or WidgetKit has nothing to
+        // schedule; belt-and-braces against a DST edge or a nil from the calendar.
+        if refresh <= now { refresh = now.addingTimeInterval(3600) }
+
+        completion(Timeline(entries: [entry], policy: .after(refresh)))
     }
 }
 
