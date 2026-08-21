@@ -61,6 +61,75 @@ private func heatColor(_ count: Int, dark: Bool) -> Color {
 // The five swatches the legend shows, low to high. Index 0 is the empty cell.
 private let legendCounts = [0, 1, 2, 4, 6]
 
+// The snapshot's heatmap keys are local dates formatted by dayjs in the WebView,
+// so every reader here must use the same calendar and time zone. en_US_POSIX
+// keeps the format fixed regardless of the user's locale settings. Shared by the
+// grid and the stats so the two can never key the map differently.
+private let heatmapKeyFormatter: DateFormatter = {
+    let f = DateFormatter()
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.dateFormat = "yyyy-MM-dd"
+    return f
+}()
+
+// Oldest visible day: back to this week's Sunday, then back to the first visible
+// week. Matches the Android walk exactly so both grids show the same window and
+// the same week alignment. File scope because the stats read the same window the
+// grid draws — a total that disagreed with the cells on screen would be worse
+// than no total at all.
+private func gridStartDate(weeks: Int) -> Date {
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
+    let weekday = calendar.component(.weekday, from: today) // 1 = Sunday
+    let thisSunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
+    return calendar.date(byAdding: .day, value: -(weeks - 1) * 7, to: thisSunday) ?? thisSunday
+}
+
+// Summary of the drawn window, for the extra-large stats row. Cheap: the heatmap
+// is a few hundred entries at most.
+private struct HeatmapStats {
+    let completions: Int
+    let activeDays: Int
+    let streak: Int
+
+    init(heatmap: [String: Int], weeks: Int) {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let start = gridStartDate(weeks: weeks)
+
+        var total = 0
+        var active = 0
+        var day = start
+        while day <= today {
+            let count = heatmap[heatmapKeyFormatter.string(from: day)] ?? 0
+            if count > 0 {
+                total += count
+                active += 1
+            }
+            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
+            day = next
+        }
+        completions = total
+        activeDays = active
+
+        // Streak counts consecutive days with at least one completion, ending
+        // today. If today is still empty the streak is measured to yesterday
+        // instead — at 9am you have not broken a streak, you just have not logged
+        // anything yet, and zeroing it then would be a lie the user would resent.
+        var cursor = today
+        if (heatmap[heatmapKeyFormatter.string(from: today)] ?? 0) == 0 {
+            cursor = calendar.date(byAdding: .day, value: -1, to: today) ?? today
+        }
+        var run = 0
+        while cursor >= start, (heatmap[heatmapKeyFormatter.string(from: cursor)] ?? 0) > 0 {
+            run += 1
+            guard let prev = calendar.date(byAdding: .day, value: -1, to: cursor) else { break }
+            cursor = prev
+        }
+        streak = run
+    }
+}
+
 // MARK: - Timeline
 
 struct HeatmapEntry: TimelineEntry {
@@ -101,16 +170,6 @@ private struct HeatmapGrid: View {
     let heatmap: [String: Int]
     let showsLabels: Bool
 
-    // The keys are local dates formatted by dayjs in the WebView, so the reader
-    // must use the same calendar and time zone. en_US_POSIX keeps the format
-    // fixed regardless of the user's locale settings.
-    private static let keyFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "yyyy-MM-dd"
-        return f
-    }()
-
     // Month abbreviations follow the user's locale — unlike the data keys, these
     // are read by a human. The same formatter is the source of the weekday
     // symbols: DateFormatter.shortWeekdaySymbols is always Sunday-first, which is
@@ -120,17 +179,6 @@ private struct HeatmapGrid: View {
         f.setLocalizedDateFormatFromTemplate("MMM")
         return f
     }()
-
-    // Oldest visible day: back to this week's Sunday, then back to the first
-    // visible week. Matches the Android walk exactly so both grids show the same
-    // window and the same week alignment.
-    private var startDate: Date {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        let weekday = calendar.component(.weekday, from: today) // 1 = Sunday
-        let thisSunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
-        return calendar.date(byAdding: .day, value: -(weeks - 1) * 7, to: thisSunday) ?? thisSunday
-    }
 
     // Width and height in units, including the label gutters when shown, so the
     // whole labelled block scales as one piece inside aspectRatio(_:contentMode:).
@@ -145,8 +193,8 @@ private struct HeatmapGrid: View {
             weeks: weeks,
             heatmap: heatmap,
             showsLabels: showsLabels,
-            startDate: startDate,
-            keyFormatter: Self.keyFormatter,
+            startDate: gridStartDate(weeks: weeks),
+            keyFormatter: heatmapKeyFormatter,
             monthFormatter: Self.monthFormatter
         )
         .aspectRatio(aspect, contentMode: .fit)
@@ -183,7 +231,7 @@ private struct HeatmapCanvas: View {
             var day = startDate
             for col in 0..<weeks {
                 for row in 0..<daysPerWeek {
-                    let count = heatmap[keyFormatter.string(from: day)] ?? 0
+                    let count = heatmap[heatmapKeyFormatter.string(from: day)] ?? 0
                     let rect = CGRect(
                         x: originX + Double(col) * (cell + gap),
                         y: originY + Double(row) * (cell + gap),
@@ -280,6 +328,30 @@ private func statText(overdue: Int, soon: Int) -> String {
     }
 }
 
+// One figure and its caption. Deliberately lastGLANCE's own idiom — system fonts
+// and semantic colours — rather than lifeGLANCE's monospaced palette, since this
+// sits directly under a grid already drawn in system colours.
+private struct StatTile: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(value)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundStyle(.primary)
+            Text(label)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .lineLimit(1)
+    }
+}
+
+private func plural(_ n: Int, _ singular: String, _ plural: String) -> String {
+    n == 1 ? singular : plural
+}
+
 private struct Wordmark: View {
     let size: Double
 
@@ -338,12 +410,16 @@ struct HeatmapWidgetView: View {
         }
     }
 
-    // A 52-week band cannot fill this family's height on its own, so the grid is
-    // centred in the space above a pinned footer rather than stretched. The
-    // labels and legend are the same furniture GitHub uses, which is what makes
-    // the remaining whitespace read as composition instead of a gap.
+    // A 52-week band is ~7.4:1 and this family is ~2:1, so the grid cannot fill
+    // the height by stretching — the cells have to stay square and there are
+    // exactly seven rows. Instead the leftover height carries content that only
+    // appears at this size: GitHub's own furniture (month and weekday labels, a
+    // legend) plus a summary of the window on screen. That mirrors lifeGLANCE's
+    // TimelineStripView, which likewise shows a caption row above medium.
     private var extraLarge: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let stats = HeatmapStats(heatmap: entry.snapshot.heatmap, weeks: extraLargeWeeks)
+
+        return VStack(alignment: .leading, spacing: 12) {
             Spacer(minLength: 0)
 
             HeatmapGrid(weeks: extraLargeWeeks, heatmap: entry.snapshot.heatmap, showsLabels: true)
@@ -352,6 +428,23 @@ struct HeatmapWidgetView: View {
             HStack(spacing: 0) {
                 Spacer(minLength: 0)
                 HeatmapLegend()
+            }
+
+            Spacer(minLength: 0)
+
+            // Figures describe exactly the window drawn above, not all of
+            // history, so nothing here can contradict the cells on screen.
+            HStack(alignment: .top, spacing: 28) {
+                StatTile(
+                    value: "\(stats.completions)",
+                    label: plural(stats.completions, "completion", "completions")
+                )
+                StatTile(
+                    value: "\(stats.activeDays)",
+                    label: plural(stats.activeDays, "active day", "active days")
+                )
+                StatTile(value: "\(stats.streak)", label: "day streak")
+                Spacer(minLength: 0)
             }
 
             Spacer(minLength: 0)
