@@ -69,6 +69,14 @@ export function ManagedSyncStatus({
     }
   }
 
+  async function handleRetrySync() {
+    if (!engine || syncing || engine.isSyncing()) return
+    engine.clearHardStop()
+    setManualError(null)
+    onClearSyncHalt()
+    await handleSyncNow()
+  }
+
   function formatLastSynced(iso: string | null): string {
     if (!iso) return t('sync.neverSynced')
     return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
@@ -116,10 +124,11 @@ export function ManagedSyncStatus({
               </div>
               <button
                 type="button"
-                onClick={() => { engine?.clearHardStop(); setManualError(null); onClearSyncHalt() }}
+                onClick={handleRetrySync}
+                disabled={!engine || syncing}
                 className="text-xs text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-200 font-medium shrink-0 underline"
               >
-                {t('sync.clearHalt')}
+                {t('sync.retrySync')}
               </button>
             </div>
           )}

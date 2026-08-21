@@ -11,7 +11,12 @@
 // 5 minute interval). This is vault only: the file engine keeps its cadence
 // model, which is deliberate given its full-payload upload cost.
 
+// Managed WebDAV extension: the same marks also schedule a separate one-second
+// debounced full-payload cycle. Its runner lives in fileSyncScheduler so the
+// baseline DB tracker and App wiring stay otherwise unchanged.
+
 import type { DbSyncEngine } from '@glance-apps/sync'
+import { scheduleFileSync } from './fileSyncScheduler'
 
 // Wait this long after the last write before pushing, so a burst of writes
 // (e.g. reordering, a restore, logging several completions) collapses into one
@@ -50,10 +55,14 @@ export function registerDbEngine(engine: DbSyncEngine | null): void {
 // Mark an entity changed so the DB transport pushes it, and schedule a debounced
 // sync. Safe to call from inside the app's own write path: it is synchronous and
 // idempotent, and does nothing when the vault transport is off.
+// Managed file sync is independent and may still be scheduled without a vault.
 export function markDirty(syncId: string | null | undefined): void {
-  if (!syncId || !dbEngine) return
-  dbEngine.markDirty(syncId)
-  schedulePush()
+  if (!syncId) return
+  if (dbEngine) {
+    dbEngine.markDirty(syncId)
+    schedulePush()
+  }
+  scheduleFileSync()
 }
 
 // Mark an entity deleted. The DB engine resolves deletions by absence: a dirty
@@ -62,7 +71,10 @@ export function markDirty(syncId: string | null | undefined): void {
 // markDirty; keeping it as a named helper documents intent at delete sites and
 // gives us one place to switch if the engine later gains a delete API.
 export function markDeleted(syncId: string | null | undefined): void {
-  if (!syncId || !dbEngine) return
-  dbEngine.markDirty(syncId)
-  schedulePush()
+  if (!syncId) return
+  if (dbEngine) {
+    dbEngine.markDirty(syncId)
+    schedulePush()
+  }
+  scheduleFileSync()
 }
