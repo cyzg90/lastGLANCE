@@ -1,6 +1,6 @@
 services:
   lastglance:
-    image: lastglance-managed-webdav:1.0
+    image: ghcr.io/cyzg90/lastglance-webdav-custom:latest
     container_name: lastglance
     ports:
       - "3020:80"

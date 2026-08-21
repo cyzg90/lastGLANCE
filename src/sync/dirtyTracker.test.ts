@@ -1,16 +1,30 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { registerDbEngine, markDirty, markDeleted } from './dirtyTracker'
+import { registerFileSyncRunner } from './fileSyncScheduler'
 import type { DbSyncEngine } from '@glance-apps/sync'
 
 describe('dirtyTracker debounced push', () => {
   beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { registerDbEngine(null); vi.useRealTimers() })
+  afterEach(() => { registerDbEngine(null); registerFileSyncRunner(null); vi.useRealTimers() })
 
   it('does nothing when no engine is registered', () => {
     registerDbEngine(null)
     markDirty('a') // must not throw
     vi.advanceTimersByTime(10_000)
     expect(true).toBe(true)
+  })
+
+  it('schedules file sync without a DB engine', () => {
+    let cycles = 0
+    registerDbEngine(null)
+    registerFileSyncRunner(async () => { cycles++ })
+
+    markDirty('a')
+    markDeleted('b')
+    vi.advanceTimersByTime(999)
+    expect(cycles).toBe(0)
+    vi.advanceTimersByTime(1)
+    expect(cycles).toBe(1)
   })
 
   it('marks dirty immediately and pushes once after the debounce window', async () => {

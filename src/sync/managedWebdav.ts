@@ -1,4 +1,5 @@
 import type { SyncEngine } from '@glance-apps/sync'
+import { registerFileSyncRunner } from './fileSyncScheduler'
 
 export const MANAGED_WEBDAV = true
 export const MANAGED_WEBDAV_URL = 'https://internal.lastglance.invalid'
@@ -28,6 +29,7 @@ export function configureManagedWebdav(engine: SyncEngine): void {
 
 export async function bootstrapManagedWebdav(engine: SyncEngine): Promise<void> {
   configureManagedWebdav(engine)
+  registerFileSyncRunner(() => engine.sync())
   localStorage.setItem(WELCOME_KEY, '1')
 }
 

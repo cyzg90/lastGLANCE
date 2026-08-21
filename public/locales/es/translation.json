@@ -402,8 +402,9 @@
       "iCloudUnavailable": "iCloud no está disponible: {{error}}"
     },
     "syncHalted": "Sincronización detenida",
-    "haltedDescription": "Ocurrió un error crítico. Resuelve el problema y borra para reintentar.",
+    "haltedDescription": "Ocurrió un error crítico. Resuelve el problema y vuelve a intentar la sincronización.",
     "clearHalt": "Borrar",
+    "retrySync": "Reintentar sincronización",
     "webdavConnection": "Conexión WebDAV",
     "autoSaveHint": "Los ajustes se guardan automáticamente al cerrar este diálogo.",
     "syncEnabledLabel": "Sincronizar con WebDAV",
