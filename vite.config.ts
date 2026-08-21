@@ -100,6 +100,7 @@ function webdavProxyPlugin(): Plugin {
 }
 
 export default defineConfig({
+  base: './',
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __BUILD_TIME__: JSON.stringify(buildTime),

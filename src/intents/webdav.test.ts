@@ -31,6 +31,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.unstubAllEnvs()
   vi.doUnmock('@/sync/nativeHttp')
 })
 
@@ -52,6 +53,15 @@ describe('webdavFetch transport selection (browser)', () => {
 
     const [url] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]
     expect(url).toBe('/api/internal-webdav/sync-directory')
+  })
+
+  it('preserves an explicitly configured proxy URL', async () => {
+    vi.stubEnv('VITE_WEBDAV_PROXY_URL', 'https://proxy.example.com')
+    const { testConnection } = await loadWebdav({ isNativePlatform: false, webdavDirect: false })
+    await testConnection('https://dav.example.com', 'chores', 'user', 'pass')
+
+    const [url] = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls[0]
+    expect(url).toBe('https://proxy.example.com/api/webdav-proxy/?url=' + encodeURIComponent('https://dav.example.com/chores/'))
   })
 
   it('direct mode: hits the target URL directly with a standard Authorization header', async () => {

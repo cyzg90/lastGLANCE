@@ -1,5 +1,9 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { managedWebdavEndpoint } from './managedWebdav'
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
 
 describe('managedWebdavEndpoint', () => {
   it.each([
@@ -17,6 +21,13 @@ describe('managedWebdavEndpoint', () => {
     expect(managedWebdavEndpoint(
       'https://internal.lastglance.invalid/GLANCE/lastglance/backups/lastglance-backup-2026-08-14T15-30-00.json',
     )).toBe('/api/internal-webdav/backups/lastglance-backup-2026-08-14T15-30-00.json')
+  })
+
+  it('preserves an explicitly configured proxy URL', () => {
+    vi.stubEnv('VITE_WEBDAV_PROXY_URL', 'https://proxy.example.com')
+    expect(managedWebdavEndpoint(
+      'https://internal.lastglance.invalid/GLANCE/lastglance/lastglance-sync.json',
+    )).toBe('https://proxy.example.com/sync')
   })
 
   it.each([

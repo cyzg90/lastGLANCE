@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import HttpBackend from 'i18next-http-backend'
 import { applyDateLocale } from '@/utils/datetime'
 import { languages, resolveLanguage } from '@/locales'
+import { appPath } from '@/utils/appPath'
 
 // Keep date handling on the same language as the UI strings. Registered before
 // .init() so this listener runs ahead of react-i18next's own — the locale is
@@ -24,7 +25,7 @@ i18n
     ns: ['translation'],
     defaultNS: 'translation',
     backend: {
-      loadPath: '/locales/{{lng}}/{{ns}}.json',
+      loadPath: appPath('locales/{{lng}}/{{ns}}.json'),
     },
     interpolation: {
       escapeValue: false,
