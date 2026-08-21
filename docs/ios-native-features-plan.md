@@ -276,10 +276,16 @@ out of scope; reconcile on next foreground).
   iOS.
 - `scripts/gen-lucide-drawables.mjs` — add a Swift-path-data mode for iOS icons
   (or a sibling script).
-- `scripts/sync-ios-version.mjs` — its `MARKETING_VERSION` regex is global, so it
-  already covers the extension targets. `CURRENT_PROJECT_VERSION` is **not** synced
-  and both are hardcoded to 1; App Store upload rejects an app and extension whose
-  build numbers differ, so whoever bumps one must bump all of them.
+- `scripts/sync-ios-version.mjs` — handles both version numbers, for different
+  reasons. `MARKETING_VERSION` always tracks package.json across every target.
+  `CURRENT_PROJECT_VERSION` (the build number) has to increment per **upload**,
+  not per version, so it cannot be derived from package.json and is set
+  explicitly: `IOS_BUILD=<n> npm run build:ios`. With `IOS_BUILD` unset the build
+  number is left alone but every target is checked for agreement, and the script
+  **fails the build** if they disagree — an app and its extensions must ship the
+  same `CFBundleVersion` or App Store Connect rejects the upload, and Xcode's
+  General tab edits only the selected target, so bumping by hand moves App and
+  silently leaves GlanceWidgets behind.
 
 **To stay iOS-friendly going forward:** keep decision logic in JS behind the
 plugin boundary; route every new entry point through the shared `lastglance://`
