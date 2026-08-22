@@ -135,12 +135,30 @@ persisted App-Group snapshot).
 win. The Android plan estimates it ~70-80% portable.
 
 - Relax the Android-only guards in `useReminders.ts` / `reminders.ts` /
-  `useNotifications.ts` to include iOS.
+  `useNotifications.ts` to include iOS. **Done 2026-08** (untested on device).
+  The scheduling model is shared; four things are platform-conditional, all of
+  them inside `reminders.ts`:
+  - `ensureChannel` — Android-only; channels have no iOS equivalent.
+  - `maybePromptExactAlarm` — Android-only; iOS has no exact-alarm permission.
+  - the per-build force-reschedule — Android-only. The hazard is aapt2
+    reassigning drawable resource IDs between builds; iOS notifications carry no
+    resource ID, so forcing it there would churn every pending notification on
+    each build to fix a problem it cannot have.
+  - the 64-notification cap — iOS-only; see below.
+  One thing the plan expected to be a fork turned out not to be: `handleNotificationAction`
+  already notes that the plugin opens the app for **every** action on both
+  platforms, so "Mark done" was never going to run headless anywhere.
 - Handle **iOS specifics**: no exact-alarm permission prompt (drop that branch on
   iOS); the app icon is used instead of a monochrome `smallIcon`; the **64
-  pending-notification cap** (our single-shot-per-chore model stays well under it,
-  but cap defensively); actions declared as `UNNotificationCategory` (the plugin
-  abstracts this) with the same "Mark done" / "Send to dayGLANCE" verbs.
+  pending-notification cap**; actions declared as `UNNotificationCategory` (the
+  plugin abstracts this) with the same "Mark done" / "Send to dayGLANCE" verbs.
+- On the cap: implemented as `soonest(all, 56)`, not 64. The limit is **per app,
+  not per feature**, so scheduling right up to it would make some future
+  notification of another kind the one iOS silently discards. When the cap bites,
+  the reminders kept are the nearest-firing — everything dropped is further out
+  than everything kept, and each later sync (foreground, completion, sync-apply)
+  pulls the next tranche in as the near ones fire. No `smallIcon` handling was
+  needed: it is set in `capacitor.config.ts` and simply ignored on iOS.
 - Delivery timing note: iOS has no `setExactAndAllowWhileIdle` equivalent; the
   system may batch delivery. This fits the "information, not guilt" single-shot
   model, but timing is inherently less precise than Android exact alarms. Accept
@@ -158,15 +176,28 @@ carry over.
   soon/overdue **list** widget, and a configurable **single-chore** widget.
   A `TimelineProvider` supplies entries; use SwiftUI relative-date text so
   "Xd ago" stays honest between snapshot pushes without a background runtime.
+- **Heatmap families (decided 2026-08, verified on device):** `systemMedium` is
+  26 weeks, bare grid; `systemExtraLarge` is 52 weeks with month/weekday labels
+  and a Less→More legend. **`systemLarge` is deliberately unsupported.** A 52x7
+  grid of square cells is ~7.4:1, so in a square family it renders as a band with
+  two thirds of the height empty and nothing worth putting there; extra-large is
+  ~2:1 and carries it. Cell size works out at ~10.9pt on extra-large versus
+  ~10.1pt for medium's 26 weeks, so the full year is *more* legible, not less.
+  Note extra-large is **iPad-only** — WidgetKit has never offered it on iPhone,
+  so iPhone gets medium alone. Android stays at 26 weeks; the split is accepted
+  (its heatmap has no extra-large analogue to diverge from).
 - **Interactive tap-to-complete via AppIntents (iOS 17+)**: the Done button runs
   an `AppIntent` that writes `{ choreSyncId, syncId, completedAt }` to the
   App-Group completion queue and optimistically mutates the snapshot entry. JS
   drains on next foreground through the **existing** `pendingCompletions` path.
-  Decide the minimum iOS version; pre-17 devices fall back to tap-to-open.
-- **Chore icons**: the Lucide *Android vector drawables* do not port. Rasterize
-  the Lucide SVGs to PNGs into the App Group (adapt
-  `scripts/gen-lucide-drawables.mjs` to emit PNG assets), tinted to the recency
-  color. Decide this up front; it blocks icon parity.
+  The deployment target is settled (see section 4): the extension is 17.0, so
+  there is **no pre-17 fallback path to build**.
+- **Chore icons**: the Lucide *Android vector drawables* do not port. Settled
+  approach is a generated Swift file of Lucide path data plus a small
+  SVG-path-to-`SwiftUI.Path` parser — see section 4 for why rasterising to
+  App-Group PNGs was rejected. **This blocks the list and single-chore widgets**,
+  which are icon-bearing; the heatmap needed no icons, which is why it shipped
+  first.
 - Style to read as the same family as the in-app `ChoreRow` (recency color bar +
   elapsed text), matching the Android "clearly same family" posture.
 
@@ -194,8 +225,14 @@ sync round-trip.
   consumed on foreground by the existing `consumeSharedChore` to open the
   new-chore form pre-filled. This is the direct analog of the Android share
   target and reuses the same web prefill.
+- **Add-chore widget**: Android ships `glance/AddChoreWidget.kt`, a static
+  one-tap surface with no snapshot dependency. Earlier drafts of this plan had no
+  iOS counterpart — an oversight, not a decision. On iOS it is a `systemSmall`
+  widget whose only job is a `widgetURL` of `action:add`, so it belongs here with
+  the other entry points rather than in Phase 2 with the data-bearing widgets.
 - **Stretch:** Lock Screen / Control Center widgets (WidgetKit accessory families)
-  are the closest analog to the Android Quick Settings tiles; optional.
+  are the closest analog to the Android Quick Settings tiles (`tiles/QsTiles.kt`,
+  add-chore and soon); optional.
 
 There is **no iOS analog planned for background CRDT sync** (same as Android:
 out of scope; reconcile on next foreground).
@@ -211,6 +248,18 @@ out of scope; reconcile on next foreground).
   there is no arbitrary background execution. The snapshot-read model fits, but
   freshness of relative time ("Xd ago") relies on TimelineProvider entries and/or
   SwiftUI relative-date formatting rather than polling.
+- **⚠ Reboot the device before believing a widget bug (learned the hard way,
+  2026-08).** WidgetKit caches extension state aggressively and a stale cache
+  survives reinstalls, including fresh TestFlight installs. The symptom that cost
+  most of a day: the widget rendered perfectly in the gallery, with live data, and
+  rendered *nothing at all* once placed on the home screen — not even static text.
+  It was not a crash (no `.ips`), not a memory kill (the extension peaked at 3 MB
+  against a ~30 MB budget and was never jetsammed), and not a code fault. **A
+  reboot fixed it.** Suspect the cache first whenever the gallery and the placed
+  widget disagree, especially right after changing `supportedFamilies`, the widget
+  `kind`, or the set of widgets in the bundle — changes to a widget's *identity*
+  are exactly what the cache gets wrong. Diagnose from the device before changing
+  code: a gallery/placed split is a WidgetKit state problem until proven otherwise.
 - **AppIntents interactivity is iOS 17+.** Decided 2026-07: the **app target stays
   at iOS 15.0** and the **widget extension targets 17.0**. An extension may set a
   higher floor than its host, so no existing app user is dropped and there is only
@@ -266,10 +315,16 @@ out of scope; reconcile on next foreground).
   iOS.
 - `scripts/gen-lucide-drawables.mjs` — add a Swift-path-data mode for iOS icons
   (or a sibling script).
-- `scripts/sync-ios-version.mjs` — its `MARKETING_VERSION` regex is global, so it
-  already covers the extension targets. `CURRENT_PROJECT_VERSION` is **not** synced
-  and both are hardcoded to 1; App Store upload rejects an app and extension whose
-  build numbers differ, so whoever bumps one must bump all of them.
+- `scripts/sync-ios-version.mjs` — handles both version numbers, for different
+  reasons. `MARKETING_VERSION` always tracks package.json across every target.
+  `CURRENT_PROJECT_VERSION` (the build number) has to increment per **upload**,
+  not per version, so it cannot be derived from package.json and is set
+  explicitly: `IOS_BUILD=<n> npm run build:ios`. With `IOS_BUILD` unset the build
+  number is left alone but every target is checked for agreement, and the script
+  **fails the build** if they disagree — an app and its extensions must ship the
+  same `CFBundleVersion` or App Store Connect rejects the upload, and Xcode's
+  General tab edits only the selected target, so bumping by hand moves App and
+  silently leaves GlanceWidgets behind.
 
 **To stay iOS-friendly going forward:** keep decision logic in JS behind the
 plugin boundary; route every new entry point through the shared `lastglance://`

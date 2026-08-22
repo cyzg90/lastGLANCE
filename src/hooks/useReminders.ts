@@ -1,15 +1,15 @@
 import { useEffect } from 'react'
-import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import type { PluginListenerHandle } from '@capacitor/core'
 import { syncReminders, handleNotificationAction } from '@/native/reminders'
+import { isNativeShell } from '@/native/platform'
 
-// Keeps the native exact-alarm reminder set in sync with the chores, on the same
-// signals as the widget snapshot, and routes notification taps to the chore.
-// No-op off Android (syncReminders guards the platform internally).
+// Keeps the native reminder set in sync with the chores, on the same signals as
+// the widget snapshot, and routes notification taps to the chore. Runs in both
+// native shells; no-op on web/PWA (syncReminders also guards internally).
 export function useReminders(): void {
   useEffect(() => {
-    if (Capacitor.getPlatform() !== 'android') return
+    if (!isNativeShell()) return
 
     syncReminders()
 

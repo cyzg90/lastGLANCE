@@ -6,8 +6,15 @@ import { pushWidgetSnapshot } from './widgetBridge'
 import dayjs from 'dayjs'
 
 // How many days of completion history to ship to the heatmap widget.
-// ~27 weeks, so the 26-week widget grid is fully covered (with week alignment).
-const HEATMAP_DAYS = 190
+// 53 weeks, so the widest grid we render (the 52-week iOS extra-large widget) is
+// fully covered even after the alignment walk back to the oldest visible Sunday.
+// Android's 26-week grid and the iOS medium widget read the same map and simply
+// ignore the older half.
+//
+// Cost is bounded by activity, not by the window: only days that actually have
+// completions are serialized, so this grows the snapshot by however many extra
+// active days a user has, not by 181 entries.
+const HEATMAP_DAYS = 371
 
 export type ChoreState = 'fresh' | 'soon' | 'overdue' | 'none'
 
