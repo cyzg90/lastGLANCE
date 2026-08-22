@@ -145,9 +145,13 @@ win. The Android plan estimates it ~70-80% portable.
     resource ID, so forcing it there would churn every pending notification on
     each build to fix a problem it cannot have.
   - the 64-notification cap — iOS-only; see below.
-  One thing the plan expected to be a fork turned out not to be: `handleNotificationAction`
-  already notes that the plugin opens the app for **every** action on both
-  platforms, so "Mark done" was never going to run headless anywhere.
+  **Device-verified 2026-08:** delivery works, and notification actions came out
+  BETTER than planned — on iOS "Mark done" does not foreground the app at all;
+  the plugin retains the action and replays it on next launch, where the
+  existing drain logs it. That is the headless completion the plan assumed was
+  impossible, courtesy of the plugin's retained-action path. Android still
+  opens the app (its plugin behavior); the divergence favours iOS and needs no
+  code.
 - Handle **iOS specifics**: no exact-alarm permission prompt (drop that branch on
   iOS); the app icon is used instead of a monochrome `smallIcon`; the **64
   pending-notification cap**; actions declared as `UNNotificationCategory` (the
