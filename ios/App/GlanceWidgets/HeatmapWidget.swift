@@ -278,10 +278,15 @@ private struct HeatmapCanvas: View {
             let labelFont = Font.system(size: unit * 0.78)
 
             // Month labels: drawn at the first column of each new month, the way
-            // GitHub does it, plus the leftmost column so the oldest (partial)
-            // month is not left anonymous. Two guards keep them readable — never
-            // within three columns of the previous label, and never so close to
-            // the right edge that the text would overhang the grid.
+            // GitHub does it. Two guards keep them readable — never within three
+            // columns of the previous label, and never so close to the right edge
+            // that the text would overhang the grid.
+            //
+            // Column 0 is deliberately skipped (lastMonth starts unset). It is a
+            // partial month, and labelling it costs a real one: the label at
+            // column 0 would claim the minimum-gap budget and suppress the true
+            // first month boundary a column or two later, which is exactly how
+            // September went missing on a 52-week grid.
             var lastMonth = -1
             var lastLabelCol = -99
             for col in 0..<weeks {
@@ -289,7 +294,7 @@ private struct HeatmapCanvas: View {
                 else { continue }
                 let month = calendar.component(.month, from: columnStart)
                 defer { lastMonth = month }
-                guard month != lastMonth else { continue }
+                guard month != lastMonth, lastMonth != -1 else { continue }
                 guard col - lastLabelCol >= 3, col <= weeks - 3 else { continue }
                 lastLabelCol = col
                 context.draw(
@@ -480,17 +485,25 @@ struct HeatmapWidgetView: View {
 
             // Figures describe exactly the window drawn above, not all of
             // history, so nothing here can contradict the cells on screen.
-            HStack(alignment: .top, spacing: 28) {
+            //
+            // Spread edge to edge rather than bunched at the leading edge with a
+            // trailing Spacer: the grid above spans the full width, and a stats
+            // row occupying only the left third against that made the whole
+            // composition read as unfinished. Spacers *between* the tiles and
+            // none after the last one pins the outer two to the same margins the
+            // grid uses.
+            HStack(alignment: .top, spacing: 0) {
                 StatTile(
                     value: "\(stats.completions)",
                     label: plural(stats.completions, "completion", "completions")
                 )
+                Spacer(minLength: 16)
                 StatTile(
                     value: "\(stats.activeDays)",
                     label: plural(stats.activeDays, "active day", "active days")
                 )
+                Spacer(minLength: 16)
                 StatTile(value: "\(stats.streak)", label: "day streak")
-                Spacer(minLength: 0)
             }
 
             Spacer(minLength: 0)
