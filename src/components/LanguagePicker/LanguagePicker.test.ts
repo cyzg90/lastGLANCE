@@ -12,7 +12,8 @@ describe('nativeLanguageName', () => {
     ['es', 'Español'],
     ['fr', 'Français'],
     ['it', 'Italiano'],
-    ['pt', 'Português'],
+    ['pt-BR', 'Português (Brasil)'],
+    ['pt-PT', 'Português (Portugal)'],
   ])('names %s in its own language', (tag, expected) => {
     expect(nativeLanguageName(tag)).toBe(expected)
   })

@@ -22,16 +22,25 @@ afterEach(() => {
 })
 
 describe('applyDateLocale', () => {
-  it('accepts the six supported languages', () => {
+  it('accepts the six base languages', () => {
     for (const lng of ['en', 'de', 'es', 'fr', 'it', 'pt']) {
       applyDateLocale(lng)
       expect(getActiveLocale()).toBe(lng)
     }
   })
 
-  it('takes the base language from a regional tag', () => {
+  it('uses the regional dayjs locale when one exists', () => {
+    // Brazilian Portuguese must not be stripped to dayjs's generic
+    // (European) "pt" — dayjs ships a dedicated "pt-br".
     applyDateLocale('pt-BR')
+    expect(getActiveLocale()).toBe('pt-br')
+  })
+
+  it('takes the base language from a regional tag dayjs has no locale for', () => {
+    applyDateLocale('pt-PT')
     expect(getActiveLocale()).toBe('pt')
+    applyDateLocale('de-AT')
+    expect(getActiveLocale()).toBe('de')
   })
 
   it('falls back to English for anything unsupported or absent', () => {

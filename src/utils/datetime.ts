@@ -11,6 +11,7 @@ import 'dayjs/locale/es'
 import 'dayjs/locale/fr'
 import 'dayjs/locale/it'
 import 'dayjs/locale/pt'
+import 'dayjs/locale/pt-br'
 
 dayjs.extend(localeData)
 dayjs.extend(updateLocale)
@@ -45,7 +46,10 @@ declare global {
   }
 }
 
-const SUPPORTED = ['de', 'es', 'fr', 'it', 'pt'] as const
+// Full tags before base languages: pt-BR must land on dayjs's "pt-br", not be
+// stripped to the generic (European) "pt". i18next reports pt-PT and pt-BR
+// since the Portuguese split; every other language is still a bare tag.
+const SUPPORTED = ['de', 'es', 'fr', 'it', 'pt', 'pt-br'] as const
 
 let activeLocale = 'en'
 
@@ -62,9 +66,12 @@ export function getActiveLocale(): string {
  * language, or the first frame shows stale formatting.
  */
 export function applyDateLocale(lng: string | undefined): void {
-  const base = (lng ?? 'en').split('-')[0].toLowerCase()
-  const supported = (SUPPORTED as readonly string[]).includes(base)
-  activeLocale = supported ? base : 'en'
+  const supported = SUPPORTED as readonly string[]
+  // Prefer the exact regional locale when dayjs ships one (pt-BR -> "pt-br"),
+  // fall back to the base language (de-AT -> "de"), then to English.
+  const full = (lng ?? 'en').toLowerCase()
+  const base = full.split('-')[0]
+  activeLocale = supported.includes(full) ? full : supported.includes(base) ? base : 'en'
   dayjs.locale(activeLocale)
   // Read the language's own week start before overwriting it, so the first
   // switch into a locale always sees the pristine value.

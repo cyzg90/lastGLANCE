@@ -33,10 +33,15 @@ export const languages = Object.keys(loaders).sort()
 
 /**
  * Which regional variant a bare language tag means when more than one ships.
- * Empty while every shipped locale is a bare tag; a split like pt → pt-PT and
- * pt-BR adds its entry here so existing users keep the standard they had.
+ *
+ * Portuguese was a single "pt" locale, written in the European standard, until
+ * it was split into pt-PT and pt-BR. Bare "pt" therefore has to keep resolving
+ * to European: every existing Portuguese user has "pt" cached in localStorage,
+ * and mapping it anywhere else would silently change the language under people
+ * who never asked for it. Browsers reporting a Portuguese-speaking region we
+ * do not ship (pt-AO, pt-MZ) land here too.
  */
-const REGIONAL_DEFAULTS: Record<string, string> = {}
+const REGIONAL_DEFAULTS: Record<string, string> = { pt: 'pt-PT' }
 
 /**
  * Map any language tag onto one this app actually ships.

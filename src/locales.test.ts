@@ -6,7 +6,7 @@ import { languages, loaders, resolveLanguage } from './locales'
 // user. The backlog is translated, so this is a strict parity check: a key
 // added to en without translations fails here instead of silently falling back.
 describe('locale bundles', () => {
-  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'pt']
+  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'pt-BR', 'pt-PT']
   const TRANSLATED = EXPECTED.filter((l) => l !== 'en')
 
   const bundles: Record<string, Record<string, unknown>> = {}
@@ -38,18 +38,31 @@ describe('locale bundles', () => {
   describe('resolveLanguage', () => {
     it('passes through a tag that is already shipped', () => {
       expect(resolveLanguage('de')).toBe('de')
-      expect(resolveLanguage('pt')).toBe('pt')
+      expect(resolveLanguage('pt-BR')).toBe('pt-BR')
     })
 
     it('matches a shipped tag regardless of case', () => {
       expect(resolveLanguage('DE')).toBe('de')
-      expect(resolveLanguage('Fr')).toBe('fr')
+      expect(resolveLanguage('pt-br')).toBe('pt-BR')
+      expect(resolveLanguage('PT-BR')).toBe('pt-BR')
+    })
+
+    // The regression the pt split must not cause. Portuguese shipped as a
+    // single "pt" locale (European) before the split, so every Portuguese
+    // user has that value cached in localStorage; without the mapping they
+    // would silently land in English.
+    it('moves the pre-split "pt" to European rather than English', () => {
+      expect(resolveLanguage('pt')).toBe('pt-PT')
+    })
+
+    it('sends an unshipped Portuguese region to European', () => {
+      expect(resolveLanguage('pt-AO')).toBe('pt-PT')
+      expect(resolveLanguage('pt-MZ')).toBe('pt-PT')
     })
 
     it('reduces a regional tag to a base language that is shipped', () => {
       expect(resolveLanguage('en-US')).toBe('en')
       expect(resolveLanguage('de-AT')).toBe('de')
-      expect(resolveLanguage('pt-BR')).toBe('pt')
     })
 
     it('falls back to en for a language that is not shipped', () => {
@@ -73,7 +86,7 @@ describe('locale bundles', () => {
     })
 
     it('always returns something the picker can render', () => {
-      for (const reported of ['en', 'pt', 'de-AT', 'zz', '', undefined]) {
+      for (const reported of ['en', 'pt', 'pt-AO', 'de-AT', 'zz', '', undefined]) {
         expect(languages).toContain(resolveLanguage(reported))
       }
     })
@@ -113,6 +126,24 @@ describe('locale bundles', () => {
         .map(([key, value]) => `  ${key}: [${slotsOf(en.get(key))}] became [${slotsOf(value)}]`)
       expect(mismatched, `${lng} placeholder mismatches:\n${mismatched.join('\n')}`).toEqual([])
     })
+  })
+
+  // pt-BR is generated from pt-PT by scripts/gen-pt-br.mjs — never edited by
+  // hand. Regenerate to a scratch path and diff against the committed file, so
+  // a pt-PT edit that was not followed by `node scripts/gen-pt-br.mjs` (or a
+  // hand edit to pt-BR that regeneration would overwrite) fails here.
+  it('pt-BR is exactly the transform of pt-PT', async () => {
+    const { execFileSync } = await import('node:child_process')
+    const { tmpdir } = await import('node:os')
+    const { join } = await import('node:path')
+    const { readFileSync } = await import('node:fs')
+    const out = join(tmpdir(), `pt-br-regen-${process.pid}.json`)
+    execFileSync('node', ['scripts/gen-pt-br.mjs', out])
+    const regenerated = JSON.parse(readFileSync(out, 'utf8'))
+    expect(
+      bundles['pt-BR'],
+      'pt-BR does not match its transform — run `node scripts/gen-pt-br.mjs` (and never edit pt-BR by hand)',
+    ).toEqual(regenerated)
   })
 
   // Parity can be satisfied by pasting the English text in. Spot-check one
