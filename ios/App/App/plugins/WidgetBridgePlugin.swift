@@ -1,5 +1,6 @@
 import Foundation
 import Capacitor
+import UIKit
 import WidgetKit
 
 // iOS counterpart of WidgetBridgePlugin.java. Receives the denormalized snapshot
@@ -46,7 +47,63 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         // reloads every placed timeline for this app. Cheap, because our providers
         // only read a JSON blob out of UserDefaults.
         WidgetCenter.shared.reloadAllTimelines()
+        refreshShortcuts(json: json)
         call.resolve()
+    }
+
+    // Rebuild the home-screen quick actions from the snapshot — the analogue of
+    // WidgetShortcuts.refresh on Android, with the same priority order: Add,
+    // Search, then the most-overdue chores. iOS shows at most four, so the
+    // data-driven tail is two chores (Android trims to the launcher's max the
+    // same way, lowest priority first).
+    //
+    // Each item's `type` is the internal deep-link token itself; AppDelegate's
+    // performActionFor validates and stores it verbatim. Parsed with
+    // JSONSerialization rather than a model on purpose — this file lives in the
+    // app target and has no reason to grow a dependency on the widget target's
+    // snapshot model for two fields.
+    private func refreshShortcuts(json: String) {
+        var items: [UIApplicationShortcutItem] = [
+            UIApplicationShortcutItem(
+                type: "action:add",
+                localizedTitle: "Add chore",
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(type: .add),
+                userInfo: nil
+            ),
+            UIApplicationShortcutItem(
+                type: "action:search",
+                localizedTitle: "Search",
+                localizedSubtitle: nil,
+                icon: UIApplicationShortcutIcon(type: .search),
+                userInfo: nil
+            ),
+        ]
+
+        if let root = (try? JSONSerialization.jsonObject(with: Data(json.utf8))) as? [String: Any],
+           let chores = root["chores"] as? [[String: Any]] {
+            let ranked = chores
+                .filter { ($0["state"] as? String) == "overdue" || ($0["state"] as? String) == "soon" }
+                .sorted {
+                    (($0["ratio"] as? Double) ?? 0) > (($1["ratio"] as? Double) ?? 0)
+                }
+                .prefix(2)
+            for chore in ranked {
+                guard let syncId = chore["syncId"] as? String,
+                      let name = chore["name"] as? String, !name.isEmpty else { continue }
+                items.append(UIApplicationShortcutItem(
+                    type: "chore:\(syncId)",
+                    localizedTitle: name,
+                    localizedSubtitle: nil,
+                    icon: UIApplicationShortcutIcon(type: .task),
+                    userInfo: nil
+                ))
+            }
+        }
+
+        DispatchQueue.main.async {
+            UIApplication.shared.shortcutItems = items
+        }
     }
 
     @objc func drainPendingCompletions(_ call: CAPPluginCall) {

@@ -43,26 +43,42 @@ struct ChoreRowView: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            RoundedRectangle(cornerRadius: 2)
-                .fill(chore.recencyColor)
-                .frame(width: 5, height: 26)
-            if let icon = chore.icon {
-                LucideIconView(name: icon, color: chore.recencyColor, size: 18)
+            // The body of the row deep-links to the chore (Android's
+            // openChoreIntent); the Done button stays OUTSIDE the Link so its
+            // AppIntent keeps the tap. Link and Button are both tappable islands
+            // inside a widget — whichever is hit wins.
+            Link(destination: choreURL(chore.syncId)) {
+                HStack(spacing: 8) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(chore.recencyColor)
+                        .frame(width: 5, height: 26)
+                    if let icon = chore.icon {
+                        LucideIconView(name: icon, color: chore.recencyColor, size: 18)
+                    }
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(chore.name)
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                        Text(chore.elapsedLabel)
+                            .font(.system(size: 11))
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 8)
+                }
             }
-            VStack(alignment: .leading, spacing: 1) {
-                Text(chore.name)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                Text(chore.elapsedLabel)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer(minLength: 8)
             DoneButton(choreSyncId: chore.syncId)
         }
     }
 }
+
+// A chore's deep link; syncIds are UUIDs, so this cannot really fail, but a
+// fallback to the Soon view beats a crash on a malformed one.
+func choreURL(_ syncId: String) -> URL {
+    URL(string: "lastglance://chore/\(syncId)") ?? soonURL
+}
+
+let soonURL = URL(string: "lastglance://filter/soon")!
 
 struct SoonListWidgetView: View {
     var entry: SnapshotEntry
@@ -80,6 +96,8 @@ struct SoonListWidgetView: View {
         .containerBackground(for: .widget) {
             Color(uiColor: .systemBackground)
         }
+        // Anywhere that is not a row Link or a Done button opens the Soon view.
+        .widgetURL(soonURL)
     }
 
     private var content: some View {
