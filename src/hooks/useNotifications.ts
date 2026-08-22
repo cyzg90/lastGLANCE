@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { getCategories, getChoresForCategory, logCompletion } from '@/db/queries'
-import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
+import { isNativeShell } from '@/native/platform'
 import { useToast, type ToastOptions } from '@/components/Toast/Toast'
 import { useIntents } from '@/intents/IntentsContext'
 import { emitCreateIntent } from '@/intents/emitter'
@@ -69,11 +69,12 @@ async function fireBrowserNotification(title: string, body: string) {
 }
 
 export async function requestNotificationPermission(): Promise<NotificationPermission> {
-  // On Android the WebView's Notification API is unavailable; the real permission
-  // (POST_NOTIFICATIONS) lives in the native Local Notifications plugin, which
-  // also delivers the closed-app reminders. Check/request there and map the
-  // plugin's PermissionState onto the web NotificationPermission the UI expects.
-  if (Capacitor.getPlatform() === 'android') {
+  // In both native shells the WebView's Notification API is unavailable (absent
+  // in WKWebView, unusable in Android's WebView), and the real permission lives
+  // in the native Local Notifications plugin, which also delivers the closed-app
+  // reminders. Check/request there and map the plugin's PermissionState onto the
+  // web NotificationPermission the UI expects.
+  if (isNativeShell()) {
     try {
       let status = await LocalNotifications.checkPermissions()
       if (status.display === 'prompt' || status.display === 'prompt-with-rationale') {
@@ -163,10 +164,10 @@ export function useNotifications() {
                 toastOpts.onSendToDayGlance = async () => emitCreateIntent(chore)
               }
               showToastRef.current(toastOpts)
-            } else if (Capacitor.getPlatform() !== 'android') {
-              // On Android, native exact-alarm reminders (useReminders) own
+            } else if (!isNativeShell()) {
+              // In both native shells the scheduled reminders (useReminders) own
               // closed/backgrounded delivery — skip the web notification so it
-              // isn't duplicated. Other platforms keep the in-WebView path.
+              // isn't duplicated. Web/PWA keeps the in-WebView path.
               await fireBrowserNotification(chore.name, body)
             }
 

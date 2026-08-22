@@ -135,12 +135,30 @@ persisted App-Group snapshot).
 win. The Android plan estimates it ~70-80% portable.
 
 - Relax the Android-only guards in `useReminders.ts` / `reminders.ts` /
-  `useNotifications.ts` to include iOS.
+  `useNotifications.ts` to include iOS. **Done 2026-08** (untested on device).
+  The scheduling model is shared; four things are platform-conditional, all of
+  them inside `reminders.ts`:
+  - `ensureChannel` — Android-only; channels have no iOS equivalent.
+  - `maybePromptExactAlarm` — Android-only; iOS has no exact-alarm permission.
+  - the per-build force-reschedule — Android-only. The hazard is aapt2
+    reassigning drawable resource IDs between builds; iOS notifications carry no
+    resource ID, so forcing it there would churn every pending notification on
+    each build to fix a problem it cannot have.
+  - the 64-notification cap — iOS-only; see below.
+  One thing the plan expected to be a fork turned out not to be: `handleNotificationAction`
+  already notes that the plugin opens the app for **every** action on both
+  platforms, so "Mark done" was never going to run headless anywhere.
 - Handle **iOS specifics**: no exact-alarm permission prompt (drop that branch on
   iOS); the app icon is used instead of a monochrome `smallIcon`; the **64
-  pending-notification cap** (our single-shot-per-chore model stays well under it,
-  but cap defensively); actions declared as `UNNotificationCategory` (the plugin
-  abstracts this) with the same "Mark done" / "Send to dayGLANCE" verbs.
+  pending-notification cap**; actions declared as `UNNotificationCategory` (the
+  plugin abstracts this) with the same "Mark done" / "Send to dayGLANCE" verbs.
+- On the cap: implemented as `soonest(all, 56)`, not 64. The limit is **per app,
+  not per feature**, so scheduling right up to it would make some future
+  notification of another kind the one iOS silently discards. When the cap bites,
+  the reminders kept are the nearest-firing — everything dropped is further out
+  than everything kept, and each later sync (foreground, completion, sync-apply)
+  pulls the next tranche in as the near ones fire. No `smallIcon` handling was
+  needed: it is set in `capacitor.config.ts` and simply ignored on iOS.
 - Delivery timing note: iOS has no `setExactAndAllowWhileIdle` equivalent; the
   system may batch delivery. This fits the "information, not guilt" single-shot
   model, but timing is inherently less precise than Android exact alarms. Accept

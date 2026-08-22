@@ -1,5 +1,5 @@
-import { Capacitor } from '@capacitor/core'
 import { LocalNotifications } from '@capacitor/local-notifications'
+import { isAndroid, isNativeShell } from './platform'
 import type { PendingLocalNotificationSchema } from '@capacitor/local-notifications'
 import { getCategories, getChoresForCategory, logCompletion } from '@/db/queries'
 import { db } from '@/db/client'
@@ -14,13 +14,21 @@ import type { ChoreWithLastCompletion } from '@/types'
 import dayjs from 'dayjs'
 
 // Phase 1: closed-app overdue notifications. The web app pre-computes each
-// chore's next-overdue instant (last completion + cadence) and registers it as
-// an exact Android alarm via @capacitor/local-notifications, so notifications
-// fire when the app is closed — replacing the in-WebView timer that only ran
-// while the app was alive. Native owns closed-app delivery; the in-app toast in
-// useNotifications.ts still covers the foreground case.
+// chore's next-overdue instant (last completion + cadence) and registers it with
+// @capacitor/local-notifications, so notifications fire when the app is closed —
+// replacing the in-WebView timer that only ran while the app was alive. Native
+// owns closed-app delivery; the in-app toast in useNotifications.ts still covers
+// the foreground case.
 //
-// No-op anywhere but Android (the only platform wired so far).
+// Runs in both native shells; no-op on web/PWA. The scheduling model is shared,
+// with three Android-only pieces skipped on iOS (notification channels, the
+// exact-alarm permission prompt, and the per-build force-reschedule) and one
+// iOS-only piece added (the 64-notification cap). Each is marked below.
+//
+// Timing differs by platform and that is accepted: Android schedules an exact
+// alarm, iOS has no equivalent and the system may batch delivery. Fine for a
+// single-shot "it's been N days" nudge; do not build anything time-critical on
+// top of it.
 
 const CHANNEL_ID = 'overdue'
 const EXACT_PROMPTED_KEY = 'lg_exact_alarm_prompted'
@@ -36,6 +44,24 @@ const BUILD_TOKEN_KEY = 'lg_reminders_build_token'
 // time via actionTypeId, and refreshes whenever syncReminders re-runs.
 const ACTION_TYPE = 'OVERDUE'
 const ACTION_TYPE_DG = 'OVERDUE_DG'
+
+// iOS keeps at most 64 pending local notifications per app and silently discards
+// the rest — no error, the reminder simply never arrives. Our model is one
+// single-shot notification per eligible chore, so a heavy user with a lot of
+// cadenced chores can plausibly reach that, unlike on Android where there is no
+// such limit. Cap below 64 rather than at it: the ceiling is per-app, not
+// per-feature, so leaving headroom keeps a future notification of any other kind
+// from being the one that gets dropped.
+const IOS_PENDING_LIMIT = 56
+
+// The soonest `n` by trigger time. When the cap bites, the reminders worth
+// keeping are the ones about to fire: everything dropped here is further out
+// than everything kept, and each later sync (foreground, completion, sync-apply)
+// re-runs this and pulls the next tranche in as the near ones fire.
+export function soonest<T extends { triggerAtMillis: number }>(items: T[], n: number): T[] {
+  if (items.length <= n) return items
+  return [...items].sort((a, b) => a.triggerAtMillis - b.triggerAtMillis).slice(0, n)
+}
 
 interface ReminderDescriptor {
   id: number // stable numeric id derived from choreSyncId
@@ -79,9 +105,12 @@ async function ensureActionTypes(): Promise<void> {
   }
 }
 
+// Android-only: notification channels have no iOS equivalent, and the plugin's
+// createChannel is a no-op there. Guarded explicitly rather than left to fail
+// quietly, so the Android-only-ness is visible at the call site.
 let channelReady = false
 async function ensureChannel(): Promise<void> {
-  if (channelReady) return
+  if (channelReady || !isAndroid()) return
   try {
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
@@ -101,7 +130,11 @@ async function ensureChannel(): Promise<void> {
 // the classic "late when closed" failure. Prompt once, lazily, and only when we
 // actually have something to schedule, so users who never opt a chore into
 // reminders are never sent to Settings.
+//
+// Android-only: iOS has no exact-alarm concept and no such permission, so there
+// is nothing to ask for and no Settings screen to send anyone to.
 async function maybePromptExactAlarm(): Promise<void> {
+  if (!isAndroid()) return
   if (localStorage.getItem(EXACT_PROMPTED_KEY)) return
   try {
     const status = await LocalNotifications.checkExactNotificationSetting()
@@ -157,7 +190,7 @@ async function buildReminders(dgEnabled: boolean): Promise<ReminderDescriptor[]>
 // schedule only what's new or changed. Avoids a blanket cancel-all that could
 // drop an alarm in the window before it's re-registered.
 export async function syncReminders(): Promise<void> {
-  if (Capacitor.getPlatform() !== 'android') return
+  if (!isNativeShell()) return
   try {
     let perm = await LocalNotifications.checkPermissions()
     if (perm.display !== 'granted') {
@@ -171,7 +204,9 @@ export async function syncReminders(): Promise<void> {
     // GLANCEvault DB transport — mirroring IntentsContext.isConfigured. Checking
     // WebDAV alone hid the action on vault-only setups.
     const dgEnabled = isIntentsConfigured(getIntentsConfig()) || isDbIntentsEnabled()
-    const desired = await buildReminders(dgEnabled)
+    const all = await buildReminders(dgEnabled)
+    // iOS-only cap. On Android the full set is scheduled; there is no limit.
+    const desired = isAndroid() ? all : soonest(all, IOS_PENDING_LIMIT)
     if (desired.length > 0) await maybePromptExactAlarm()
 
     // Android bakes each scheduled notification — including its small-icon
@@ -187,8 +222,13 @@ export async function syncReminders(): Promise<void> {
     // The token is the build timestamp, not the version name: IDs churn per build,
     // and same-version rebuilds (internal-test builds that bump only versionCode)
     // would slip past a versionName check and keep firing the stale icon.
+    //
+    // Android-only. The whole hazard is aapt2 reassigning drawable resource IDs
+    // between builds; iOS notifications carry no resource ID, so forcing a full
+    // reschedule there would churn every pending notification on each new build
+    // to fix a problem it cannot have.
     const buildToken = typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : 'dev'
-    const force = localStorage.getItem(BUILD_TOKEN_KEY) !== buildToken
+    const force = isAndroid() && localStorage.getItem(BUILD_TOKEN_KEY) !== buildToken
 
     const desiredById = new Map(desired.map(r => [r.id, r]))
     const pending: PendingLocalNotificationSchema[] =
