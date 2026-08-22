@@ -33,6 +33,7 @@
 		EA00000000000000000000C5 /* SoonListWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E5 /* SoonListWidget.swift */; };
 		EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E6 /* SingleChoreWidget.swift */; };
 		EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E7 /* AddChoreWidget.swift */; };
+		EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E8 /* AccessoryWidgets.swift */; };
 		EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E9 /* SecureStorePlugin.swift */; };
 		EB00000000000000000000C1 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000E1 /* ShareViewController.swift */; };
 		EB00000000000000000000C2 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
@@ -103,6 +104,7 @@
 		EA00000000000000000000E5 /* SoonListWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SoonListWidget.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E6 /* SingleChoreWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SingleChoreWidget.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E7 /* AddChoreWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddChoreWidget.swift; sourceTree = "<group>"; };
+		EA00000000000000000000E8 /* AccessoryWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryWidgets.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E9 /* SecureStorePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorePlugin.swift; sourceTree = "<group>"; };
 		EB00000000000000000000E1 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		EB00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -209,6 +211,7 @@
 				EA00000000000000000000E5 /* SoonListWidget.swift */,
 				EA00000000000000000000E6 /* SingleChoreWidget.swift */,
 				EA00000000000000000000E7 /* AddChoreWidget.swift */,
+				EA00000000000000000000E8 /* AccessoryWidgets.swift */,
 				EA00000000000000000000FA /* LucidePath.swift */,
 				EA00000000000000000000FB /* LucideIcons.generated.swift */,
 				EA00000000000000000000F7 /* Info.plist */,
@@ -394,6 +397,7 @@
 				EA00000000000000000000C5 /* SoonListWidget.swift in Sources */,
 				EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */,
 				EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */,
+				EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */,
 				EA00000000000000000000B8 /* LucidePath.swift in Sources */,
 				EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */,
 			);
