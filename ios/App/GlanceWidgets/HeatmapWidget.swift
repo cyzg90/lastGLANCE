@@ -171,14 +171,15 @@ struct HeatmapProvider: TimelineProvider {
         // which shifts the whole grid by one column. Only (b) needs a scheduled
         // refresh, so ask for exactly one, at the next local midnight.
         //
-        // Computed by adding a day to the start of today, NOT by
-        // Calendar.nextDate(after:matching:matchingPolicy:). That API searches
-        // for a matching date rather than calculating one, and anything that
-        // stalls in here means completion() is never called — WidgetKit then has
-        // no timeline to render and the widget stays completely blank, with no
-        // crash and nothing in the log to explain it. The gallery kept working
-        // throughout because getSnapshot never took this path. Direct arithmetic
-        // has no search to go wrong.
+        // Computed by adding a day to the start of today, rather than with
+        // Calendar.nextDate(after:matching:matchingPolicy:), which is what this
+        // used to call. Direct arithmetic over a search API is the smaller,
+        // clearer thing to do here and that is the whole reason it stays.
+        //
+        // It is NOT a bug fix, despite what the commit that introduced it said:
+        // the widget was blank because of a stale WidgetKit extension cache, and
+        // a device reboot fixed it. nextDate had been in this method since the
+        // widget was written and had worked fine throughout.
         let calendar = Calendar.current
         var refresh = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
             ?? now.addingTimeInterval(3600)

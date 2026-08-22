@@ -221,6 +221,18 @@ out of scope; reconcile on next foreground).
   there is no arbitrary background execution. The snapshot-read model fits, but
   freshness of relative time ("Xd ago") relies on TimelineProvider entries and/or
   SwiftUI relative-date formatting rather than polling.
+- **⚠ Reboot the device before believing a widget bug (learned the hard way,
+  2026-08).** WidgetKit caches extension state aggressively and a stale cache
+  survives reinstalls, including fresh TestFlight installs. The symptom that cost
+  most of a day: the widget rendered perfectly in the gallery, with live data, and
+  rendered *nothing at all* once placed on the home screen — not even static text.
+  It was not a crash (no `.ips`), not a memory kill (the extension peaked at 3 MB
+  against a ~30 MB budget and was never jetsammed), and not a code fault. **A
+  reboot fixed it.** Suspect the cache first whenever the gallery and the placed
+  widget disagree, especially right after changing `supportedFamilies`, the widget
+  `kind`, or the set of widgets in the bundle — changes to a widget's *identity*
+  are exactly what the cache gets wrong. Diagnose from the device before changing
+  code: a gallery/placed split is a WidgetKit state problem until proven otherwise.
 - **AppIntents interactivity is iOS 17+.** Decided 2026-07: the **app target stays
   at iOS 15.0** and the **widget extension targets 17.0**. An extension may set a
   higher floor than its host, so no existing app user is dropped and there is only
