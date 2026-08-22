@@ -94,8 +94,16 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
                 items.append(UIApplicationShortcutItem(
                     type: "chore:\(syncId)",
                     localizedTitle: name,
-                    localizedSubtitle: nil,
-                    icon: UIApplicationShortcutIcon(type: .task),
+                    localizedSubtitle: elapsedSubtitle(chore),
+                    // An SF Symbol, NOT UIApplicationShortcutIcon(type: .task):
+                    // that legacy enum case rendered as "?" on current iOS
+                    // (verified on device), while .add/.search still map to real
+                    // glyphs. A clock is on-brand for "when did you last...".
+                    // Android shows each chore's own tinted Lucide icon here; iOS
+                    // cannot — shortcut icons accept only system symbols or
+                    // asset-catalog names, never runtime-rendered images, so the
+                    // Lucide pipeline cannot reach quick actions.
+                    icon: UIApplicationShortcutIcon(systemImageName: "clock"),
                     userInfo: nil
                 ))
             }
@@ -103,6 +111,32 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
 
         DispatchQueue.main.async {
             UIApplication.shared.shortcutItems = items
+        }
+    }
+
+    // "today" / "yesterday" / "Nd ago" for a shortcut's subtitle — the same
+    // wording as the widget rows' elapsed label, and the same calendar-day
+    // semantics (a chore done last night reads "yesterday" this morning). A
+    // deliberate small duplication of ChoreSnapshot.elapsedLabel: that lives in
+    // the widget target, and this file has already chosen not to depend on the
+    // widget target's model for a couple of fields.
+    private func elapsedSubtitle(_ chore: [String: Any]) -> String? {
+        guard let iso = chore["lastCompletedAt"] as? String else { return nil }
+        let fmt = DateFormatter()
+        fmt.locale = Locale(identifier: "en_US_POSIX")
+        fmt.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
+        fmt.timeZone = TimeZone(identifier: "UTC")
+        guard let then = fmt.date(from: iso) else { return nil }
+        let calendar = Calendar.current
+        let days = calendar.dateComponents(
+            [.day],
+            from: calendar.startOfDay(for: then),
+            to: calendar.startOfDay(for: Date())
+        ).day ?? 0
+        switch days {
+        case ...0: return "today"
+        case 1: return "yesterday"
+        default: return "\(days)d ago"
         }
     }
 
