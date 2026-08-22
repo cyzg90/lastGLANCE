@@ -10,5 +10,6 @@ class BridgeViewController: CAPBridgeViewController {
     override open func capacitorDidLoad() {
         bridge?.registerPluginInstance(VaultSsePlugin())
         bridge?.registerPluginInstance(WidgetBridgePlugin())
+        bridge?.registerPluginInstance(SecureStorePlugin())
     }
 }
