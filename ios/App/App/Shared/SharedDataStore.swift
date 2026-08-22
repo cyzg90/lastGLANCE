@@ -89,13 +89,46 @@ public enum SharedDataStore {
 
     // MARK: - Shared chore text
 
-    public static func writePendingSharedChore(_ value: String) {
-        defaults?.set(value, forKey: keySharedChore)
+    // A QUEUE, not a slot — a lesson taken straight from lifeGLANCE's share
+    // extension. Android's single slot is correct there because a share opens
+    // the app immediately and drains it on the spot; iOS cannot open the host
+    // app from a share extension, so shares pile up until the user next opens
+    // lastGLANCE, and a last-write-wins slot would silently drop every share
+    // but the most recent. The web side consumes one entry per foreground, so
+    // queued names surface across subsequent opens, oldest first.
+
+    public static func appendPendingSharedChore(_ value: String) {
+        guard let defaults else { return }
+        var queue = defaults.stringArray(forKey: keySharedChore) ?? []
+        // Migrate a legacy single-string value written by an older build.
+        if queue.isEmpty, let legacy = defaults.string(forKey: keySharedChore) {
+            queue = [legacy]
+        }
+        queue.append(value)
+        defaults.set(queue, forKey: keySharedChore)
     }
 
-    public static func readAndClearPendingSharedChore() -> String? {
-        guard let defaults, let value = defaults.string(forKey: keySharedChore) else { return nil }
-        defaults.removeObject(forKey: keySharedChore)
-        return value
+    // Pop the OLDEST queued name; later entries stay for later foregrounds.
+    public static func consumeNextSharedChore() -> String? {
+        guard let defaults else { return nil }
+        if var queue = defaults.stringArray(forKey: keySharedChore) {
+            guard !queue.isEmpty else {
+                defaults.removeObject(forKey: keySharedChore)
+                return nil
+            }
+            let next = queue.removeFirst()
+            if queue.isEmpty {
+                defaults.removeObject(forKey: keySharedChore)
+            } else {
+                defaults.set(queue, forKey: keySharedChore)
+            }
+            return next
+        }
+        // Legacy single-string value from an older build: consume it whole.
+        if let legacy = defaults.string(forKey: keySharedChore) {
+            defaults.removeObject(forKey: keySharedChore)
+            return legacy
+        }
+        return nil
     }
 }

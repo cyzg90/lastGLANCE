@@ -1,146 +1,162 @@
 import UIKit
-import Social
 import UniformTypeIdentifiers
 
-// The share target: another app shares text or a URL, the user confirms in the
-// standard compose sheet, and the chosen text lands in the App Group as
-// pending_shared_chore — consumed by the existing consumeSharedChore path to
-// open the new-chore form pre-filled on next app foreground. The direct analog
-// of MainActivity.captureSharedText, with the same preference order: a title
-// over the raw text/URL, because a page title makes a better chore name.
+// The share target: another app shares text or a URL and it is saved as a
+// pending chore name IMMEDIATELY, with a confirmation card as the only UI —
+// the pattern proven in lifeGLANCE's share extension, adopted here after two
+// rounds with a compose sheet. The sheet earned its keep by letting the user
+// edit the name before saving, but the Add-chore form the share opens on next
+// foreground is already an edit step, so the sheet was a second copy of it.
+// Instant save + confirmation is less tapping for the same control.
 //
-// The compose box is ALWAYS populated before the user acts. Text shares arrive
-// with contentText pre-filled by the system; page/URL shares arrive with an
-// empty box and only a URL attachment, so viewDidLoad walks the attachments and
-// puts the title (or URL) into the box itself. First shipped without that, and
-// a page share showed an empty sheet that saved something invisible on Post —
-// technically correct and terrible: the whole point of the sheet is seeing and
-// editing what will be saved.
+// The confirmation card is not decoration. iOS bars app extensions from
+// opening their host app (the responder-chain openURL trick died in iOS 18,
+// by design), so a share can only land quietly in the App Group — and without
+// UI, a quiet save is indistinguishable from a failed one. The card is that
+// missing feedback, and its detail line says when the chore will appear.
 //
-// One deliberate UX difference from Android: an Android share launches the app
-// immediately; an iOS share extension cannot reliably open its containing app,
-// so confirming saves the name and the pre-filled form appears the next time
-// the app opens.
-class ShareViewController: SLComposeServiceViewController {
+// Name preference mirrors Android's captureSharedText: a title/subject over
+// raw text over the URL, because a page title makes a better chore name.
+//
+// The runtime name is fixed as @objc(ShareViewController) and Info.plist's
+// NSExtensionPrincipalClass is the bare string "ShareViewController" — the
+// combination lifeGLANCE ships. If the @objc attribute is ever removed, the
+// Info.plist key must change back to the module-qualified form in the same
+// commit, or the extension fails to launch.
+@objc(ShareViewController)
+final class ShareViewController: UIViewController {
+
+    private let card = UIView()
+    private let headline = UILabel()
+    private let detail = UILabel()
+    private let doneButton = UIButton(type: .system)
+
+    private let brandGreen = UIColor(
+        red: 0x22 / 255, green: 0xC5 / 255, blue: 0x5E / 255, alpha: 1
+    )
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        placeholder = "Chore name"
-        prefillFromAttachmentsIfEmpty()
-    }
-
-    override func presentationAnimationDidFinish() {
-        super.presentationAnimationDidFinish()
-        renamePostButton()
-    }
-
-    // The sheet's confirm button says "Post" — SLComposeServiceViewController
-    // was built for social feeds and offers no API to change it. The button is
-    // an ordinary bar item on the sheet's internal navigation bar, so retitle
-    // it there. Best-effort by design: if an iOS release rearranges the
-    // internals, the title quietly stays "Post" instead of anything breaking.
-    private func renamePostButton() {
-        let bars = children.compactMap { ($0 as? UINavigationController)?.navigationBar }
-            + (navigationController.map { [$0.navigationBar] } ?? [])
-        for bar in bars {
-            bar.topItem?.rightBarButtonItem?.title = "Add"
+        buildUI()
+        Task {
+            let saved = await captureShare()
+            show(saved: saved)
         }
     }
 
-    // Page/URL shares put nothing in the compose box. Fetch the same value
-    // didSelectPost would fall back to — title first, then URL — and make it
-    // visible and editable up front.
-    private func prefillFromAttachmentsIfEmpty() {
-        guard (contentText ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else { return }
-
+    // Extract the best available name and queue it. Returns what was captured,
+    // or nil when the share held nothing usable.
+    private func captureShare() async -> String? {
         let items = (extensionContext?.inputItems as? [NSExtensionItem]) ?? []
 
+        var subject = ""
+        var body = ""
+
         for item in items {
-            if let title = item.attributedTitle?.string.trimmingCharacters(in: .whitespacesAndNewlines),
+            // attributedContentText is the shared text itself — or, for Safari
+            // and Brave page shares, the page title. attributedTitle is an
+            // explicit subject where the source app provides one. Either fills
+            // the "subject" role Android's EXTRA_SUBJECT plays.
+            if subject.isEmpty,
+               let title = item.attributedTitle?.string.trimmingCharacters(in: .whitespacesAndNewlines),
                !title.isEmpty {
-                setComposeText(title)
-                return
+                subject = title
             }
-        }
-
-        for item in items {
-            for provider in item.attachments ?? []
-            where provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] value, _ in
-                    let url = (value as? URL)?.absoluteString
-                        ?? (value as? Data).flatMap { String(data: $0, encoding: .utf8) }
-                    guard let url, !url.isEmpty else { return }
-                    DispatchQueue.main.async {
-                        self?.setComposeText(url)
-                    }
+            if subject.isEmpty,
+               let content = item.attributedContentText?.string.trimmingCharacters(in: .whitespacesAndNewlines),
+               !content.isEmpty {
+                subject = content
+            }
+            for provider in item.attachments ?? [] {
+                if body.isEmpty, let url = await load(provider, as: UTType.url) {
+                    body = url
+                } else if body.isEmpty, let text = await load(provider, as: UTType.plainText) {
+                    body = text
                 }
-                return
-            }
-        }
-    }
-
-    private func setComposeText(_ text: String) {
-        // Never clobber something the user has started typing in the meantime.
-        guard (contentText ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-        else { return }
-        textView.text = text
-        validateContent()
-    }
-
-    override func isContentValid() -> Bool {
-        // Confirming an empty box is allowed: a late-arriving URL attachment may
-        // still supply the name in didSelectPost's fallback walk.
-        true
-    }
-
-    override func didSelectPost() {
-        let typed = contentText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-
-        // The visible text wins outright — after the prefill above it is
-        // literally what the user saw and approved. The walk below only matters
-        // when the async URL prefill had not landed before they confirmed.
-        if !typed.isEmpty {
-            finish(with: typed)
-            return
-        }
-
-        let items = (extensionContext?.inputItems as? [NSExtensionItem]) ?? []
-
-        for item in items {
-            if let title = item.attributedTitle?.string.trimmingCharacters(in: .whitespacesAndNewlines),
-               !title.isEmpty {
-                finish(with: title)
-                return
             }
         }
 
-        for item in items {
-            for provider in item.attachments ?? []
-            where provider.hasItemConformingToTypeIdentifier(UTType.url.identifier) {
-                provider.loadItem(forTypeIdentifier: UTType.url.identifier) { [weak self] value, _ in
-                    let url = (value as? URL)?.absoluteString
-                        ?? (value as? Data).flatMap { String(data: $0, encoding: .utf8) }
-                    DispatchQueue.main.async {
-                        self?.finish(with: url)
-                    }
-                }
-                return
-            }
-        }
+        let name = subject.isEmpty ? body.trimmingCharacters(in: .whitespacesAndNewlines) : subject
+        guard !name.isEmpty else { return nil }
 
-        finish(with: nil)
+        SharedDataStore.appendPendingSharedChore(name)
+        return name
     }
 
-    private func finish(with name: String?) {
-        if let name, !name.isEmpty {
-            SharedDataStore.writePendingSharedChore(name)
+    private func load(_ provider: NSItemProvider, as type: UTType) async -> String? {
+        guard provider.hasItemConformingToTypeIdentifier(type.identifier) else { return nil }
+        let item = try? await provider.loadItem(forTypeIdentifier: type.identifier)
+        if let url = item as? URL { return url.absoluteString }
+        if let s = item as? String, !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return s.trimmingCharacters(in: .whitespacesAndNewlines)
         }
+        if let data = item as? Data, let s = String(data: data, encoding: .utf8),
+           !s.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return s.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        return nil
+    }
+
+    // MARK: - UI
+    // Same card lifeGLANCE draws, in lastGLANCE's clothes: system semantic
+    // colours so it follows light/dark automatically (the widgets already use
+    // systemBackground), and the brand green on the Done action.
+
+    private func buildUI() {
+        view.backgroundColor = UIColor.black.withAlphaComponent(0.4)
+
+        card.backgroundColor = .systemBackground
+        card.layer.cornerRadius = 16
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.alpha = 0
+        view.addSubview(card)
+
+        headline.font = .systemFont(ofSize: 17, weight: .semibold)
+        headline.textColor = .label
+        headline.numberOfLines = 1
+        headline.textAlignment = .center
+
+        detail.font = .systemFont(ofSize: 14)
+        detail.textColor = .secondaryLabel
+        detail.numberOfLines = 4
+        detail.textAlignment = .center
+
+        doneButton.setTitle("Done", for: .normal)
+        doneButton.setTitleColor(brandGreen, for: .normal)
+        doneButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        doneButton.addTarget(self, action: #selector(finish), for: .touchUpInside)
+
+        let stack = UIStackView(arrangedSubviews: [headline, detail, doneButton])
+        stack.axis = .vertical
+        stack.spacing = 12
+        stack.alignment = .fill
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            card.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            card.centerYAnchor.constraint(equalTo: view.centerYAnchor),
+            card.leadingAnchor.constraint(greaterThanOrEqualTo: view.leadingAnchor, constant: 32),
+            card.widthAnchor.constraint(lessThanOrEqualToConstant: 340),
+            stack.topAnchor.constraint(equalTo: card.topAnchor, constant: 24),
+            stack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -20),
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 24),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -24),
+        ])
+    }
+
+    private func show(saved: String?) {
+        if let name = saved {
+            headline.text = "Saved to lastGLANCE"
+            detail.text = "\(name)\n\nIt'll be waiting as a new chore next time you open the app."
+        } else {
+            headline.text = "Nothing to save"
+            detail.text = "This item didn't contain any text or link lastGLANCE could use."
+        }
+        UIView.animate(withDuration: 0.2) { self.card.alpha = 1 }
+    }
+
+    @objc private func finish() {
         extensionContext?.completeRequest(returningItems: [])
-    }
-
-    override func configurationItems() -> [Any]! {
-        // No options below the compose box; the sheet is just text + confirm.
-        []
     }
 }

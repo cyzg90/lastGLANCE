@@ -40,8 +40,13 @@
 		</dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
+		<!-- Bare name, paired with @objc(ShareViewController) on the class, which
+		     pins its Objective-C runtime name without the module prefix — the
+		     combination lifeGLANCE ships in production. If the @objc attribute is
+		     removed, this must revert to $(PRODUCT_MODULE_NAME).ShareViewController
+		     in the same commit. -->
 		<key>NSExtensionPrincipalClass</key>
-		<string>$(PRODUCT_MODULE_NAME).ShareViewController</string>
+		<string>ShareViewController</string>
 	</dict>
 </dict>
 </plist>

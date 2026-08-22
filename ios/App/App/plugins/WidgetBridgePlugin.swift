@@ -152,6 +152,9 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func consumeSharedChore(_ call: CAPPluginCall) {
-        call.resolve(["text": SharedDataStore.readAndClearPendingSharedChore() ?? NSNull()])
+        // Pops the OLDEST queued share; the JS side calls this on every
+        // foreground, so multiple shares queued while the app was closed
+        // surface one per open rather than all-but-the-last being lost.
+        call.resolve(["text": SharedDataStore.consumeNextSharedChore() ?? NSNull()])
     }
 }
