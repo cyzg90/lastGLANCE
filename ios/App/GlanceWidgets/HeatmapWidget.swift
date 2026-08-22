@@ -344,6 +344,10 @@ struct HeatmapWidgetView: View {
         .containerBackground(for: .widget) {
             Color(uiColor: .systemBackground)
         }
+        // Body tap opens the Soon view, matching the Android heatmap's
+        // clickable(openSoonIntent) — the URL lands in AppDelegate, becomes the
+        // filter:soon token, and routeWidgetDeepLink applies it on foreground.
+        .widgetURL(URL(string: "lastglance://filter/soon"))
     }
 
     // Unchanged from the original single-size widget. The half-year grid at this
@@ -435,10 +439,6 @@ struct HeatmapWidget: Widget {
         }
         .configurationDisplayName("Activity")
         .description("Your completion history at a glance.")
-        // No widgetURL yet: lastglance:// is not declared in Info.plist until
-        // Phase 3, so a body tap falls back to WidgetKit's default of opening the
-        // app. Phase 3 adds the URL and the "open Soon" routing the Android
-        // widget has.
         .supportedFamilies([.systemMedium, .systemExtraLarge])
     }
 }

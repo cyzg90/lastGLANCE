@@ -221,6 +221,16 @@ sync round-trip.
 
 ### Phase 3 — Entry points: deep links, shortcuts, share extension
 
+> **Status 2026-08: everything except the share extension written, unbuilt.**
+> `CFBundleURLTypes` declares `lastglance://`; AppDelegate maps URLs to the
+> internal tokens (mirroring `MainActivity.linkFromUri`) and handles quick-action
+> taps, whose item `type` IS the token. WidgetBridgePlugin rebuilds the quick
+> actions from each snapshot push (Add, Search, top-2 overdue — iOS caps at 4,
+> the same lowest-priority-first trim Android applies). Widget body-taps carry
+> `widgetURL`/`Link`s: heatmap → Soon, list rows → their chore (Done buttons stay
+> outside the Link so the AppIntent keeps the tap), single-chore → its chore,
+> AddChoreWidget → the new-chore form. `usePendingDeepLink` runs in both shells.
+
 - **Deep-link capture**: widget body-taps use SwiftUI `widgetURL` /
   `Link(destination:)` with `lastglance://chore/<syncId>` and
   `lastglance://filter/soon`; the app handles the URL in the Scene/AppDelegate and

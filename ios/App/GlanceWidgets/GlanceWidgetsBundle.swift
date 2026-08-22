@@ -11,5 +11,6 @@ struct GlanceWidgetsBundle: WidgetBundle {
         HeatmapWidget()
         SoonListWidget()
         SingleChoreWidget()
+        AddChoreWidget()
     }
 }

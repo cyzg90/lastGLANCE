@@ -128,6 +128,10 @@ struct SingleChoreWidgetView: View {
         .containerBackground(for: .widget) {
             Color(uiColor: .systemBackground)
         }
+        // Body tap opens the shown chore (Android's openChoreIntent), or the
+        // Soon view when there is nothing to show. The Done button's AppIntent
+        // still owns its own tap.
+        .widgetURL(chore.map { choreURL($0.syncId) } ?? soonURL)
     }
 
     // The Android tile's row, at its sizes: bar 6x36 r3, icon 22, name 15 bold,

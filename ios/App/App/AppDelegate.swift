@@ -34,9 +34,58 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-        // Called when the app was launched with a url. Feel free to add additional processing here,
-        // but if you want the App API to support tracking app url opens, make sure to keep this call
+        // lastglance:// is the app's own navigation scheme (widget body-taps,
+        // home-screen shortcuts). Map it to the internal token the web router
+        // consumes and stash it in the App Group — the same hand-off
+        // MainActivity.captureWidgetDeepLink does on Android. The web app owns
+        // navigation; this just records the target, which usePendingDeepLink
+        // picks up on mount (cold start) or on the visibilitychange the
+        // foregrounding causes (warm start).
+        if url.scheme == "lastglance" {
+            if let token = AppDelegate.deepLinkToken(from: url) {
+                SharedDataStore.writePendingDeepLink(token)
+            }
+            return true
+        }
+        // Anything else (OAuth callbacks etc.) keeps the Capacitor path.
         return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+    }
+
+    // Home-screen quick actions (long-press the app icon). The item's `type` IS
+    // the internal deep-link token — WidgetBridgePlugin builds the items that
+    // way — so handling is a validity check and a store, nothing more. UIKit
+    // calls this for both warm taps and cold starts (after didFinishLaunching).
+    func application(_ application: UIApplication,
+                     performActionFor shortcutItem: UIApplicationShortcutItem,
+                     completionHandler: @escaping (Bool) -> Void) {
+        let token = shortcutItem.type
+        let valid = token.hasPrefix("chore:")
+            || token == "filter:soon" || token == "action:add" || token == "action:search"
+        if valid {
+            SharedDataStore.writePendingDeepLink(token)
+        }
+        completionHandler(valid)
+    }
+
+    // Map a lastglance:// URL to the internal pending-deep-link token the web
+    // app consumes — the exact mirror of MainActivity.linkFromUri. Returns nil
+    // for anything unrecognized rather than guessing.
+    static func deepLinkToken(from url: URL) -> String? {
+        switch url.host {
+        case "chore":
+            let id = url.lastPathComponent
+            return (id.isEmpty || id == "/") ? nil : "chore:\(id)"
+        case "filter":
+            return "filter:soon"
+        case "action":
+            switch url.lastPathComponent {
+            case "search": return "action:search"
+            case "add": return "action:add"
+            default: return nil
+            }
+        default:
+            return nil
+        }
     }
 
     func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
