@@ -24,6 +24,8 @@
 		EA00000000000000000000B4 /* GlanceWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */; };
 		EA00000000000000000000B5 /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F5 /* HeatmapWidget.swift */; };
 		EA00000000000000000000B6 /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F6 /* Snapshot.swift */; };
+		EA00000000000000000000B8 /* LucidePath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FA /* LucidePath.swift */; };
+		EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FB /* LucideIcons.generated.swift */; };
 		EA00000000000000000000B7 /* GlanceWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
@@ -73,6 +75,8 @@
 		EA00000000000000000000F6 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EA00000000000000000000F8 /* GlanceWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GlanceWidgets.entitlements; sourceTree = "<group>"; };
+		EA00000000000000000000FA /* LucidePath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucidePath.swift; sourceTree = "<group>"; };
+		EA00000000000000000000FB /* LucideIcons.generated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucideIcons.generated.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlanceWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -157,6 +161,8 @@
 				EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */,
 				EA00000000000000000000F5 /* HeatmapWidget.swift */,
 				EA00000000000000000000F6 /* Snapshot.swift */,
+				EA00000000000000000000FA /* LucidePath.swift */,
+				EA00000000000000000000FB /* LucideIcons.generated.swift */,
 				EA00000000000000000000F7 /* Info.plist */,
 				EA00000000000000000000F8 /* GlanceWidgets.entitlements */,
 			);
@@ -292,6 +298,8 @@
 				EA00000000000000000000B5 /* HeatmapWidget.swift in Sources */,
 				EA00000000000000000000B6 /* Snapshot.swift in Sources */,
 				EA00000000000000000000B3 /* SharedDataStore.swift in Sources */,
+				EA00000000000000000000B8 /* LucidePath.swift in Sources */,
+				EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
