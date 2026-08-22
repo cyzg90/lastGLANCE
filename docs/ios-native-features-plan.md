@@ -172,11 +172,14 @@ carry over.
   an `AppIntent` that writes `{ choreSyncId, syncId, completedAt }` to the
   App-Group completion queue and optimistically mutates the snapshot entry. JS
   drains on next foreground through the **existing** `pendingCompletions` path.
-  Decide the minimum iOS version; pre-17 devices fall back to tap-to-open.
-- **Chore icons**: the Lucide *Android vector drawables* do not port. Rasterize
-  the Lucide SVGs to PNGs into the App Group (adapt
-  `scripts/gen-lucide-drawables.mjs` to emit PNG assets), tinted to the recency
-  color. Decide this up front; it blocks icon parity.
+  The deployment target is settled (see section 4): the extension is 17.0, so
+  there is **no pre-17 fallback path to build**.
+- **Chore icons**: the Lucide *Android vector drawables* do not port. Settled
+  approach is a generated Swift file of Lucide path data plus a small
+  SVG-path-to-`SwiftUI.Path` parser — see section 4 for why rasterising to
+  App-Group PNGs was rejected. **This blocks the list and single-chore widgets**,
+  which are icon-bearing; the heatmap needed no icons, which is why it shipped
+  first.
 - Style to read as the same family as the in-app `ChoreRow` (recency color bar +
   elapsed text), matching the Android "clearly same family" posture.
 
@@ -204,8 +207,14 @@ sync round-trip.
   consumed on foreground by the existing `consumeSharedChore` to open the
   new-chore form pre-filled. This is the direct analog of the Android share
   target and reuses the same web prefill.
+- **Add-chore widget**: Android ships `glance/AddChoreWidget.kt`, a static
+  one-tap surface with no snapshot dependency. Earlier drafts of this plan had no
+  iOS counterpart — an oversight, not a decision. On iOS it is a `systemSmall`
+  widget whose only job is a `widgetURL` of `action:add`, so it belongs here with
+  the other entry points rather than in Phase 2 with the data-bearing widgets.
 - **Stretch:** Lock Screen / Control Center widgets (WidgetKit accessory families)
-  are the closest analog to the Android Quick Settings tiles; optional.
+  are the closest analog to the Android Quick Settings tiles (`tiles/QsTiles.kt`,
+  add-chore and soon); optional.
 
 There is **no iOS analog planned for background CRDT sync** (same as Android:
 out of scope; reconcile on next foreground).
