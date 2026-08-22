@@ -68,6 +68,17 @@ struct ChoreRowView: View {
 struct SoonListWidgetView: View {
     var entry: SnapshotEntry
 
+    @Environment(\.widgetFamily) private var family
+
+    // Medium is ~113pt of usable height on the iPad mini, and the standard row
+    // metrics put the two-row candidate at ~112pt — losing by a point, so the
+    // widget showed a single row over a slab of dead space. Trimming row
+    // padding 4→3 and header padding 6→4 in medium alone brings two rows to
+    // ~106pt with real clearance. Large keeps the standard metrics untouched;
+    // ViewThatFits still measures, so if a device disagrees the widget degrades
+    // to one row instead of clipping.
+    private var compactRows: Bool { family == .systemMedium }
+
     var body: some View {
         Group {
             if let problem = entry.problem {
@@ -122,7 +133,7 @@ struct SoonListWidgetView: View {
         Text("SOON")
             .font(.system(size: 11, weight: .bold))
             .foregroundStyle(.secondary)
-            .padding(.bottom, 6)
+            .padding(.bottom, compactRows ? 4 : 6)
     }
 
     private func candidate(_ all: [SnapshotChore], _ count: Int) -> some View {
@@ -133,13 +144,13 @@ struct SoonListWidgetView: View {
             header
             ForEach(shown, id: \.syncId) { chore in
                 ChoreRowView(chore: chore)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, compactRows ? 3 : 4)
             }
             if hidden > 0 {
                 Text("+\(hidden) more")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
-                    .padding(.top, 2)
+                    .padding(.top, compactRows ? 1 : 2)
             }
         }
     }
