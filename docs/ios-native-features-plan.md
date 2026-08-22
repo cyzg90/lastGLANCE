@@ -245,6 +245,16 @@ sync round-trip.
   consumed on foreground by the existing `consumeSharedChore` to open the
   new-chore form pre-filled. This is the direct analog of the Android share
   target and reuses the same web prefill.
+  **Status 2026-08: written, unbuilt** — `ios/App/ShareExtension/` target
+  (`com.lastglance.ShareExtension`, deployment 15.0, SLComposeServiceViewController).
+  ⚠ **Portal prerequisite:** the App Group must be enabled on this THIRD App ID
+  too — `com.lastglance.ShareExtension` joins `com.lastglance` and
+  `com.lastglance.GlanceWidgets`. Without it the extension builds and runs but
+  every save silently vanishes (`UserDefaults(suiteName:)` returns nil).
+  One deliberate UX difference from Android: an iOS share extension cannot
+  reliably open its containing app, so Post saves the name and the pre-filled
+  form appears on next app open, with the compose sheet providing the
+  see-what-you-save confirmation Android gets by launching the app.
 - **Add-chore widget**: Android ships `glance/AddChoreWidget.kt`, a static
   one-tap surface with no snapshot dependency. Earlier drafts of this plan had no
   iOS counterpart — an oversight, not a decision. On iOS it is a `systemSmall`
