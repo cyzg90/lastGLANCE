@@ -11,6 +11,7 @@
     "lint": "eslint . --max-warnings 0",
     "test": "vitest run",
     "gen:icons": "node scripts/gen-lucide-drawables.mjs",
+    "gen:icons:ios": "node scripts/gen-lucide-swift.mjs",
     "gen:screenshots": "node scripts/seed-demo-screenshots.mjs",
     "reviewer-code": "node scripts/reviewer-code.mjs",
     "cap:sync": "npm run build && cap sync",
