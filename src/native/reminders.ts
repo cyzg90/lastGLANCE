@@ -305,10 +305,14 @@ async function sendChoreToDayGlance(choreSyncId: string): Promise<void> {
   await emitCreateIntent({ ...chore, last_completed_at: null, elapsed_days: null } as ChoreWithLastCompletion)
 }
 
-// Routes a notification interaction. The plugin opens the app for every action
-// (no background actions in the official plugin), then replays this — retained
-// across a cold start, so it survives a killed app. 'tap' is the body press;
-// 'mark_done' / 'send_dg' are the action buttons.
+// Routes a notification interaction. Platform behavior differs, observed on
+// device (2026-08): on Android every action opens the app, then the plugin
+// replays this. On iOS an action button does NOT foreground the app — the
+// system runs the extension-less action in the background, the plugin retains
+// it, and it replays here on the next launch, so a "Mark done" tapped at night
+// is logged the next time the app opens. Retained across a cold start on both
+// platforms. 'tap' is the body press; 'mark_done' / 'send_dg' are the action
+// buttons.
 export function handleNotificationAction(actionId: string, extra: unknown): void {
   const choreSyncId = (extra as { choreSyncId?: string } | null)?.choreSyncId
   if (!choreSyncId) return
