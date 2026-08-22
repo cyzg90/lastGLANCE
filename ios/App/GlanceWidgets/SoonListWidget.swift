@@ -7,12 +7,13 @@ import WidgetKit
 // rows so the platforms read as one product.
 //
 // One structural difference from Android: Glance lists scroll, WidgetKit
-// widgets never do. So the row count is fixed per family and a "+N more" line
-// stands in for the tail rather than pretending it is not there.
-
-private func rowCapacity(_ family: WidgetFamily) -> Int {
-    family == .systemLarge ? 9 : 4
-}
+// widgets never do — a widget is a static render with tappable islands, so
+// there is no scrolling to offer. Instead the row count adapts: ViewThatFits
+// measures candidate lists from ten rows down and renders the most that
+// actually fit this family on this device, with a "+N more" line standing in
+// for the tail. Measured, not guessed — a hardcoded per-family cap overflowed
+// on the iPad mini (SwiftUI centers overflowing content, clipping both ends,
+// which read as a list stuck mid-scroll).
 
 // The one-tap Done chip, shared by the list rows and the single-chore widget.
 // Runs CompleteChoreIntent in-process — the widget updates immediately, offline,
@@ -83,8 +84,6 @@ let soonURL = URL(string: "lastglance://filter/soon")!
 struct SoonListWidgetView: View {
     var entry: SnapshotEntry
 
-    @Environment(\.widgetFamily) private var family
-
     var body: some View {
         Group {
             if let problem = entry.problem {
@@ -101,39 +100,66 @@ struct SoonListWidgetView: View {
     }
 
     private var content: some View {
-        let capacity = rowCapacity(family)
         let all = entry.snapshot.soonList(limit: 100)
-        let shown = Array(all.prefix(capacity))
-        let hidden = all.count - shown.count
 
-        return VStack(alignment: .leading, spacing: 0) {
-            Text("SOON")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 6)
-
-            if shown.isEmpty {
-                Spacer(minLength: 0)
-                Text("All caught up")
-                    .font(.system(size: 14))
-                    .foregroundStyle(.primary)
-                Spacer(minLength: 0)
-                Wordmark(size: 16)
+        return Group {
+            if all.isEmpty {
+                VStack(alignment: .leading, spacing: 0) {
+                    header
+                    Spacer(minLength: 0)
+                    Text("All caught up")
+                        .font(.system(size: 14))
+                        .foregroundStyle(.primary)
+                    Spacer(minLength: 0)
+                    Wordmark(size: 16)
+                }
             } else {
-                ForEach(shown, id: \.syncId) { chore in
-                    ChoreRowView(chore: chore)
-                        .padding(.vertical, 4)
+                // Candidates in descending order; ViewThatFits renders the first
+                // whose measured height fits, falling back to the last (a single
+                // row) when even that overflows. The candidates must contain no
+                // Spacer or flexible frame — flexible content always "fits", and
+                // the measurement would be meaningless.
+                ViewThatFits(in: .vertical) {
+                    candidate(all, 10)
+                    candidate(all, 9)
+                    candidate(all, 8)
+                    candidate(all, 7)
+                    candidate(all, 6)
+                    candidate(all, 5)
+                    candidate(all, 4)
+                    candidate(all, 3)
+                    candidate(all, 2)
+                    candidate(all, 1)
                 }
-                if hidden > 0 {
-                    Text("+\(hidden) more")
-                        .font(.system(size: 11))
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 2)
-                }
-                Spacer(minLength: 0)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var header: some View {
+        Text("SOON")
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(.secondary)
+            .padding(.bottom, 6)
+    }
+
+    private func candidate(_ all: [SnapshotChore], _ count: Int) -> some View {
+        let shown = Array(all.prefix(count))
+        let hidden = all.count - shown.count
+
+        return VStack(alignment: .leading, spacing: 0) {
+            header
+            ForEach(shown, id: \.syncId) { chore in
+                ChoreRowView(chore: chore)
+                    .padding(.vertical, 4)
+            }
+            if hidden > 0 {
+                Text("+\(hidden) more")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 2)
+            }
+        }
     }
 }
 
