@@ -1,12 +1,15 @@
 import SwiftUI
 import WidgetKit
 
-// Entry point for the WidgetKit extension. Phase 0 ships only the heatmap, which
-// exists to prove the App-Group read path end to end; the soon/overdue list and
-// the configurable single-chore widget join this bundle in Phase 2.
+// Entry point for the WidgetKit extension: the same three widget surfaces the
+// Android glance/ package ships — heatmap, soon/overdue list, and the
+// configurable single-chore tile — all rendering from the one App-Group
+// snapshot.
 @main
 struct GlanceWidgetsBundle: WidgetBundle {
     var body: some Widget {
         HeatmapWidget()
+        SoonListWidget()
+        SingleChoreWidget()
     }
 }

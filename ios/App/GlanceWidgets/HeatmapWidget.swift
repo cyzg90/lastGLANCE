@@ -35,8 +35,6 @@ private let gapRatio = 3.0 / 14.0
 private let weekdayGutterUnits = 2.4
 private let monthStripUnits = 1.3
 
-private let brandGreen = Color(red: 0x3D / 255, green: 0xDC / 255, blue: 0x84 / 255)
-
 private func hex(_ value: UInt32) -> Color {
     Color(
         red: Double((value >> 16) & 0xFF) / 255,
@@ -127,67 +125,6 @@ private struct HeatmapStats {
             cursor = prev
         }
         streak = run
-    }
-}
-
-// MARK: - Timeline
-
-struct HeatmapEntry: TimelineEntry {
-    let date: Date
-    let snapshot: WidgetSnapshot
-    // Non-nil when there is nothing to draw and we know why. Rendered in place
-    // of the grid so the failure names itself instead of looking like a widget
-    // that never finished loading.
-    let problem: String?
-
-    init(date: Date, snapshot: WidgetSnapshot, problem: String? = nil) {
-        self.date = date
-        self.snapshot = snapshot
-        self.problem = problem
-    }
-
-    init(date: Date, load: SnapshotLoad) {
-        self.init(date: date, snapshot: load.snapshot, problem: load.problem)
-    }
-}
-
-struct HeatmapProvider: TimelineProvider {
-
-    func placeholder(in context: Context) -> HeatmapEntry {
-        HeatmapEntry(date: Date(), snapshot: WidgetSnapshot())
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (HeatmapEntry) -> Void) {
-        completion(HeatmapEntry(date: Date(), load: SnapshotLoad.read()))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<HeatmapEntry>) -> Void) {
-        let now = Date()
-        let entry = HeatmapEntry(date: now, load: SnapshotLoad.read())
-
-        // WidgetKit is not a live process, so the only two things that can change
-        // what this widget should show are (a) the app pushing a new snapshot,
-        // which calls reloadAllTimelines directly, and (b) the date rolling over,
-        // which shifts the whole grid by one column. Only (b) needs a scheduled
-        // refresh, so ask for exactly one, at the next local midnight.
-        //
-        // Computed by adding a day to the start of today, rather than with
-        // Calendar.nextDate(after:matching:matchingPolicy:), which is what this
-        // used to call. Direct arithmetic over a search API is the smaller,
-        // clearer thing to do here and that is the whole reason it stays.
-        //
-        // It is NOT a bug fix, despite what the commit that introduced it said:
-        // the widget was blank because of a stale WidgetKit extension cache, and
-        // a device reboot fixed it. nextDate had been in this method since the
-        // widget was written and had worked fine throughout.
-        let calendar = Calendar.current
-        var refresh = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
-            ?? now.addingTimeInterval(3600)
-        // A refresh date must be in the future or WidgetKit has nothing to
-        // schedule; belt-and-braces against a DST edge or a nil from the calendar.
-        if refresh <= now { refresh = now.addingTimeInterval(3600) }
-
-        completion(Timeline(entries: [entry], policy: .after(refresh)))
     }
 }
 
@@ -385,24 +322,8 @@ private func plural(_ n: Int, _ singular: String, _ plural: String) -> String {
     n == 1 ? singular : plural
 }
 
-private struct Wordmark: View {
-    let size: Double
-
-    var body: some View {
-        HStack(spacing: 0) {
-            Text("last")
-                .font(.system(size: size, weight: .bold))
-                .foregroundStyle(.primary)
-            Text("GLANCE")
-                .font(.system(size: size, weight: .bold))
-                .italic()
-                .foregroundStyle(brandGreen)
-        }
-    }
-}
-
 struct HeatmapWidgetView: View {
-    var entry: HeatmapEntry
+    var entry: SnapshotEntry
 
     @Environment(\.widgetFamily) private var family
 
@@ -413,7 +334,7 @@ struct HeatmapWidgetView: View {
     var body: some View {
         Group {
             if let problem = entry.problem {
-                diagnostic(problem)
+                SnapshotProblemView(message: problem, large: family == .systemExtraLarge)
             } else if family == .systemExtraLarge {
                 extraLarge
             } else {
@@ -423,22 +344,6 @@ struct HeatmapWidgetView: View {
         .containerBackground(for: .widget) {
             Color(uiColor: .systemBackground)
         }
-    }
-
-    // Shown instead of an all-empty grid when the snapshot could not be read.
-    // An empty grid is a legitimate render (a user with no completions yet), so
-    // it must not double as the error state.
-    private func diagnostic(_ message: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Spacer(minLength: 0)
-            Wordmark(size: family == .systemExtraLarge ? 26 : 20)
-            Text(message)
-                .font(.system(size: family == .systemExtraLarge ? 15 : 13))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-            Spacer(minLength: 0)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // Unchanged from the original single-size widget. The half-year grid at this
@@ -525,7 +430,7 @@ struct HeatmapWidget: Widget {
     let kind = "HeatmapWidget"
 
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: HeatmapProvider()) { entry in
+        StaticConfiguration(kind: kind, provider: SnapshotProvider()) { entry in
             HeatmapWidgetView(entry: entry)
         }
         .configurationDisplayName("Activity")

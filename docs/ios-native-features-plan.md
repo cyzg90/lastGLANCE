@@ -172,6 +172,16 @@ notification fires and its tap routes to the chore.
 The big lift. ~0% code reuse from Kotlin, but the data contract and layout design
 carry over.
 
+> **Status 2026-08: written, unbuilt.** SoonListWidget, SingleChoreWidget
+> (configurable via `AppIntentConfiguration` — no config Activity needed on iOS),
+> CompleteChoreIntent + CompletionStore mirroring the Kotlin completion contract
+> field for field (lowercase-UUID sync_id minted at tap time, millisecond-UTC
+> completedAt, optimistic snapshot fold with counts recompute and heatmap bump).
+> The optimistic fold mutates the raw JSON via JSONSerialization, NOT the Codable
+> model — the model is lenient/lossy by design and a round trip would drop fields
+> this build does not know. One divergence from Android: WidgetKit lists do not
+> scroll, so rows are capped per family with a "+N more" line instead.
+
 - **WidgetKit + SwiftUI** widgets reading the App-Group snapshot: heatmap,
   soon/overdue **list** widget, and a configurable **single-chore** widget.
   A `TimelineProvider` supplies entries; use SwiftUI relative-date text so
