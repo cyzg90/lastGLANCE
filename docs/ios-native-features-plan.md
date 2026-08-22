@@ -255,10 +255,20 @@ sync round-trip.
   too — `com.lastglance.ShareExtension` joins `com.lastglance` and
   `com.lastglance.GlanceWidgets`. Without it the extension builds and runs but
   every save silently vanishes (`UserDefaults(suiteName:)` returns nil).
-  One deliberate UX difference from Android: an iOS share extension cannot
-  reliably open its containing app, so Post saves the name and the pre-filled
-  form appears on next app open, with the compose sheet providing the
-  see-what-you-save confirmation Android gets by launching the app.
+  **Redesigned 2026-08 after device testing, adopting lifeGLANCE's proven
+  pattern:** no compose sheet — the share saves immediately and a confirmation
+  card ("Saved to lastGLANCE" + the captured name) is the only UI. The
+  Add-chore form the share opens on next foreground is already an edit step,
+  so the sheet was a second copy of it. Two structural facts drive the design:
+  iOS bars extensions from opening their host app (the responder-chain openURL
+  trick died in iOS 18, by design), and because the app is NOT brought forward,
+  `pending_shared_chore` is a **queue, not a slot** — Android's slot is right
+  there only because its share opens the app and drains it instantly. The JS
+  drain pops one name per foreground, so multiple queued shares surface across
+  subsequent opens, oldest first. The principal class is the bare
+  `ShareViewController` paired with `@objc(ShareViewController)` — lifeGLANCE's
+  battle-tested combination; if the attribute is removed the plist key must
+  revert in the same commit.
 - **Add-chore widget**: Android ships `glance/AddChoreWidget.kt`, a static
   one-tap surface with no snapshot dependency. Earlier drafts of this plan had no
   iOS counterpart — an oversight, not a decision. On iOS it is a `systemSmall`
