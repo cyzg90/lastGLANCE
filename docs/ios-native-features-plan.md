@@ -6,39 +6,39 @@ lastGLANCE **iOS** app. This is the iOS counterpart to
 to be cross-platform, so this plan reuses the shared JS layer and data contracts
 and only reimplements the native rendering per platform.
 
-> **▶ STATUS (last updated 2026-08-09)**
-> **Phase 0 merged (PR #260), still never compiled.** Every Swift file in the tree
-> was authored on Linux; Xcode is macOS-only, and CI is `ubuntu-latest` running
-> JS checks only. Nothing here has been through a Swift compiler or onto a device.
-> Treat the whole iOS native surface as unverified.
+> **▶ STATUS (last updated 2026-08-22)**
+> **Feature-complete and device-verified.** Every phase of this plan — and the
+> stretch goals it deferred — is built, merged, and confirmed working on a
+> physical iPad via TestFlight. iOS now has parity with (and in places exceeds)
+> the Android native feature set.
 >
-> - **Phase 0 (this plan):** `App.entitlements` + `GlanceWidgets.entitlements`
->   (App Group `group.com.lastglance`), `App/Shared/SharedDataStore.swift`,
->   `App/plugins/WidgetBridgePlugin.swift`, and a `GlanceWidgetsExtension`
->   WidgetKit target rendering the heatmap. `project.pbxproj` was hand-edited to
->   add the target.
-> - **Arrived separately:** Vault SSE phase 3 added `VaultSseClient.swift` and
->   `VaultSsePlugin.swift` to the App target. It is not part of this plan, but it
->   shares the plugin-registration point below, so Phases 1-3 must keep it working.
-> - **`BridgeViewController.swift` is the registration point for every app-local
->   plugin.** Capacitor 5+ removed runtime plugin scanning on iOS, so `@objc` +
->   `CAPBridgedPlugin` conformance is **not** sufficient on its own (an earlier
->   draft of this plan claimed it was). `Main.storyboard` instantiates this
->   `CAPBridgeViewController` subclass, and `capacitorDidLoad()` registers
->   `VaultSsePlugin` and `WidgetBridgePlugin`. **Every new plugin must be added
->   there or it is simply absent at runtime, with no error.**
-> - **JS:** `src/native/platform.ts` adds `isAndroid()` / `isIOS()` /
->   `isNativeShell()`; `widgetBridge.ts` runs in both shells. The reminder,
->   deep-link and pending-completion hooks are still Android-gated — Phases 1-3.
-> - **Still required off-repo:** register the App Group on the App IDs in the Apple
->   Developer portal and let Xcode regenerate the provisioning profiles. Nothing
->   reads or writes the shared container until that is done.
-> - **Version drift:** all four build configs still read `MARKETING_VERSION =
->   1.12.0` against a `package.json` on 2.2.0. `npm run build:ios` runs
->   `sync-ios-version.mjs`, which fixes this globally; it has not been run yet.
-> - Android remains feature-complete (Phases 0-3). Bringing iOS up is **additive**:
->   the shared JS/design layer does not change, only the native declarations and
->   rendering are added.
+> - **Phase 0** ✅ App Group `group.com.lastglance`, WidgetBridge Swift plugin,
+>   snapshot push/read verified end to end.
+> - **Phase 1** ✅ Overdue notifications deliver; "Mark done" runs HEADLESS on
+>   iOS (the plugin retains the background action and replays it on next launch)
+>   — better than Android, which opens the app.
+> - **Phase 2** ✅ Heatmap (medium 26wk / extra-large 52wk with labels, legend,
+>   stats), Soon list (ViewThatFits row adaptation; no scrolling exists in
+>   WidgetKit), configurable single-chore widget, one-tap Done via AppIntents
+>   with optimistic snapshot fold + idempotent replay. Icons via the generated
+>   Lucide path pipeline (`npm run gen:icons:ios`).
+> - **Phase 3** ✅ `lastglance://` deep links, home-screen quick actions rebuilt
+>   from each snapshot push (SF-symbol icons — the legacy `.task` enum renders
+>   "?"), AddChoreWidget, and the share extension: instant save + confirmation
+>   card (lifeGLANCE's pattern), with `pending_shared_chore` as a QUEUE because
+>   iOS cannot bring the app forward on share — a slot would drop all but the
+>   last of several queued shares.
+> - **Portal state:** App Group enabled on all three App IDs (`com.lastglance`,
+>   `.GlanceWidgets`, `.ShareExtension`).
+> - **Operational notes that outlived their PRs:** reboot the device before
+>   believing a widget bug (WidgetKit caches survive reinstalls); quick actions
+>   refresh on snapshot push, not install; `IOS_BUILD=<n> npm run cap:ios` sets
+>   the build number across all six configs and fails the build on drift.
+> - **In flight / next:** Keychain-backed SecureStore (iOS credentials are
+>   still plaintext in WebView storage), Lock Screen + Control Center accessory
+>   widgets, and App Store billing (StoreKit half of `@glance-apps/billing` —
+>   lives in the glance-billing repo; products and prices already defined in
+>   `src/billing/billing.ts`).
 
 ---
 
