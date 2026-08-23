@@ -12,7 +12,7 @@ import { EUROPEAN_ONLY, BRAZILIAN_ONLY } from './ptMarkers'
  * the variant guardrail exists to stop.
  */
 const IOS = join(__dirname, '../ios/App')
-const CATALOG = join(IOS, 'GlanceWidgets/Localizable.xcstrings')
+const CATALOGS = ['GlanceWidgets/Localizable.xcstrings', 'ShareExtension/Localizable.xcstrings']
 const PBXPROJ = join(IOS, 'App.xcodeproj/project.pbxproj')
 
 const LANGS = ['de', 'es', 'fr', 'it', 'pt-PT', 'pt-BR']
@@ -21,14 +21,14 @@ interface StringUnit { stringUnit: { state: string; value: string } }
 interface CatalogEntry { localizations?: Record<string, StringUnit> }
 interface Catalog { sourceLanguage: string; strings: Record<string, CatalogEntry>; version: string }
 
-const catalog: Catalog = JSON.parse(readFileSync(CATALOG, 'utf8'))
-const entries = Object.entries(catalog.strings)
 const specifiers = (v: string) => (v.match(/%(lld|@|d)/g) ?? []).sort().join(',')
 
-describe('GlanceWidgets string catalog', () => {
+describe.each(CATALOGS)('%s', (rel) => {
+  const catalog: Catalog = JSON.parse(readFileSync(join(IOS, rel), 'utf8'))
+  const entries = Object.entries(catalog.strings)
   it('parses and declares en as the source language', () => {
     expect(catalog.sourceLanguage).toBe('en')
-    expect(entries.length).toBeGreaterThan(20)
+    expect(entries.length).toBeGreaterThan(2)
   })
 
   it.each(LANGS)('every key carries a translated %s value', (lng) => {
@@ -80,10 +80,10 @@ describe('pbxproj wiring', () => {
     expect(dupes, 'duplicate ids corrupt the project when Xcode next loads it').toEqual([])
   })
 
-  it('registers the catalog as file, build file, and resource', () => {
-    expect(pbx).toContain('/* Localizable.xcstrings */ = {isa = PBXFileReference')
-    expect(pbx).toContain('/* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile')
-    expect(pbx.match(/Localizable\.xcstrings in Resources \*\//g)?.length).toBe(2)
+  it('registers both catalogs as files, build files, and resources', () => {
+    expect(pbx.match(/\/\* Localizable\.xcstrings \*\/ = \{isa = PBXFileReference/g)?.length).toBe(2)
+    expect(pbx.match(/\/\* Localizable\.xcstrings in Resources \*\/ = \{isa = PBXBuildFile/g)?.length).toBe(2)
+    expect(pbx.match(/Localizable\.xcstrings in Resources \*\//g)?.length).toBe(4)
   })
 
   it('declares every catalog language in knownRegions', () => {

@@ -121,7 +121,7 @@ final class ShareViewController: UIViewController {
         detail.numberOfLines = 4
         detail.textAlignment = .center
 
-        doneButton.setTitle("Done", for: .normal)
+        doneButton.setTitle(String(localized: "Done"), for: .normal)
         doneButton.setTitleColor(brandGreen, for: .normal)
         doneButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
         doneButton.addTarget(self, action: #selector(finish), for: .touchUpInside)
@@ -147,11 +147,11 @@ final class ShareViewController: UIViewController {
 
     private func show(saved: String?) {
         if let name = saved {
-            headline.text = "Saved to lastGLANCE"
-            detail.text = "\(name)\n\nIt'll be waiting as a new chore next time you open the app."
+            headline.text = String(localized: "Saved to lastGLANCE")
+            detail.text = String(localized: "\(name)\n\nIt'll be waiting as a new chore next time you open the app.")
         } else {
-            headline.text = "Nothing to save"
-            detail.text = "This item didn't contain any text or link lastGLANCE could use."
+            headline.text = String(localized: "Nothing to save")
+            detail.text = String(localized: "This item didn't contain any text or link lastGLANCE could use.")
         }
         UIView.animate(withDuration: 0.2) { self.card.alpha = 1 }
     }
