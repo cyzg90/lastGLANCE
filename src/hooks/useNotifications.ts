@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import i18n from 'i18next'
 import { getCategories, getChoresForCategory, logCompletion } from '@/db/queries'
 import { LocalNotifications } from '@capacitor/local-notifications'
 import { isNativeShell } from '@/native/platform'
@@ -139,8 +140,8 @@ export function useNotifications() {
           if (localStorage.getItem(STORAGE_KEY(chore.id!)) !== today) {
             const overdue = Math.floor(chore.elapsed_days! - chore.target_cadence_days!)
             const body = overdue > 0
-              ? `${overdue} day${overdue > 1 ? 's' : ''} overdue`
-              : 'Due today'
+              ? i18n.t('notifications.daysOverdue', { count: overdue })
+              : i18n.t('notifications.dueToday')
 
             if (document.visibilityState === 'visible') {
               const choreId = chore.id!

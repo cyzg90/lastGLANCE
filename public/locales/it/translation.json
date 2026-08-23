@@ -297,6 +297,20 @@
     "delete": "Elimina",
     "viaDayglance": "via dayGLANCE"
   },
+  "notifications": {
+    "itsBeenDays_one": "È passato {{count}} giorno",
+    "itsBeenDays_other": "Sono passati {{count}} giorni",
+    "daysOverdue_one": "{{count}} giorno di ritardo",
+    "daysOverdue_other": "{{count}} giorni di ritardo",
+    "dueToday": "Scade oggi",
+    "markDone": "Segna come fatta",
+    "sendToDayglance": "Invia a dayGLANCE",
+    "channelName": "Attività in ritardo",
+    "channelDescription": "Ti avvisa quando un’attività supera la sua frequenza.",
+    "rowsSkippedTitle_one": "Impossibile leggere {{count}} elemento",
+    "rowsSkippedTitle_other": "Impossibile leggere {{count}} elementi",
+    "rowsSkippedBody": "Alcuni dati sincronizzati non sono stati decifrati. Controlla le impostazioni di sincronizzazione cloud."
+  },
   "passphrase": {
     "title": "Sblocca sincronizzazione",
     "description": "Inserisci la tua passphrase di crittografia per riprendere la sincronizzazione.",

@@ -44,6 +44,7 @@ import type { SyncEngine, SyncStatus, DbSyncEngine, SyncErrorCode } from '@glanc
 import { syncSharedUsers } from '@/multiuser/sharedUsers'
 import { getUsersPath, getMultiUserEnabled } from '@/multiuser/settings'
 import dayjs from 'dayjs'
+import i18n from 'i18next'
 import { useTranslation } from 'react-i18next'
 
 // ── Header heatmap ─────────────────────────────────────────────────────────────
@@ -295,8 +296,8 @@ function AppInner() {
         setVaultSkipped(count)
         // Transient: nudge the user toward the settings where the count lives.
         showToastRef.current({
-          title: `${count} ${count === 1 ? 'item' : 'items'} couldn’t be read`,
-          body: 'Some synced rows couldn’t be decrypted. Check Cloud Sync settings.',
+          title: i18n.t('notifications.rowsSkippedTitle', { count }),
+          body: i18n.t('notifications.rowsSkippedBody'),
         })
       },
     })

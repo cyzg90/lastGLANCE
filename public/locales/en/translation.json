@@ -297,6 +297,20 @@
     "delete": "Delete",
     "viaDayglance": "via dayGLANCE"
   },
+  "notifications": {
+    "itsBeenDays_one": "It's been {{count}} day",
+    "itsBeenDays_other": "It's been {{count}} days",
+    "daysOverdue_one": "{{count}} day overdue",
+    "daysOverdue_other": "{{count}} days overdue",
+    "dueToday": "Due today",
+    "markDone": "Mark done",
+    "sendToDayglance": "Send to dayGLANCE",
+    "channelName": "Overdue chores",
+    "channelDescription": "Reminds you when a chore passes its cadence.",
+    "rowsSkippedTitle_one": "{{count}} item couldn’t be read",
+    "rowsSkippedTitle_other": "{{count}} items couldn’t be read",
+    "rowsSkippedBody": "Some synced rows couldn’t be decrypted. Check Cloud Sync settings."
+  },
   "passphrase": {
     "title": "Unlock Sync",
     "description": "Enter your encryption passphrase to resume syncing.",
