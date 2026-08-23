@@ -45,6 +45,11 @@ export interface CompletionEvent {
   source: 'manual' | 'dayglance'
   completed_by_user_sync_id: string | null
   sync_id: string
+  // When the row last changed. Events are otherwise immutable, but the NOTE is
+  // editable after the fact, and note edits sync last-write-wins on this
+  // timestamp. Optional because rows written before the field existed lack it;
+  // every reader falls back to completed_at.
+  updated_at?: string
 }
 
 export interface Tombstone {

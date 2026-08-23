@@ -55,17 +55,22 @@ function entityKind(entity: unknown): EntityKind | null {
   return null
 }
 
-// Insert-only types never conflict on merge: completion events are immutable.
+// Completion events stay on the engine's insert-only ("idempotent union")
+// path: apply is unconditional and never clears the dirty flag. They are no
+// longer strictly immutable — notes are editable — but that's exactly why the
+// union path fits: applyCompletionEvent does its own note-grain last-write-wins
+// on updatedAt, and a locally dirty note edit stays dirty for the next push.
 export function isInsertOnly(entity: unknown): boolean {
   return entityKind(entity) === 'completionEvent'
 }
 
-// Timestamp the engine compares for entity-grain last-writer-wins: updatedAt
-// for categories, chores, and users; completedAt for completion events.
+// Timestamp the engine compares for entity-grain last-writer-wins (and against
+// tombstone deletedAt stamps): updatedAt everywhere, with completion events
+// falling back to completedAt for shapes written before note edits synced.
 export function getEntityLastModified(entity: unknown): string | number | undefined {
   if (!entity || typeof entity !== 'object') return undefined
   const e = entity as Record<string, unknown>
-  if (entityKind(e) === 'completionEvent') return e.completedAt as string | undefined
+  if (entityKind(e) === 'completionEvent') return (e.updatedAt ?? e.completedAt) as string | undefined
   return e.updatedAt as string | undefined
 }
 
@@ -108,6 +113,9 @@ function toSyncCompletionEvent(e: CompletionEvent, choreSyncId: string): SyncCom
     id: e.sync_id,
     choreSyncId,
     completedAt: e.completed_at,
+    // Rows written before updated_at existed fall back to completedAt, so a
+    // note edit (which bumps updated_at) reads as newer on the receiving side.
+    updatedAt: e.updated_at ?? e.completed_at,
     note: e.note,
     source: e.source,
     completedByUserSyncId: e.completed_by_user_sync_id ?? null,
@@ -291,21 +299,33 @@ async function drainDeferredChores(): Promise<void> {
 async function applyCompletionEvent(evt: SyncCompletionEvent): Promise<void> {
   let skipped = false
   await db.transaction('rw', db.completionEvents, db.chores, async () => {
-    // Insert-only: if it is already present, leave it untouched.
+    // Events are immutable EXCEPT the note, which updateCompletionNote edits
+    // after the fact (bumping updated_at). If we already hold the event, adopt
+    // the incoming note when the incoming updatedAt is strictly newer
+    // (last-write-wins; ties keep local, matching the file tier's merge).
     const existing = await db.completionEvents.where('sync_id').equals(evt.id).first()
-    if (existing) return
+    if (existing) {
+      const incomingUpdated = evt.updatedAt ?? evt.completedAt
+      const localUpdated = existing.updated_at ?? existing.completed_at
+      if (new Date(incomingUpdated).getTime() > new Date(localUpdated).getTime()) {
+        await db.completionEvents.update(existing.id!, { note: evt.note, updated_at: incomingUpdated })
+      }
+      return
+    }
     const chore = await db.chores.where('sync_id').equals(evt.choreSyncId).first()
     // The chore may not be present yet (it arrives later in seq order when it was
     // edited after this completion, or it is itself parked awaiting its category),
     // OR it may have been deleted. We cannot tell the two apart here, so park the
     // event and let drainDeferredCompletions retry once a chore with this sync_id
-    // lands. A completion is insert-only and never re-listed, so dropping it here
-    // would lose it permanently — that was the "some completions never arrive" bug.
+    // lands. A completion is only re-listed if its note is later edited, so
+    // dropping it here would (in the common case) lose it permanently — that was
+    // the "some completions never arrive" bug.
     if (!chore) { skipped = true; return }
     await db.completionEvents.add({
       sync_id: evt.id,
       chore_id: chore.id,
       completed_at: evt.completedAt,
+      updated_at: evt.updatedAt ?? evt.completedAt,
       note: evt.note,
       source: evt.source,
       completed_by_user_sync_id: evt.completedByUserSyncId ?? null,

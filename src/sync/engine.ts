@@ -79,7 +79,10 @@ export const buildPayload = async (): Promise<SyncPayload> => {
     completionEvents: completionEvents.flatMap(e => {
       const choreSyncId = choreMap.get(e.chore_id) ?? ''
       if (!uuidRe.test(e.sync_id) || !uuidRe.test(choreSyncId)) return []
-      return [{ id: e.sync_id, choreSyncId, completedAt: e.completed_at, note: e.note, source: e.source, completedByUserSyncId: e.completed_by_user_sync_id ?? null }]
+      // updatedAt falls back to completedAt for rows written before the field
+      // existed, so note edits (which bump updated_at) win the merge while
+      // untouched events keep their original timestamp.
+      return [{ id: e.sync_id, choreSyncId, completedAt: e.completed_at, updatedAt: e.updated_at ?? e.completed_at, note: e.note, source: e.source, completedByUserSyncId: e.completed_by_user_sync_id ?? null }]
     }),
     users: users.map(u => ({
       id: u.sync_id,
@@ -120,14 +123,18 @@ export const mergePayloads = (
   const rCats   = dedupeById(r.categories       as unknown as R[] ?? [], 'id')
   const lChores = dedupeById(l.chores           as unknown as R[] ?? [], 'id')
   const rChores = dedupeById(r.chores           as unknown as R[] ?? [], 'id')
-  const lEvts   = dedupeById((l.completionEvents as unknown as R[] ?? []).filter((e: R) => uuidRe.test(e.id as string) && uuidRe.test(e.choreSyncId as string)), 'id')
-  const rEvts   = dedupeById((r.completionEvents as unknown as R[] ?? []).filter((e: R) => uuidRe.test(e.id as string) && uuidRe.test(e.choreSyncId as string)), 'id')
+  // Events merge on updatedAt (note edits bump it); payloads from clients
+  // predating the field carry only completedAt, so normalize before merging —
+  // mergeArrayById reads exactly the configured timestampField.
+  const fillUpdatedAt = (e: R): R => ({ ...e, updatedAt: e.updatedAt ?? e.completedAt })
+  const lEvts   = dedupeById((l.completionEvents as unknown as R[] ?? []).filter((e: R) => uuidRe.test(e.id as string) && uuidRe.test(e.choreSyncId as string)).map(fillUpdatedAt), 'id')
+  const rEvts   = dedupeById((r.completionEvents as unknown as R[] ?? []).filter((e: R) => uuidRe.test(e.id as string) && uuidRe.test(e.choreSyncId as string)).map(fillUpdatedAt), 'id')
   const lUsers  = dedupeById(l.users            as unknown as R[] ?? [], 'id')
   const rUsers  = dedupeById(r.users            as unknown as R[] ?? [], 'id')
 
   const catMerge  = mergeArrayById(lCats,   rCats,   tombstones, null, { idField: 'id', timestampField: 'updatedAt' })
   const choreMerge = mergeArrayById(lChores, rChores, tombstones, null, { idField: 'id', timestampField: 'updatedAt' })
-  const evtMerge  = mergeArrayById(lEvts,   rEvts,   tombstones, null, { idField: 'id', timestampField: 'completedAt' })
+  const evtMerge  = mergeArrayById(lEvts,   rEvts,   tombstones, null, { idField: 'id', timestampField: 'updatedAt' })
   const userMerge = mergeArrayById(lUsers,  rUsers,  tombstones, null, { idField: 'id', timestampField: 'updatedAt' })
 
   // Settings: OR the multiUserEnabled flag (if either side turned it on, keep it on)
@@ -173,6 +180,7 @@ function validateSyncPayload(data: SyncPayload): void {
     if (!uuidRe.test(e.id)) throw new Error('invalid completionEvent id')
     if (!uuidRe.test(e.choreSyncId)) throw new Error('invalid completionEvent choreSyncId')
     if (!isoRe.test(e.completedAt)) throw new Error('invalid completionEvent completedAt')
+    if (e.updatedAt != null && !isoRe.test(e.updatedAt)) throw new Error('invalid completionEvent updatedAt')
     if (e.source !== 'manual' && e.source !== 'dayglance') throw new Error('invalid completionEvent source')
     if (e.completedByUserSyncId != null && !uuidRe.test(e.completedByUserSyncId)) throw new Error('invalid completionEvent completedByUserSyncId')
   }
@@ -345,22 +353,38 @@ export const applyPayload = async (rawData: unknown, { allowEmpty }: { allowEmpt
       .filter((id): id is number => id != null)
     await db.chores.bulkDelete(choreTombstoneIds)
 
-    // ── COMPLETION EVENTS: insert new ones only (events are immutable) ──
+    // ── COMPLETION EVENTS: insert new; update notes on existing ──
+    // Events are immutable EXCEPT the note, which updateCompletionNote can edit
+    // after the fact (bumping updated_at). For an event we already hold, adopt
+    // the incoming note when the incoming updatedAt is strictly newer — the
+    // same last-write-wins rule mergePayloads applies, re-applied here because
+    // applyMergedPayload also receives raw remote payloads on pull.
     // Re-fetch chores after upsert for chore_id resolution
     const allChoresForEvents = await db.chores.toArray()
     const choreMapForEvents = new Map(allChoresForEvents.map(c => [c.sync_id, c]))
     const eventsToAdd: Omit<CompletionEvent, 'id'>[] = []
+    const eventNoteUpdates: Array<[number, object]> = []
     for (const evt of (data.completionEvents ?? [])) {
       if (tombstoneIds.has(evt.id)) continue
-      if (eventBySyncId.has(evt.id)) continue  // immutable; already present
+      const existing = eventBySyncId.get(evt.id)
+      if (existing) {
+        const incomingUpdated = evt.updatedAt ?? evt.completedAt
+        const localUpdated = existing.updated_at ?? existing.completed_at
+        if (new Date(incomingUpdated).getTime() > new Date(localUpdated).getTime()) {
+          eventNoteUpdates.push([existing.id!, { note: evt.note, updated_at: incomingUpdated }])
+        }
+        continue
+      }
       const chore = choreMapForEvents.get(evt.choreSyncId)
       if (!chore) continue  // chore was deleted; skip orphaned events
       eventsToAdd.push({
         sync_id: evt.id, chore_id: chore.id!,
-        completed_at: evt.completedAt, note: evt.note, source: evt.source,
+        completed_at: evt.completedAt, updated_at: evt.updatedAt ?? evt.completedAt,
+        note: evt.note, source: evt.source,
         completed_by_user_sync_id: evt.completedByUserSyncId ?? null,
       })
     }
+    await Promise.all(eventNoteUpdates.map(([id, fields]) => db.completionEvents.update(id, fields)))
     await db.completionEvents.bulkAdd(eventsToAdd as CompletionEvent[])
 
     // ── Delete tombstoned completion events ──

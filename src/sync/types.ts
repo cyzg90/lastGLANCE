@@ -39,6 +39,10 @@ export interface SyncCompletionEvent {
   note: string | null
   source: 'manual' | 'dayglance'
   completedByUserSyncId: string | null
+  // Note-edit propagation (events are otherwise immutable). Optional so
+  // payloads written by older builds keep validating; readers fall back to
+  // completedAt, which is what pre-edit rows effectively carry anyway.
+  updatedAt?: string
 }
 
 export interface SyncSettings {
