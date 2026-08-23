@@ -169,6 +169,14 @@
     "today": "Hoy",
     "noTimeHint": "Sin hora — se usará el mediodía"
   },
+  "elapsed": {
+    "never": "nunca",
+    "justNow": "ahora mismo",
+    "minutesAgo": "hace {{count}} min",
+    "hoursAgo": "hace {{count}} h",
+    "yesterday": "ayer",
+    "daysAgo": "hace {{count}} d"
+  },
   "heatmap": {
     "completions_one": "{{count}} completada",
     "completions_other": "{{count}} completadas",

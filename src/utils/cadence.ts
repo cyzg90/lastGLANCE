@@ -1,4 +1,5 @@
 import dayjs from 'dayjs'
+import type { TFunction } from 'i18next'
 import relativeTime from 'dayjs/plugin/relativeTime'
 
 dayjs.extend(relativeTime)
@@ -73,16 +74,16 @@ function interpolateHex(a: string, b: string, t: number): string {
   return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${bv.toString(16).padStart(2, '0')}`
 }
 
-export function formatElapsed(elapsedDays: number | null, lastCompletedAt: string | null): string {
-  if (elapsedDays === null || lastCompletedAt === null) return 'never'
+export function formatElapsed(t: TFunction, elapsedDays: number | null, lastCompletedAt: string | null): string {
+  if (elapsedDays === null || lastCompletedAt === null) return t('elapsed.never')
   const diffMinutes = dayjs().diff(dayjs(lastCompletedAt), 'minute')
-  if (diffMinutes < 1) return 'just now'
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
+  if (diffMinutes < 1) return t('elapsed.justNow')
+  if (diffMinutes < 60) return t('elapsed.minutesAgo', { count: diffMinutes })
   if (elapsedDays < 1) {
     const diffHours = Math.floor(diffMinutes / 60)
-    return `${diffHours}h ago`
+    return t('elapsed.hoursAgo', { count: diffHours })
   }
   const calendarDaysAgo = dayjs().startOf('day').diff(dayjs(lastCompletedAt).startOf('day'), 'day')
-  if (calendarDaysAgo === 1) return 'yesterday'
-  return `${calendarDaysAgo}d ago`
+  if (calendarDaysAgo === 1) return t('elapsed.yesterday')
+  return t('elapsed.daysAgo', { count: calendarDaysAgo })
 }

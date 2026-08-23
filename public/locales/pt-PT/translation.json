@@ -169,6 +169,14 @@
     "today": "Hoje",
     "noTimeHint": "Sem hora — será usado o meio-dia"
   },
+  "elapsed": {
+    "never": "nunca",
+    "justNow": "agora mesmo",
+    "minutesAgo": "há {{count}} min",
+    "hoursAgo": "há {{count}} h",
+    "yesterday": "ontem",
+    "daysAgo": "há {{count}} d"
+  },
   "heatmap": {
     "completions_one": "{{count}} conclusão",
     "completions_other": "{{count}} conclusões",

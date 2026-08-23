@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">Tu actividad reciente de un vistazo.</string>
+    <string name="single_chore_widget_description">La tarea que más atención necesita, con Hecho en un toque.</string>
+    <string name="soon_list_widget_description">Tareas que pronto necesitan atención, con Hecho en un toque.</string>
+    <string name="soon_list_widget_title">Pronto</string>
+    <string name="widget_done">Hecho</string>
+    <string name="widget_all_caught_up">Todo al día</string>
+    <string name="widget_config_auto">La más atrasada (automático)</string>
+    <string name="widget_config_title">Elige una tarea</string>
+    <string name="widget_config_search">Buscar tareas</string>
+    <string name="widget_label_activity">lastGLANCE Actividad</string>
+    <string name="widget_label_chore">lastGLANCE Tarea</string>
+    <string name="widget_label_soon">lastGLANCE Pronto</string>
+    <string name="widget_label_add">lastGLANCE Añadir</string>
+    <string name="add_chore_widget_description">Un toque para añadir una nueva tarea.</string>
+    <string name="widget_add_chore">Añadir tarea</string>
+    <string name="shortcut_soon_short">Pronto</string>
+    <string name="shortcut_soon_long">Lo que necesita atención</string>
+    <string name="shortcut_search_short">Buscar</string>
+    <string name="shortcut_search_long">Buscar tareas</string>
+    <string name="shortcut_add_short">Añadir</string>
+    <string name="shortcut_add_long">Añadir una nueva tarea</string>
+    <string name="tile_add_chore">Añadir tarea</string>
+    <string name="tile_soon">Pronto</string>
+    <string name="widget_never">nunca</string>
+    <string name="widget_today">hoy</string>
+    <string name="widget_yesterday">ayer</string>
+    <string name="widget_days_ago">hace %1$d d</string>
+    <string name="widget_count_overdue">%1$d vencidas</string>
+    <string name="widget_count_soon">%1$d por vencer</string>
+</resources>

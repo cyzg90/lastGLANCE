@@ -29,4 +29,11 @@
     <!-- Quick Settings tiles -->
     <string name="tile_add_chore">Add chore</string>
     <string name="tile_soon">Soon</string>
+    <!-- Widget/tile display fragments previously hardcoded in Kotlin -->
+    <string name="widget_never">never</string>
+    <string name="widget_today">today</string>
+    <string name="widget_yesterday">yesterday</string>
+    <string name="widget_days_ago">%1$dd ago</string>
+    <string name="widget_count_overdue">%1$d overdue</string>
+    <string name="widget_count_soon">%1$d soon</string>
 </resources>

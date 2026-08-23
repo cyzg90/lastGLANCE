@@ -136,7 +136,7 @@ internal object ChoreSnapshot {
         return ChoreData(
             syncId = ch.optString("syncId"),
             name = ch.optString("name"),
-            elapsed = elapsedLabel(ch),
+            elapsed = elapsedLabel(context, ch),
             colorInt = parseColor(color),
             iconResId = resolveIcon(context, ch.optString("icon", null)),
         )
@@ -181,8 +181,8 @@ internal object ChoreSnapshot {
         return sb.toString()
     }
 
-    private fun elapsedLabel(chore: JSONObject): String {
-        if (chore.isNull("elapsedDays")) return "never"
+    private fun elapsedLabel(context: Context, chore: JSONObject): String {
+        if (chore.isNull("elapsedDays")) return context.getString(R.string.widget_never)
         // Prefer a calendar-day boundary off the real timestamp so a chore done
         // "last night" reads "yesterday", not "today" — matching the app's
         // formatElapsed(). elapsedDays alone is a duration (<24h reads "today"),
@@ -190,15 +190,15 @@ internal object ChoreSnapshot {
         val days = calendarDaysAgo(chore.optString("lastCompletedAt", ""))
         if (days != null) {
             return when {
-                days <= 0 -> "today"
-                days == 1 -> "yesterday"
-                else -> "${days}d ago"
+                days <= 0 -> context.getString(R.string.widget_today)
+                days == 1 -> context.getString(R.string.widget_yesterday)
+                else -> context.getString(R.string.widget_days_ago, days)
             }
         }
         // Fall back to the elapsed duration when the timestamp is missing.
         val d = chore.optDouble("elapsedDays", 0.0)
-        if (d < 1) return "today"
-        return "${Math.round(d)}d ago"
+        if (d < 1) return context.getString(R.string.widget_today)
+        return context.getString(R.string.widget_days_ago, Math.round(d).toInt())
     }
 
     // Whole calendar days between the completion's local day and today's local
