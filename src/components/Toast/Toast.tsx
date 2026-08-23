@@ -153,7 +153,7 @@ function ToastCard({ toast, onDismiss }: { toast: ToastItem; onDismiss: () => vo
 
   return (
     <div
-      className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 w-72 transition-all duration-200 ${
+      className={`flex items-start gap-3 px-4 py-3 rounded-xl shadow-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/80 w-72 max-w-full transition-all duration-200 ${
         exiting ? 'opacity-0 translate-x-3' : 'opacity-100 translate-x-0'
       }`}
     >
@@ -206,7 +206,14 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     <ToastContext.Provider value={{ showToast, dismissWhere }}>
       {children}
       {createPortal(
-        <div className="fixed z-[60] flex flex-col gap-2 items-end bottom-20 right-4 min-[1060px]:bottom-6 min-[1060px]:right-6">
+        // Bottom-anchored to the LEFT of the FAB column (fixed bottom-6
+        // right-6, w-16 — see Ribbon.tsx): right-28 = the FABs' 24px inset +
+        // 64px width + a 24px gap, so stacked toasts rise beside the buttons
+        // instead of covering them (they sit at z-[60], above the FABs' z-40,
+        // so overlap means blocked taps). max-w guards the 288px card on
+        // narrow phones: never wider than the viewport minus the FAB column
+        // and a matching left inset.
+        <div className="fixed z-[60] flex flex-col gap-2 items-end bottom-6 right-28 max-w-[calc(100vw-136px)]">
           {toasts.map(toast => (
             <ToastCard key={toast.id} toast={toast} onDismiss={() => dismiss(toast.id)} />
           ))}
