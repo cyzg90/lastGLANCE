@@ -297,6 +297,20 @@
     "delete": "Löschen",
     "viaDayglance": "via dayGLANCE"
   },
+  "notifications": {
+    "itsBeenDays_one": "Es ist {{count}} Tag her",
+    "itsBeenDays_other": "Es sind {{count}} Tage her",
+    "daysOverdue_one": "{{count}} Tag überfällig",
+    "daysOverdue_other": "{{count}} Tage überfällig",
+    "dueToday": "Heute fällig",
+    "markDone": "Als erledigt markieren",
+    "sendToDayglance": "An dayGLANCE senden",
+    "channelName": "Überfällige Aufgaben",
+    "channelDescription": "Erinnert dich, wenn eine Aufgabe ihren Rhythmus überschreitet.",
+    "rowsSkippedTitle_one": "{{count}} Eintrag konnte nicht gelesen werden",
+    "rowsSkippedTitle_other": "{{count}} Einträge konnten nicht gelesen werden",
+    "rowsSkippedBody": "Einige synchronisierte Daten konnten nicht entschlüsselt werden. Überprüfe die Cloud-Sync-Einstellungen."
+  },
   "passphrase": {
     "title": "Sync entsperren",
     "description": "Verschlüsselungspassphrase eingeben, um die Synchronisierung fortzusetzen.",

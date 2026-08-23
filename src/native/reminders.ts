@@ -1,4 +1,9 @@
 import { LocalNotifications } from '@capacitor/local-notifications'
+// The bare singleton, not '@/i18n': that module boots the detector and HTTP
+// backend as an import side effect, which node-side tests must not inherit.
+// main.tsx imports '@/i18n' before anything schedules, so by the time these
+// t() calls run the instance is initialized.
+import i18n from 'i18next'
 import { isAndroid, isNativeShell } from './platform'
 import type { PendingLocalNotificationSchema } from '@capacitor/local-notifications'
 import { getCategories, getChoresForCategory, logCompletion } from '@/db/queries'
@@ -83,18 +88,30 @@ export function reminderIdFor(syncId: string): number {
   return (h & 0x7fffffff) || 1
 }
 
+// Action-button titles and the Android channel are registered once per app run
+// — but they carry localized text, so a language switch invalidates them. The
+// memo flags reset on languageChanged and the next syncReminders re-registers
+// both (createChannel with an existing id updates its name in place). Pending
+// notification BODIES re-bake through the body diff in syncReminders, which
+// useReminders triggers on the same event.
 let actionTypesReady = false
+let channelReady = false
+i18n.on('languageChanged', () => {
+  actionTypesReady = false
+  channelReady = false
+})
+
 async function ensureActionTypes(): Promise<void> {
   if (actionTypesReady) return
   try {
     await LocalNotifications.registerActionTypes({
       types: [
-        { id: ACTION_TYPE, actions: [{ id: 'mark_done', title: 'Mark done' }] },
+        { id: ACTION_TYPE, actions: [{ id: 'mark_done', title: i18n.t('notifications.markDone') }] },
         {
           id: ACTION_TYPE_DG,
           actions: [
-            { id: 'mark_done', title: 'Mark done' },
-            { id: 'send_dg', title: 'Send to dayGLANCE' },
+            { id: 'mark_done', title: i18n.t('notifications.markDone') },
+            { id: 'send_dg', title: i18n.t('notifications.sendToDayglance') },
           ],
         },
       ],
@@ -108,14 +125,13 @@ async function ensureActionTypes(): Promise<void> {
 // Android-only: notification channels have no iOS equivalent, and the plugin's
 // createChannel is a no-op there. Guarded explicitly rather than left to fail
 // quietly, so the Android-only-ness is visible at the call site.
-let channelReady = false
 async function ensureChannel(): Promise<void> {
   if (channelReady || !isAndroid()) return
   try {
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
-      name: 'Overdue chores',
-      description: 'Reminds you when a chore passes its cadence.',
+      name: i18n.t('notifications.channelName'),
+      description: i18n.t('notifications.channelDescription'),
       importance: 4, // HIGH — heads-up
       visibility: 1, // public
     })
@@ -172,12 +188,13 @@ async function buildReminders(dgEnabled: boolean): Promise<ReminderDescriptor[]>
       // future crossings (a past `at` would fire immediately on every sync).
       if (triggerAtMillis <= now) continue
 
-      const days = ch.target_cadence_days
       out.push({
         id: reminderIdFor(ch.sync_id),
         choreSyncId: ch.sync_id,
         title: ch.name,
-        body: `It's been ${days} ${days === 1 ? 'day' : 'days'}`,
+        // Baked in the language active at schedule time; a language switch
+        // re-bakes it via the body diff in syncReminders (see useReminders).
+        body: i18n.t('notifications.itsBeenDays', { count: ch.target_cadence_days }),
         triggerAtMillis,
         dgEnabled,
       })

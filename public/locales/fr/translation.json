@@ -297,6 +297,20 @@
     "delete": "Supprimer",
     "viaDayglance": "via dayGLANCE"
   },
+  "notifications": {
+    "itsBeenDays_one": "Cela fait {{count}} jour",
+    "itsBeenDays_other": "Cela fait {{count}} jours",
+    "daysOverdue_one": "{{count}} jour de retard",
+    "daysOverdue_other": "{{count}} jours de retard",
+    "dueToday": "Échéance aujourd’hui",
+    "markDone": "Marquer comme fait",
+    "sendToDayglance": "Envoyer à dayGLANCE",
+    "channelName": "Tâches en retard",
+    "channelDescription": "Vous rappelle quand une tâche dépasse sa fréquence.",
+    "rowsSkippedTitle_one": "{{count}} élément n’a pas pu être lu",
+    "rowsSkippedTitle_other": "{{count}} éléments n’ont pas pu être lus",
+    "rowsSkippedBody": "Certaines données synchronisées n’ont pas pu être déchiffrées. Vérifiez les réglages de Sync cloud."
+  },
   "passphrase": {
     "title": "Déverrouiller la sync",
     "description": "Entrez votre phrase secrète de chiffrement pour reprendre la synchronisation.",

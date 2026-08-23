@@ -297,6 +297,20 @@
     "delete": "Excluir",
     "viaDayglance": "via dayGLANCE"
   },
+  "notifications": {
+    "itsBeenDays_one": "Passou {{count}} dia",
+    "itsBeenDays_other": "Passaram {{count}} dias",
+    "daysOverdue_one": "{{count}} dia de atraso",
+    "daysOverdue_other": "{{count}} dias de atraso",
+    "dueToday": "Vence hoje",
+    "markDone": "Marcar como concluída",
+    "sendToDayglance": "Enviar para dayGLANCE",
+    "channelName": "Tarefas atrasadas",
+    "channelDescription": "Avisa quando uma tarefa ultrapassa a sua frequência.",
+    "rowsSkippedTitle_one": "Não foi possível ler {{count}} item",
+    "rowsSkippedTitle_other": "Não foi possível ler {{count}} itens",
+    "rowsSkippedBody": "Alguns dados sincronizados não puderam ser decifrados. Verifique as configurações de sincronização na nuvem."
+  },
   "passphrase": {
     "title": "Desbloquear sincronização",
     "description": "Digite a sua frase de criptografia para retomar a sincronização.",
