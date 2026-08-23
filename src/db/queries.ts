@@ -289,15 +289,17 @@ export async function logCompletion(
   opts: { note?: string; completedAt?: string; source?: 'manual' | 'dayglance'; completedByUserSyncId?: string | null; syncId?: string } = {}
 ): Promise<number> {
   const sync_id = opts.syncId ?? crypto.randomUUID()
+  const completedAt = opts.completedAt ?? dayjs().toISOString()
   const id = await db.completionEvents.add({
     chore_id: choreId,
-    completed_at: opts.completedAt ?? dayjs().toISOString(),
+    completed_at: completedAt,
     note: opts.note ?? null,
     source: opts.source ?? 'manual',
     completed_by_user_sync_id: opts.completedByUserSyncId ?? null,
     sync_id,
+    updated_at: completedAt,
   } as CompletionEvent)
-  // Completion events are insert-only: mark dirty at creation time.
+  // Mark dirty at creation; a later note edit re-marks it (updateCompletionNote).
   markDirty(sync_id)
   return id
 }
@@ -409,12 +411,13 @@ export async function getJournalEntries(
 }
 
 export async function updateCompletionNote(id: number, note: string | null): Promise<void> {
-  await db.completionEvents.update(id, { note: note || null })
+  // Bumping updated_at is what makes the edit travel: both sync tiers apply
+  // note changes last-write-wins on this timestamp (events are otherwise
+  // immutable). Before it existed, an edited note only ever reached devices
+  // that had never seen the event - anything that already held it skipped the
+  // incoming copy as "already present" and kept the stale note forever.
+  await db.completionEvents.update(id, { note: note || null, updated_at: dayjs().toISOString() })
   const evt = await db.completionEvents.get(id)
-  // Pushes the updated ciphertext for this event to the vault, so a fresh device
-  // that has never seen the event receives the latest note on its first pull.
-  // Devices that already hold the event keep their own copy: completion events
-  // are insert-only, and applyRemoteEntity skips events already present locally.
   markDirty(evt?.sync_id)
 }
 
@@ -542,7 +545,7 @@ interface NormalizedChore {
   seasonal_start: string | null; seasonal_end: string | null; details: string | null; icon?: string
   assigned_user_sync_ids: string[]; created_at: string
 }
-interface NormalizedEvent { sync_id: string; chore_sync_id: string; completed_at: string; note: string | null; source: 'manual' | 'dayglance'; completed_by_user_sync_id: string | null }
+interface NormalizedEvent { sync_id: string; chore_sync_id: string; completed_at: string; updated_at: string; note: string | null; source: 'manual' | 'dayglance'; completed_by_user_sync_id: string | null }
 interface NormalizedUser { sync_id: string; name: string }
 interface NormalizedBackup {
   categories: NormalizedCategory[]
@@ -634,6 +637,10 @@ function normalizeBackup(raw: unknown, now: string): NormalizedBackup {
       sync_id: typeof e.sync_id === 'string' ? e.sync_id : typeof e.id === 'string' ? e.id : crypto.randomUUID(),
       chore_sync_id: eventChoreOf(e) ?? '',
       completed_at: asStr(e.completed_at ?? e.completedAt),
+      // Preserve the note-edit timestamp from backups that carry it; older
+      // backups fall back to completed_at (their notes were never edited or
+      // the edit time was not tracked yet — same thing to the sync merge).
+      updated_at: asStr(e.updated_at ?? e.updatedAt ?? e.completed_at ?? e.completedAt),
       note: typeof e.note === 'string' ? e.note : null,
       source: (e.source === 'dayglance' ? 'dayglance' : 'manual'),
       completed_by_user_sync_id: typeof (e.completed_by_user_sync_id ?? e.completedByUserSyncId) === 'string' ? (e.completed_by_user_sync_id ?? e.completedByUserSyncId) as string : null,
@@ -770,6 +777,7 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
         if (!chore) return null
         return {
           sync_id: e.sync_id, chore_id: chore.id!, completed_at: e.completed_at,
+          updated_at: e.updated_at,
           note: e.note, source: e.source, completed_by_user_sync_id: e.completed_by_user_sync_id,
         } as CompletionEvent
       })
