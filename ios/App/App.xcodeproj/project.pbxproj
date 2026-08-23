@@ -37,6 +37,7 @@
 		EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E8 /* AccessoryWidgets.swift */; };
 		EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E9 /* SecureStorePlugin.swift */; };
 		EB00000000000000000000C1 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000E1 /* ShareViewController.swift */; };
+		EB00000000000000000000FB /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000FA /* Localizable.xcstrings */; };
 		EB00000000000000000000C2 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
 		EB00000000000000000000B7 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000F9 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EA00000000000000000000B7 /* GlanceWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -111,6 +112,7 @@
 		EB00000000000000000000E1 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		EB00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EB00000000000000000000F8 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
+		EB00000000000000000000FA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EB00000000000000000000F9 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlanceWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -229,6 +231,7 @@
 				EB00000000000000000000E1 /* ShareViewController.swift */,
 				EB00000000000000000000F7 /* Info.plist */,
 				EB00000000000000000000F8 /* ShareExtension.entitlements */,
+				EB00000000000000000000FA /* Localizable.xcstrings */,
 			);
 			path = ShareExtension;
 			sourceTree = "<group>";
@@ -372,6 +375,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EB00000000000000000000FB /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
