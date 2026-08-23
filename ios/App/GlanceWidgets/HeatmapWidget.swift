@@ -404,15 +404,15 @@ struct HeatmapWidgetView: View {
             HStack(alignment: .top, spacing: 0) {
                 StatTile(
                     value: "\(stats.completions)",
-                    label: plural(stats.completions, "completion", "completions")
+                    label: plural(stats.completions, String(localized: "completion"), String(localized: "completions"))
                 )
                 Spacer(minLength: 16)
                 StatTile(
                     value: "\(stats.activeDays)",
-                    label: plural(stats.activeDays, "active day", "active days")
+                    label: plural(stats.activeDays, String(localized: "active day"), String(localized: "active days"))
                 )
                 Spacer(minLength: 16)
-                StatTile(value: "\(stats.streak)", label: "day streak")
+                StatTile(value: "\(stats.streak)", label: String(localized: "day streak"))
             }
 
             Spacer(minLength: 0)
