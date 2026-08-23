@@ -84,7 +84,7 @@ export function LogModal({ chore, onClose, onLogged }: Props) {
     }
   }
 
-  const elapsedText = formatElapsed(chore.elapsed_days, chore.last_completed_at)
+  const elapsedText = formatElapsed(t, chore.elapsed_days, chore.last_completed_at)
   const stats = computeStats(completions)
   const heatmap = buildHeatmap(completions)
 

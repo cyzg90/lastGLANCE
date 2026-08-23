@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">La tua attività recente a colpo d\'occhio.</string>
+    <string name="single_chore_widget_description">L\'attività che ha più bisogno di attenzione, con Fatto in un tocco.</string>
+    <string name="soon_list_widget_description">Le attività che presto avranno bisogno di attenzione, con Fatto in un tocco.</string>
+    <string name="soon_list_widget_title">Presto</string>
+    <string name="widget_done">Fatto</string>
+    <string name="widget_all_caught_up">Tutto fatto</string>
+    <string name="widget_config_auto">La più in ritardo (automatico)</string>
+    <string name="widget_config_title">Scegli un\'attività</string>
+    <string name="widget_config_search">Cerca attività</string>
+    <string name="widget_label_activity">lastGLANCE Heatmap</string>
+    <string name="widget_label_chore">lastGLANCE Attività</string>
+    <string name="widget_label_soon">lastGLANCE Presto</string>
+    <string name="widget_label_add">lastGLANCE Aggiungi</string>
+    <string name="add_chore_widget_description">Un tocco per aggiungere una nuova attività.</string>
+    <string name="widget_add_chore">Aggiungi attività</string>
+    <string name="shortcut_soon_short">Presto</string>
+    <string name="shortcut_soon_long">Cosa ha bisogno di attenzione</string>
+    <string name="shortcut_search_short">Cerca</string>
+    <string name="shortcut_search_long">Cerca attività</string>
+    <string name="shortcut_add_short">Aggiungi</string>
+    <string name="shortcut_add_long">Aggiungi una nuova attività</string>
+    <string name="tile_add_chore">Aggiungi attività</string>
+    <string name="tile_soon">Presto</string>
+    <string name="widget_never">mai</string>
+    <string name="widget_today">oggi</string>
+    <string name="widget_yesterday">ieri</string>
+    <string name="widget_days_ago">%1$d g fa</string>
+    <string name="widget_count_overdue">%1$d in ritardo</string>
+    <string name="widget_count_soon">%1$d in scadenza</string>
+</resources>

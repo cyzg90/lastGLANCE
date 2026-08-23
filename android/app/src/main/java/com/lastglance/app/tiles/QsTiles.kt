@@ -65,9 +65,11 @@ class SoonTileService : TileService() {
 }
 
 private fun subtitle(context: Context, overdue: Int, soon: Int): String = when {
-    overdue > 0 && soon > 0 -> "$overdue overdue · $soon soon"
-    overdue > 0 -> "$overdue overdue"
-    soon > 0 -> "$soon soon"
+    overdue > 0 && soon > 0 ->
+        context.getString(R.string.widget_count_overdue, overdue) + " · " +
+            context.getString(R.string.widget_count_soon, soon)
+    overdue > 0 -> context.getString(R.string.widget_count_overdue, overdue)
+    soon > 0 -> context.getString(R.string.widget_count_soon, soon)
     else -> context.getString(R.string.widget_all_caught_up)
 }
 

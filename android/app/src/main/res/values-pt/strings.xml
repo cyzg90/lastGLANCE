@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">A sua atividade recente num relance.</string>
+    <string name="single_chore_widget_description">A tarefa que mais precisa de atenção, com Feito num toque.</string>
+    <string name="soon_list_widget_description">Tarefas que em breve precisam de atenção, com Feito num toque.</string>
+    <string name="soon_list_widget_title">Em breve</string>
+    <string name="widget_done">Feito</string>
+    <string name="widget_all_caught_up">Tudo em dia</string>
+    <string name="widget_config_auto">A mais atrasada (automático)</string>
+    <string name="widget_config_title">Escolher uma tarefa</string>
+    <string name="widget_config_search">Pesquisar tarefas</string>
+    <string name="widget_label_activity">lastGLANCE Atividade</string>
+    <string name="widget_label_chore">lastGLANCE Tarefa</string>
+    <string name="widget_label_soon">lastGLANCE Em breve</string>
+    <string name="widget_label_add">lastGLANCE Adicionar</string>
+    <string name="add_chore_widget_description">Um toque para adicionar uma nova tarefa.</string>
+    <string name="widget_add_chore">Adicionar tarefa</string>
+    <string name="shortcut_soon_short">Em breve</string>
+    <string name="shortcut_soon_long">O que precisa de atenção</string>
+    <string name="shortcut_search_short">Pesquisar</string>
+    <string name="shortcut_search_long">Pesquisar tarefas</string>
+    <string name="shortcut_add_short">Adicionar</string>
+    <string name="shortcut_add_long">Adicionar uma nova tarefa</string>
+    <string name="tile_add_chore">Adicionar tarefa</string>
+    <string name="tile_soon">Em breve</string>
+    <string name="widget_never">nunca</string>
+    <string name="widget_today">hoje</string>
+    <string name="widget_yesterday">ontem</string>
+    <string name="widget_days_ago">há %1$d d</string>
+    <string name="widget_count_overdue">%1$d atrasadas</string>
+    <string name="widget_count_soon">%1$d a vencer</string>
+</resources>

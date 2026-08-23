@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">Votre activité récente en un coup d\'œil.</string>
+    <string name="single_chore_widget_description">La tâche la plus urgente, avec Fait en un geste.</string>
+    <string name="soon_list_widget_description">Les tâches qui demanderont bientôt de l\'attention, avec Fait en un geste.</string>
+    <string name="soon_list_widget_title">Bientôt</string>
+    <string name="widget_done">Fait</string>
+    <string name="widget_all_caught_up">Tout est à jour</string>
+    <string name="widget_config_auto">La plus en retard (automatique)</string>
+    <string name="widget_config_title">Choisir une tâche</string>
+    <string name="widget_config_search">Rechercher des tâches</string>
+    <string name="widget_label_activity">lastGLANCE Activité</string>
+    <string name="widget_label_chore">lastGLANCE Tâche</string>
+    <string name="widget_label_soon">lastGLANCE Bientôt</string>
+    <string name="widget_label_add">lastGLANCE Ajouter</string>
+    <string name="add_chore_widget_description">Un geste pour ajouter une nouvelle tâche.</string>
+    <string name="widget_add_chore">Ajouter une tâche</string>
+    <string name="shortcut_soon_short">Bientôt</string>
+    <string name="shortcut_soon_long">Ce qui demande de l\'attention</string>
+    <string name="shortcut_search_short">Rechercher</string>
+    <string name="shortcut_search_long">Rechercher des tâches</string>
+    <string name="shortcut_add_short">Ajouter</string>
+    <string name="shortcut_add_long">Ajouter une nouvelle tâche</string>
+    <string name="tile_add_chore">Ajouter une tâche</string>
+    <string name="tile_soon">Bientôt</string>
+    <string name="widget_never">jamais</string>
+    <string name="widget_today">aujourd\'hui</string>
+    <string name="widget_yesterday">hier</string>
+    <string name="widget_days_ago">il y a %1$d j</string>
+    <string name="widget_count_overdue">%1$d en retard</string>
+    <string name="widget_count_soon">%1$d bientôt</string>
+</resources>

@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">Deine letzten Erledigungen auf einen Blick.</string>
+    <string name="single_chore_widget_description">Die Aufgabe, die am dringendsten ansteht, mit Erledigt per Tipp.</string>
+    <string name="soon_list_widget_description">Aufgaben, die bald Aufmerksamkeit brauchen, mit Erledigt per Tipp.</string>
+    <string name="soon_list_widget_title">Bald</string>
+    <string name="widget_done">Erledigt</string>
+    <string name="widget_all_caught_up">Alles erledigt</string>
+    <string name="widget_config_auto">Am längsten überfällig (automatisch)</string>
+    <string name="widget_config_title">Aufgabe auswählen</string>
+    <string name="widget_config_search">Aufgaben suchen</string>
+    <string name="widget_label_activity">lastGLANCE Heatmap</string>
+    <string name="widget_label_chore">lastGLANCE Aufgabe</string>
+    <string name="widget_label_soon">lastGLANCE Bald</string>
+    <string name="widget_label_add">lastGLANCE Hinzufügen</string>
+    <string name="add_chore_widget_description">Ein Tipp, um eine neue Aufgabe hinzuzufügen.</string>
+    <string name="widget_add_chore">Aufgabe hinzufügen</string>
+    <string name="shortcut_soon_short">Bald</string>
+    <string name="shortcut_soon_long">Was Aufmerksamkeit braucht</string>
+    <string name="shortcut_search_short">Suchen</string>
+    <string name="shortcut_search_long">Aufgaben suchen</string>
+    <string name="shortcut_add_short">Hinzufügen</string>
+    <string name="shortcut_add_long">Neue Aufgabe hinzufügen</string>
+    <string name="tile_add_chore">Aufgabe hinzufügen</string>
+    <string name="tile_soon">Bald</string>
+    <string name="widget_never">nie</string>
+    <string name="widget_today">heute</string>
+    <string name="widget_yesterday">gestern</string>
+    <string name="widget_days_ago">vor %1$d T.</string>
+    <string name="widget_count_overdue">%1$d überfällig</string>
+    <string name="widget_count_soon">%1$d bald fällig</string>
+</resources>
