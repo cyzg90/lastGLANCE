@@ -4,8 +4,8 @@ import { nativeLanguageName } from './nativeLanguageName'
 
 /**
  * One picker for every surface that offers a language choice, so the desktop
- * header and the mobile settings sheet cannot drift apart. Persistence is
- * i18next's own localStorage cache — changeLanguage writes it, the detector
+ * overflow menu and the mobile settings sheet cannot drift apart. Persistence
+ * is i18next's own localStorage cache — changeLanguage writes it, the detector
  * reads it back on the next launch.
  */
 export function LanguagePicker({ className, id }: { className?: string; id?: string }) {
