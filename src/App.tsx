@@ -169,6 +169,9 @@ function AppInner() {
   const [showJournal, setShowJournal] = useState(false)
   const [journalDate, setJournalDate] = useState<string | null>(null)
   const [showSettingsSheet, setShowSettingsSheet] = useState(false)
+  // Desktop overflow menu: theme, backup, and language — the rarely-clicked
+  // controls, folded behind one button so the icon row stays short.
+  const [showDesktopMenu, setShowDesktopMenu] = useState(false)
   const [ribbonKey, setRibbonKey] = useState(0)
   const [heatmapWeeks, setHeatmapWeeks] = useState<HeatDay[][]>([])
   const [waveKey, setWaveKey] = useState(0)
@@ -613,21 +616,48 @@ function AppInner() {
               <button onClick={() => setShowIntegration(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.dayglanceIntegration')} data-tooltip={t('app.dayglanceIntegration')}><Plug size={15} /></button>
               <button onClick={() => setShowUsers(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.users')} data-tooltip={t('app.users')}><Users size={15} /></button>
               <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t('app.journalTooltip')}><NotebookText size={15} /></button>
-              <button
-                onClick={toggleTheme}
-                className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
-                aria-label={t('app.toggleTheme')}
-                data-tooltip={isDark ? t('app.lightMode') : t('app.darkMode')}
-              >
-                {isDark ? <Sun size={15} /> : <Moon size={15} />}
-              </button>
-              <button onClick={() => setShowBackup(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.backupRestore')} data-tooltip={t('app.backupRestore')}><Archive size={15} /></button>
               <button onClick={() => setShowHelp(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.helpFeedback')} data-tooltip={t('app.helpFeedback')}><HelpCircle size={15} /></button>
-              <label className="flex items-center gap-1.5 p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer" data-tooltip={t('app.language')}>
-                <Languages size={15} className="shrink-0" />
-                <span className="sr-only">{t('app.language')}</span>
-                <LanguagePicker className="bg-transparent text-sm text-slate-500 dark:text-slate-400 focus:outline-none cursor-pointer max-w-28" />
-              </label>
+              {/* Overflow: theme, backup, language — set-and-forget controls
+                  folded behind one button, same card pattern as the mobile
+                  settings sheet. Theme also stays a keyboard shortcut away. */}
+              <div className="relative">
+                <button
+                  onClick={() => setShowDesktopMenu(m => !m)}
+                  className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${showDesktopMenu ? 'text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}
+                  aria-label={t('app.settings')}
+                  aria-expanded={showDesktopMenu}
+                  data-tooltip={t('app.settings')}
+                >
+                  <Settings size={15} />
+                </button>
+                {showDesktopMenu && (
+                  <>
+                    {/* backdrop */}
+                    <div className="fixed inset-0 z-40" onClick={() => setShowDesktopMenu(false)} />
+                    <div className="absolute right-0 top-full mt-2 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl p-3 flex flex-col gap-1 min-w-[190px]">
+                      <button
+                        onClick={() => { toggleTheme(); setShowDesktopMenu(false) }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left w-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                      >
+                        {isDark ? <Sun size={15} /> : <Moon size={15} />}
+                        {isDark ? t('app.lightMode') : t('app.darkMode')}
+                      </button>
+                      <button
+                        onClick={() => { setShowBackup(true); setShowDesktopMenu(false) }}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-left w-full transition-colors hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300"
+                      >
+                        <Archive size={15} />
+                        {t('app.backupRestore')}
+                      </button>
+                      <label className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm w-full text-slate-600 dark:text-slate-300">
+                        <Languages size={15} className="shrink-0" />
+                        <span className="sr-only">{t('app.language')}</span>
+                        <LanguagePicker className="flex-1 min-w-0 bg-transparent text-sm text-slate-600 dark:text-slate-300 focus:outline-none" />
+                      </label>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
