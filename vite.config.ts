@@ -123,7 +123,13 @@ export default defineConfig({
         // shell. Without this they are neither precached nor runtime-cached, so
         // on reopen the service worker can't serve them and i18next renders raw
         // keys (e.g. "app.cloudSync") until the user clears site data.
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
+        globPatterns: ['**/*.{js,css,ico,png,svg,json}'],
+
+        // Keep page navigations on the network so upstream access authentication
+        // is checked on every page load, and clean up caches from older SW versions.
+        navigateFallback: undefined,
+        cleanupOutdatedCaches: true,
+
         skipWaiting: true,
         clientsClaim: true,
       },
