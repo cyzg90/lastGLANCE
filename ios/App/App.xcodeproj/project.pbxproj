@@ -22,6 +22,7 @@
 		EA00000000000000000000B2 /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F3 /* WidgetBridgePlugin.swift */; };
 		EA00000000000000000000B3 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
 		EA00000000000000000000B4 /* GlanceWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */; };
+		EA00000000000000000000FD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FC /* Localizable.xcstrings */; };
 		EA00000000000000000000B5 /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F5 /* HeatmapWidget.swift */; };
 		EA00000000000000000000B6 /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F6 /* Snapshot.swift */; };
 		EA00000000000000000000B8 /* LucidePath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FA /* LucidePath.swift */; };
@@ -95,6 +96,7 @@
 		EA00000000000000000000F6 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EA00000000000000000000F8 /* GlanceWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GlanceWidgets.entitlements; sourceTree = "<group>"; };
+		EA00000000000000000000FC /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EA00000000000000000000FA /* LucidePath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucidePath.swift; sourceTree = "<group>"; };
 		EA00000000000000000000FB /* LucideIcons.generated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucideIcons.generated.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E1 /* SnapshotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotProvider.swift; sourceTree = "<group>"; };
@@ -216,6 +218,7 @@
 				EA00000000000000000000FB /* LucideIcons.generated.swift */,
 				EA00000000000000000000F7 /* Info.plist */,
 				EA00000000000000000000F8 /* GlanceWidgets.entitlements */,
+				EA00000000000000000000FC /* Localizable.xcstrings */,
 			);
 			path = GlanceWidgets;
 			sourceTree = "<group>";
@@ -321,6 +324,12 @@
 			knownRegions = (
 				en,
 				Base,
+				de,
+				es,
+				fr,
+				it,
+				"pt-PT",
+				"pt-BR",
 			);
 			mainGroup = 504EC2FB1FED79650016851F;
 			packageReferences = (
@@ -355,6 +364,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EA00000000000000000000FD /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -51,7 +51,7 @@ extension SnapshotChore {
     // elapsedDays alone is a duration and gets that wrong (a 10pm→8am gap is
     // under 24h). Falls back to the duration when the timestamp is missing.
     var elapsedLabel: String {
-        guard elapsedDays != nil else { return "never" }
+        guard elapsedDays != nil else { return String(localized: "never") }
         if let iso = lastCompletedAt, let then = isoMillisFormatter.date(from: iso) {
             let calendar = Calendar.current
             let days = calendar.dateComponents(
@@ -60,14 +60,14 @@ extension SnapshotChore {
                 to: calendar.startOfDay(for: Date())
             ).day ?? 0
             switch days {
-            case ...0: return "today"
-            case 1: return "yesterday"
-            default: return "\(days)d ago"
+            case ...0: return String(localized: "today")
+            case 1: return String(localized: "yesterday")
+            default: return String(localized: "\(days)d ago")
             }
         }
         let d = elapsedDays ?? 0
-        if d < 1 { return "today" }
-        return "\(Int(d.rounded()))d ago"
+        if d < 1 { return String(localized: "today") }
+        return String(localized: "\(Int(d.rounded()))d ago")
     }
 
     // The recency colour the snapshot shipped, with the same two fallbacks as

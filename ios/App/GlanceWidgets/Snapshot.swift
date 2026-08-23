@@ -127,8 +127,8 @@ enum SnapshotLoad {
         switch self {
         case .loaded: return nil
         case .appGroupUnavailable: return "App Group unavailable.\nCheck the GlanceWidgets entitlement."
-        case .noSnapshotYet: return "Open lastGLANCE once to sync."
-        case .undecodable: return "Snapshot unreadable."
+        case .noSnapshotYet: return String(localized: "Open lastGLANCE once to sync.")
+        case .undecodable: return String(localized: "Snapshot unreadable.")
         }
     }
 
