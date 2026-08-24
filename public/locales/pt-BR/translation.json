@@ -402,8 +402,9 @@
       "iCloudUnavailable": "iCloud não está disponível: {{error}}"
     },
     "syncHalted": "Sincronização interrompida",
-    "haltedDescription": "Ocorreu um erro crítico. Resolva o problema e limpe para tentar novamente.",
+    "haltedDescription": "Ocorreu um erro crítico. Resolva o problema e tente sincronizar novamente.",
     "clearHalt": "Limpar",
+    "retrySync": "Tentar sincronizar novamente",
     "webdavConnection": "Conexão WebDAV",
     "autoSaveHint": "As configurações são salvas automaticamente ao fechar esta janela.",
     "syncEnabledLabel": "Sincronizar com WebDAV",
@@ -445,7 +446,16 @@
     "lastSynced": "Última sincronização: {{date}}",
     "neverSynced": "Nunca",
     "saveClose": "Salvar e fechar",
-    "provider": "Provedor"
+    "provider": "Provedor",
+    "managedDescription": "A sincronização na nuvem é gerenciada por este servidor. As configurações de conexão e as credenciais são configuradas pelo provedor de hospedagem.",
+    "managedStorage": "Armazenamento",
+    "managedWebdav": "WebDAV gerenciado",
+    "managedFolder": "Pasta de sincronização",
+    "status": "Estado",
+    "statusIdle": "Inativo",
+    "statusConnected": "Conectado",
+    "statusSyncing": "Sincronizando",
+    "close": "Fechar"
   },
   "users": {
     "title": "Usuários",
