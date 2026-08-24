@@ -235,6 +235,10 @@ const OVERRIDES = {
   // says "ajuda você". ("fazê-lo" further on is fine in both.)
   'welcome.description':
     'O lastGLANCE ajuda você a registrar quando foi a última vez que fez algo e, opcionalmente, a saber quando é hora de fazê-lo novamente.',
+  'sync.managedDescription':
+    'A sincronização na nuvem é gerenciada por este servidor. As configurações de conexão e as credenciais são configuradas pelo provedor de hospedagem.',
+  'sync.managedWebdav': 'WebDAV gerenciado',
+  'sync.statusSyncing': 'Sincronizando',
 }
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
