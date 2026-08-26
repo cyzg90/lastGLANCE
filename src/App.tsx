@@ -30,6 +30,7 @@ import { useDbIntentsPoller, drainDbIntents } from '@/hooks/useDbIntentsPoller'
 import { useVaultEventStream } from '@/hooks/useVaultEventStream'
 import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
+import { useDayRollover } from '@/hooks/useDayRollover'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
 import { getAllCompletionCounts } from '@/db/queries'
 import { formatDate } from '@/utils/datetime'
@@ -384,6 +385,20 @@ function AppInner() {
     setHeatmapWeeks(buildHeaderHeatmap(counts))
     setWaveKey(k => k + 1)
   }, [])
+
+  // Same reload, without bumping waveKey. The wave is a flourish for a *user*
+  // action landing (a chore logged, a backup imported); the rollover refresh is
+  // ambient bookkeeping, and replaying a 1.5s animation every time the tab
+  // regains focus would read as the app churning for no reason.
+  const refreshHeatmapQuietly = useCallback(async () => {
+    const counts = await getAllCompletionCounts()
+    setHeatmapWeeks(buildHeaderHeatmap(counts))
+  }, [])
+
+  // The heatmap bakes the current date into every cell (which column is today,
+  // which days are still in the future), so it goes stale the same way the
+  // chore rows do.
+  useDayRollover(refreshHeatmapQuietly)
 
   useIntentsPoller(loadHeatmap)
   // GLANCEvault DB intents transport — gated by isDbIntentsEnabled(); a no-op
