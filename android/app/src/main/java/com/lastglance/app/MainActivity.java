@@ -24,20 +24,32 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SecureStorePlugin.class);
         registerPlugin(com.lastglance.app.sse.VaultSsePlugin.class);
         super.onCreate(savedInstanceState);
-        captureWidgetDeepLink(getIntent());
-        captureSharedText(getIntent());
-        // Cold start via a Tasker Activity intent: the web app drains the slot on
-        // mount, so just store it here (no wake needed — nothing is listening yet).
-        captureTaskerIntent(getIntent(), false);
+        // Cold start via a widget tap, a share, or a Tasker Activity intent: the
+        // web app drains the slots on mount, so just store them here (no wake
+        // needed — nothing is listening yet). A non-null savedInstanceState means
+        // the system is rebuilding an activity it killed and is replaying the
+        // intent that rooted the task, not delivering a new one.
+        captureLaunchIntent(getIntent(), savedInstanceState != null, false);
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        // Warm Activity intent (app already running): store it AND wake the
+        // WebView. Never a restore, but a resume from recents can still redeliver
+        // the task's root intent here, which LaunchIntentGuard filters out.
+        captureLaunchIntent(intent, false, true);
+    }
+
+    // Single entry point for every inbound Activity intent, so the sticky-intent
+    // guard cannot be bypassed by one capture path forgetting to ask. See
+    // LaunchIntentGuard for why reading an intent is not consuming it.
+    private void captureLaunchIntent(Intent intent, boolean isRestoredInstance, boolean wake) {
+        if (intent == null) return;
+        if (!LaunchIntentGuard.shouldCapture(intent.getFlags(), isRestoredInstance)) return;
         captureWidgetDeepLink(intent);
         captureSharedText(intent);
-        // Warm Activity intent (app already running): store it AND wake the WebView.
-        captureTaskerIntent(intent, true);
+        captureTaskerIntent(intent, wake);
     }
 
     // Capture an Activity-target Tasker intent (app.lastglance.*). The manifest
