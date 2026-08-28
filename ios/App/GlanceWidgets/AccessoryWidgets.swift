@@ -92,45 +92,7 @@ struct AccessoryStatusWidget: Widget {
     }
 }
 
-// MARK: - Control Center control (iOS 18+)
-
-// Opens the app straight into the new-chore form — the Quick Settings
-// add-chore tile, relocated to where iOS puts such things.
-//
-// The intent's ONLY job is to hand back an OpenURLIntent for the same
-// lastglance:// URL every other entry point uses; the app then receives it
-// through the AppDelegate URL path, which is device-verified. Two designs
-// that look right do not work from a control, learned the hard way:
-//  - `openAppWhenRun` alone is ignored when the intent runs in the widget
-//    extension process — which is exactly where a control button's intent
-//    runs. The tap performed, wrote its token, and nothing opened.
-//  - Writing the pending token from the intent also had a warm-open race:
-//    the app's foreground drain could run before the token landed.
-// Chaining OpenURLIntent solves both: the system opens the URL itself, and
-// the token is minted by AppDelegate on receipt, exactly as for a widget tap.
-@available(iOS 18.0, *)
-struct OpenAddChoreIntent: AppIntent {
-    static let title: LocalizedStringResource = "Add chore"
-    static let isDiscoverable = false
-    static let openAppWhenRun = true
-
-    @MainActor
-    func perform() async throws -> some IntentResult & OpensIntent {
-        .result(opensIntent: OpenURLIntent(URL(string: "lastglance://action/add")!))
-    }
-}
-
-@available(iOS 18.0, *)
-struct AddChoreControl: ControlWidget {
-    let kind = "AddChoreControl"
-
-    var body: some ControlWidgetConfiguration {
-        StaticControlConfiguration(kind: kind) {
-            ControlWidgetButton(action: OpenAddChoreIntent()) {
-                Label("Add chore", systemImage: "plus.circle")
-            }
-        }
-        .displayName("Add chore")
-        .description("Open lastGLANCE ready to add a new chore.")
-    }
-}
+// The Control Center control that used to live here now sits in
+// App/Shared/AddChoreControl.swift: it has to compile into the app target
+// as well as this one, and the accessory widget above cannot (it depends on
+// SnapshotProvider/SnapshotEntry, which are extension-only).

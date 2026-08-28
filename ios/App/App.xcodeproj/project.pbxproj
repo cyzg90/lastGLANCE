@@ -35,6 +35,8 @@
 		EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E6 /* SingleChoreWidget.swift */; };
 		EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E7 /* AddChoreWidget.swift */; };
 		EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E8 /* AccessoryWidgets.swift */; };
+		EA00000000000000000000CA /* AddChoreControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000EA /* AddChoreControl.swift */; };
+		EA00000000000000000000CB /* AddChoreControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000EA /* AddChoreControl.swift */; };
 		EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E9 /* SecureStorePlugin.swift */; };
 		EB00000000000000000000C1 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000E1 /* ShareViewController.swift */; };
 		EB00000000000000000000FB /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000FA /* Localizable.xcstrings */; };
@@ -91,6 +93,7 @@
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
 		EA00000000000000000000F1 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
 		EA00000000000000000000F2 /* SharedDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataStore.swift; sourceTree = "<group>"; };
+		EA00000000000000000000EA /* AddChoreControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddChoreControl.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F3 /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceWidgetsBundle.swift; sourceTree = "<group>"; };
 		EA00000000000000000000F5 /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidget.swift; sourceTree = "<group>"; };
@@ -189,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				EA00000000000000000000F2 /* SharedDataStore.swift */,
+				EA00000000000000000000EA /* AddChoreControl.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -387,6 +391,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				EA00000000000000000000CA /* AddChoreControl.swift in Sources */,
 				7A4E51062E3A9A0100C4F2D1 /* BridgeViewController.swift in Sources */,
 				7A4E51022E3A9A0100C4F2D1 /* VaultSseClient.swift in Sources */,
 				7A4E51042E3A9A0100C4F2D1 /* VaultSsePlugin.swift in Sources */,
@@ -412,6 +417,7 @@
 				EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */,
 				EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */,
 				EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */,
+				EA00000000000000000000CB /* AddChoreControl.swift in Sources */,
 				EA00000000000000000000B8 /* LucidePath.swift in Sources */,
 				EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */,
 			);
