@@ -6,6 +6,7 @@ import './i18n'
 import App from './App'
 import { hydrateSecureConfig, installSecureConfigShim } from './sync/secureConfigShim'
 import { initHardwareBackButton } from './native/backButton'
+import { lockViewportScaleOnIPhone } from './utils/viewportZoom'
 
 // crypto.randomUUID() is only available in secure contexts (HTTPS / localhost).
 // This polyfill covers HTTP access over a LAN IP (e.g. self-hosted Docker).
@@ -25,6 +26,11 @@ if (typeof crypto.randomUUID !== 'function') {
 if (Capacitor.isNativePlatform()) {
   document.documentElement.classList.add('native')
 }
+
+// Cap the viewport scale on iPhone before anything can take focus, so WebKit
+// cannot zoom the page in on a sub-16px field it can never zoom back out of
+// (see utils/viewportZoom.ts). No-op on every other platform.
+lockViewportScaleOnIPhone()
 
 // Apply theme before React renders to avoid flash
 const saved = localStorage.getItem('theme')
