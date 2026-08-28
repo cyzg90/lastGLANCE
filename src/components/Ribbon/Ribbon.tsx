@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, useCallback } from 'react'
 import { Plus, GripVertical, Search, UserCircle, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 import { useChores } from '@/hooks/useChores'
+import { useDayRollover } from '@/hooks/useDayRollover'
 import { ensureInboxCategory, reorderCategories } from '@/db/queries'
 import { CategorySection } from '@/components/CategorySection/CategorySection'
 import { LogModal } from '@/components/LogModal/LogModal'
@@ -66,6 +67,9 @@ const ADD_CAT_ID = -1
 export function Ribbon({ editMode, onLogged }: Props) {
   const { t } = useTranslation()
   const { data, loading, refresh } = useChores()
+  // elapsed_days is computed inside the query, not in render, so a stale day
+  // can only be corrected by re-reading — a re-render alone would not do it.
+  useDayRollover(refresh)
   const { multiUserEnabled, meId, filter, setFilter, attentionOnly, setAttentionOnly } = useUsersContext()
   const [localData, setLocalData] = useState<CategoryWithChores[]>([])
   const [activeCategoryIndex, setActiveCategoryIndex] = useState(0)
