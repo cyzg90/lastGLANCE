@@ -12,24 +12,38 @@ import AppIntents
 // at all. That is why it sits in App/Shared/ next to SharedDataStore.swift,
 // the repo's existing both-targets home, rather than beside the widgets it
 // belongs to conceptually.
-//
-// The dual membership is what makes the OpenURLIntent chain below reachable;
-// it is not an alternative to it. Both are required.
 
 // Opens the app straight into the new-chore form — the Quick Settings
 // add-chore tile, relocated to where iOS puts such things.
 //
-// The intent's ONLY job is to hand back an OpenURLIntent for the same
-// lastglance:// URL every other entry point uses; the app then receives it
-// through the AppDelegate URL path, which is device-verified. Two designs
-// that look right do not work from a control, learned the hard way:
-//  - `openAppWhenRun` alone is ignored when the intent runs in the widget
-//    extension process — which is exactly where a control button's intent
-//    runs. The tap performed, wrote its token, and nothing opened.
-//  - Writing the pending token from the intent also had a warm-open race:
-//    the app's foreground drain could run before the token landed.
-// Chaining OpenURLIntent solves both: the system opens the URL itself, and
-// the token is minted by AppDelegate on receipt, exactly as for a widget tap.
+// TWO INDEPENDENT HALVES, AND THE DESTINATION MUST NOT RIDE ON EITHER ONE.
+//
+// Opening the app and saying WHERE to go are separate problems here, and the
+// system decides which of the two open mechanisms below it honours:
+//
+//  - `openAppWhenRun` foregrounds the app but carries no destination. It is
+//    ignored while the app target cannot see this intent, which is why the
+//    control did nothing before the file gained its App-target membership —
+//    and it is what opens the app now that it can.
+//  - The chained `OpenURLIntent` carries the destination in the URL, and the
+//    app receives it through the AppDelegate URL path every widget body-tap
+//    already uses. But the system will not necessarily perform it once
+//    `openAppWhenRun` has already satisfied "open the app".
+//
+// So `perform()` writes the pending token itself, BEFORE handing back the
+// open. That is the half that cannot be dropped: whichever mechanism actually
+// foregrounds the app, the destination is already in the App Group for
+// usePendingDeepLink to drain on mount or on the foreground visibilitychange.
+//
+// Deleting this write is precisely how the control regressed from "does
+// nothing" to "opens the app on the wrong screen": it was removed in favour of
+// the OpenURLIntent chain alone, at a point when the control could not open
+// the app at all, so the chain was never actually observed to deliver the URL.
+//
+// The OpenURLIntent is kept, not redundant. If the system does perform it,
+// AppDelegate maps the same URL to the same "action:add" token and writes it
+// to the same single slot — same value, consumed once by
+// readAndClearPendingDeepLink, so at most one new-chore form either way.
 @available(iOS 18.0, *)
 struct OpenAddChoreIntent: AppIntent {
     static let title: LocalizedStringResource = "Add chore"
@@ -38,7 +52,11 @@ struct OpenAddChoreIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult & OpensIntent {
-        .result(opensIntent: OpenURLIntent(URL(string: "lastglance://action/add")!))
+        // Runs to completion in the widget extension process before the system
+        // opens the app, so the token is in the shared container ahead of any
+        // drain the foregrounding app can run.
+        SharedDataStore.writePendingDeepLink("action:add")
+        return .result(opensIntent: OpenURLIntent(URL(string: "lastglance://action/add")!))
     }
 }
 
