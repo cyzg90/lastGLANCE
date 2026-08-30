@@ -1,6 +1,22 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
+
+// The router is exercised for real below, so the native bridge it calls is
+// stubbed. vi.hoisted because vi.mock is lifted above ordinary declarations.
+const { plugin } = vi.hoisted(() => ({
+  plugin: {
+    consumeDeepLink: vi.fn(async () => ({ deepLink: null as string | null })),
+    consumeSharedChore: vi.fn(async () => ({ text: null as string | null })),
+  },
+}))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { getPlatform: () => 'ios' },
+  registerPlugin: () => plugin,
+}))
+
+import { routeWidgetDeepLink } from '@/native/pendingDeepLink'
 
 /**
  * CI cannot run Xcode, so the project wiring the Control Center control
@@ -19,6 +35,14 @@ import { join } from 'node:path'
  * Nothing else catches this. It is not a compile error, and the accessory
  * widget in the same original file genuinely cannot join the app target, since
  * it depends on the extension-only SnapshotProvider.
+ *
+ * OPENING THE APP AND SAYING WHERE TO GO ARE SEPARATE PROBLEMS, and the second
+ * regressed on its own once the first was fixed: with the membership in place
+ * `openAppWhenRun` foregrounds the app, which can satisfy "open" without the
+ * system ever performing the chained OpenURLIntent — so the app arrived on the
+ * chore list with no destination. The intent therefore writes the pending token
+ * itself, and the tests below follow that token all the way to the web event,
+ * because every layer of that chain is a plain literal no compiler checks.
  */
 const IOS = join(__dirname, '../ios/App')
 const PBXPROJ = join(IOS, 'App.xcodeproj/project.pbxproj')
@@ -83,5 +107,80 @@ describe('iOS Control Center control', () => {
   it('still registers the control in the widget bundle', () => {
     const bundle = readFileSync(join(IOS, 'GlanceWidgets/GlanceWidgetsBundle.swift'), 'utf8')
     expect(bundle).toMatch(/AddChoreControl\(\)/)
+  })
+})
+
+// ── The destination, from the intent to the web event ────────────────────────
+//
+// The control opening the app is only half the job. Nothing about "and it opens
+// the new-chore form" is checked by a compiler, a type, or the Swift build: the
+// token is a bare string that has to survive an App Group write, an AppDelegate
+// URL mapping, a Capacitor bridge call and a web-router branch, each of which
+// spells it out as its own literal. These tests read the token out of the Swift
+// intent and follow that exact value through every remaining layer, so any one
+// of them drifting fails here rather than on someone's phone.
+describe('iOS Control Center destination', () => {
+  const src = readFileSync(join(IOS, 'App/Shared', CONTROL_FILE), 'utf8')
+
+  /** The token the intent writes, and the URL it chains — from source. */
+  const token = src.match(/writePendingDeepLink\("([^"]+)"\)/)?.[1]
+  const url = src.match(/OpenURLIntent\(URL\(string: "([^"]+)"\)!\)/)?.[1]
+
+  beforeEach(() => {
+    vi.clearAllMocks()
+    plugin.consumeDeepLink.mockResolvedValue({ deepLink: null })
+    plugin.consumeSharedChore.mockResolvedValue({ text: null })
+  })
+
+  it('writes the pending token itself, rather than relying on the chained URL', () => {
+    expect(
+      token,
+      'OpenAddChoreIntent.perform() must write the deep-link token. `openAppWhenRun` ' +
+        'foregrounds the app carrying no destination, and once it has satisfied "open the ' +
+        'app" the system need not perform the chained OpenURLIntent — so the URL is not a ' +
+        'reliable carrier. Without this write the control opens the app on the chore list.',
+    ).toBe('action:add')
+  })
+
+  it('keeps the chained URL, and AppDelegate maps it back to the same token', () => {
+    // Not redundant with the write: when the system DOES perform it, this is
+    // the path the URL takes, and it must land on the same single slot.
+    expect(url).toBe('lastglance://action/add')
+
+    // Mirror AppDelegate.deepLinkToken's parse: host, then lastPathComponent.
+    const { host, pathname } = new URL(url!)
+    const last = pathname.split('/').filter(Boolean).pop()
+
+    const delegate = readFileSync(join(IOS, 'App/AppDelegate.swift'), 'utf8')
+    expect(delegate).toMatch(new RegExp(`case "${host}":`))
+    expect(delegate).toMatch(new RegExp(`case "${last}": return "${token}"`))
+  })
+
+  it('is accepted by the quick-action validity check too', () => {
+    // The same token arrives from home-screen quick actions, which validate
+    // against an explicit allow-list. A token the control writes but that list
+    // rejects would work from one entry point and not the other.
+    const delegate = readFileSync(join(IOS, 'App/AppDelegate.swift'), 'utf8')
+    expect(delegate).toContain(`token == "${token}"`)
+  })
+
+  it('routes that exact token to the new-chore form', async () => {
+    // The web half, run for real: the router is driven with the token read out
+    // of the Swift source, not with a literal re-typed here.
+    const dispatched: string[] = []
+    vi.stubGlobal('window', { dispatchEvent: (e: Event) => { dispatched.push(e.type); return true } })
+    plugin.consumeDeepLink.mockResolvedValue({ deepLink: token! })
+
+    await routeWidgetDeepLink()
+
+    expect(dispatched).toContain('lg:new-chore')
+    vi.unstubAllGlobals()
+  })
+
+  it('has a listener for that event mounted in the Ribbon', () => {
+    // The last link in the chain, and the only one not executable here: the
+    // Ribbon owns the new-chore form and registers the listener on mount.
+    const ribbon = readFileSync(join(__dirname, 'components/Ribbon/Ribbon.tsx'), 'utf8')
+    expect(ribbon).toContain("addEventListener('lg:new-chore'")
   })
 })
