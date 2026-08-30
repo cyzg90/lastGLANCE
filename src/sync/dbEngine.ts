@@ -31,6 +31,30 @@ import {
 const APP_ID = 'lastglance'
 const CRYPTO_DB_NAME = 'lastglance-crypto'
 
+// Pull-cursor durability contract (@glance-apps/sync 2.0.0).
+//
+// 2.0.0 turned the cursor commit point into a declared mode and flipped the
+// DEFAULT to 'end-of-pull', which advances the pull cursor once, after a fully
+// successful pagination loop. lastGLANCE declares 'per-page' to KEEP the
+// behaviour it has had since 1.10.0: the cursor advances after each completed
+// page, so a large backlog on a flaky connection resumes from the last good
+// page instead of re-downloading everything it already applied on every
+// failure. Taking the new default would silently reintroduce exactly the
+// convergence bug 1.10.0 fixed, and it would present as a network problem.
+//
+// 'per-page' is safe HERE because applyRemoteEntity / applyRemoteDelete write
+// straight into Dexie (see the module header) and are durable the moment they
+// return: there is no per-cycle mirror a later failure could discard, so the
+// persisted cursor is always behind committed local state. The default flipped
+// because that is NOT true of every consumer of the package (a
+// commit-only-on-success composer loses rows under per-page), not because
+// per-page is wrong for the callers it fits.
+//
+// Exported so the multi-device test exercises the real declared mode rather
+// than a second copy of the literal. An unrecognised mode is refused at
+// construction, so a typo throws instead of silently reverting to the default.
+export const PULL_CURSOR_COMMIT = 'per-page' as const
+
 // User-facing text for the typed vault (DB transport) error codes is no longer
 // mapped here. The engine emits a typed SyncErrorCode alongside its message on
 // onError; the client localizes it at render time via syncErrorText (see
@@ -537,6 +561,7 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
     applyRemoteDelete,
     isInsertOnly,
     getEntityLastModified,
+    pullCursorCommit: PULL_CURSOR_COMMIT,
     onStatusChange: callbacks.onStatusChange,
     onError: callbacks.onError,
     onRowsSkipped: callbacks.onRowsSkipped,
