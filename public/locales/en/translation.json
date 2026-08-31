@@ -395,6 +395,7 @@
       "ACCOUNT_ID_REQUIRED": "Finishing sync setup — try again in a moment.",
       "CREDENTIAL_INVALID": "The sync server no longer accepts this device's sync access. Your changes are saved on this device. Ask whoever runs your sync server to restore access for this device.",
       "QUOTA_EXCEEDED": "The sync server has reached its limit for this account. Your changes are saved on this device and syncing will retry automatically. Ask whoever runs your sync server to raise the limit.",
+      "RATE_LIMITED": "The sync server is receiving too many requests. Syncing has paused briefly and will resume automatically. Your changes are saved on this device.",
       "passphraseNeeded": "Enter your sync passphrase to continue.",
       "vaultUnreachable": "Couldn't reach GLANCEvault: {{detail}}",
       "requestFailed": "Sync request failed. Please try again.",

@@ -395,6 +395,7 @@
       "ACCOUNT_ID_REQUIRED": "A concluir a configuração da sincronização — tente novamente daqui a pouco.",
       "CREDENTIAL_INVALID": "O servidor de sincronização já não aceita o acesso deste dispositivo. As suas alterações estão guardadas neste dispositivo. Peça a quem gere o seu servidor de sincronização para restaurar o acesso deste dispositivo.",
       "QUOTA_EXCEEDED": "O servidor de sincronização atingiu o limite desta conta. As suas alterações estão guardadas neste dispositivo e a sincronização será repetida automaticamente. Peça a quem gere o seu servidor de sincronização para aumentar o limite.",
+      "RATE_LIMITED": "O servidor de sincronização recebeu demasiados pedidos. A sincronização foi pausada por um momento e será retomada automaticamente. As suas alterações estão guardadas neste dispositivo.",
       "passphraseNeeded": "Introduza a sua frase-passe de sincronização para continuar.",
       "vaultUnreachable": "Não foi possível contactar o GLANCEvault: {{detail}}",
       "requestFailed": "O pedido de sincronização falhou. Tente novamente.",
