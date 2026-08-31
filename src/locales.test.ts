@@ -1,4 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { languages, loaders, resolveLanguage } from './locales'
 
 // de/es/fr/it/pt sat 8 keys behind en — the backup restore confirmation and
@@ -144,6 +146,71 @@ describe('locale bundles', () => {
       bundles['pt-BR'],
       'pt-BR does not match its transform — run `node scripts/gen-pt-br.mjs` (and never edit pt-BR by hand)',
     ).toEqual(regenerated)
+  })
+
+  // Locale-to-locale parity cannot see a code the ENGINE knows about and no
+  // locale has, which is how RATE_LIMITED arrived unmapped: @glance-apps/sync
+  // 1.11.0 added it, the bump to 2.0.0 brought it in, and syncErrorText's
+  // fallback to the engine's own message meant it degraded to English instead
+  // of failing. Nothing was broken, and nothing said anything either.
+  //
+  // So the codes are checked against the package's own union rather than
+  // against each other. A code that should NOT have a key needs an entry in
+  // UNMAPPED with a reason, which turns "we forgot" into "we decided".
+  describe('every SyncErrorCode the engine can surface has English text', () => {
+    // Codes deliberately without a key, and why.
+    const UNMAPPED: Record<string, string> = {
+      // dbSyncCycle never routes this to onError: a suppressed half is
+      // reported through surfaceStandingWindow (quota only) and the standing
+      // window is rendered from getBackoffState() by backoffStatus.ts, not by
+      // syncErrorText. A string here would be unreachable.
+      SYNC_SUPPRESSED: 'never reaches onError; rendered as a backoff window',
+    }
+
+    const codes = (() => {
+      const dts = readFileSync(
+        join(__dirname, '../node_modules/@glance-apps/sync/types/index.d.ts'),
+        'utf8',
+      )
+      // Comments are stripped BEFORE the union's terminating `;` is located.
+      // Several members carry doc comments containing a semicolon, so matching
+      // `=([\s\S]*?);` against the raw text truncates the union mid-way — it
+      // silently yielded 12 of 14 codes, with the two newest (the ones a bump
+      // actually adds) falling off the end.
+      const body = dts.slice(dts.indexOf('export type SyncErrorCode =')).replace(/\/\/[^\n]*/g, '')
+      const union = body.slice(0, body.indexOf(';'))
+      return [...union.matchAll(/'([A-Z_]+)'/g)].map((m) => m[1])
+    })()
+
+    it('parses the whole union out of the package types', () => {
+      // Pinned at BOTH ends: a parse that stops early still returns plausible
+      // codes, so a count threshold does not catch it. The last member is the
+      // one that matters — a truncated union makes every case below vacuous
+      // for exactly the newly-added codes this guard exists to catch.
+      expect(codes[0]).toBe('APP_ID_MISMATCH')
+      expect(codes).toContain('NETWORK_ERROR')
+      expect(codes[codes.length - 1]).toBe('SYNC_SUPPRESSED')
+    })
+
+    it.each(codes)('%s', (code) => {
+      const errors = (bundles.en as { sync: { errors: Record<string, string> } }).sync.errors
+      if (code in UNMAPPED) {
+        expect(
+          errors[code],
+          `${code} is listed in UNMAPPED (${UNMAPPED[code]}) but has a string. ` +
+            'Drop it from UNMAPPED if it can now reach onError.',
+        ).toBeUndefined()
+        return
+      }
+      expect(
+        errors[code],
+        `sync.errors.${code} is missing from en. The engine can pass this code to ` +
+          'onError, and syncErrorText falls back to the raw English message, so the ' +
+          'gap shows up as untranslated text rather than as an error. Add the key to ' +
+          'every locale (pt-BR via scripts/gen-pt-br.mjs), or add it to UNMAPPED here ' +
+          'with the reason it cannot be surfaced.',
+      ).toBeTypeOf('string')
+    })
   })
 
   // Parity can be satisfied by pasting the English text in. Spot-check one

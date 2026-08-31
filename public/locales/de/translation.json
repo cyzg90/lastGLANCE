@@ -395,6 +395,7 @@
       "ACCOUNT_ID_REQUIRED": "Die Sync-Einrichtung wird abgeschlossen – versuche es gleich noch einmal.",
       "CREDENTIAL_INVALID": "Der Sync-Server akzeptiert den Sync-Zugriff dieses Geräts nicht mehr. Deine Änderungen sind auf diesem Gerät gespeichert. Bitte die Person, die deinen Sync-Server betreibt, den Zugriff für dieses Gerät wiederherzustellen.",
       "QUOTA_EXCEEDED": "Der Sync-Server hat das Limit für dieses Konto erreicht. Deine Änderungen sind auf diesem Gerät gespeichert und die Synchronisierung versucht es automatisch erneut. Bitte die Person, die deinen Sync-Server betreibt, das Limit zu erhöhen.",
+      "RATE_LIMITED": "Der Sync-Server erhält zu viele Anfragen. Die Synchronisierung pausiert kurz und wird automatisch fortgesetzt. Deine Änderungen sind auf diesem Gerät gespeichert.",
       "passphraseNeeded": "Gib deine Sync-Passphrase ein, um fortzufahren.",
       "vaultUnreachable": "GLANCEvault ist nicht erreichbar: {{detail}}",
       "requestFailed": "Sync-Anfrage fehlgeschlagen. Bitte versuche es erneut.",

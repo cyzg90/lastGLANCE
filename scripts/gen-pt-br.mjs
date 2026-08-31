@@ -168,6 +168,9 @@ const RULES = [
   ['partilhados', 'compartilhados'],
   ['Gerir subscrição', 'Gerenciar assinatura'],
   ['quem gere', 'quem gerencia'],
+  // "pedidos" is fine in both, but Brazil says "solicitações" for the
+  // HTTP sense the rate-limit message is about.
+  ['recebeu demasiados pedidos', 'recebeu solicitações demais'],
 
   // ── progressives: Portugal's "a + infinitive", Brazil's gerund ──
   ['A aguardar chave', 'Aguardando chave'],
