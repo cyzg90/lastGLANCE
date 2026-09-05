@@ -409,8 +409,9 @@
       "iCloudUnavailable": "iCloud 不可用：{{error}}"
     },
     "syncHalted": "同步已停止",
-    "haltedDescription": "发生严重错误。解决问题后清除错误状态以重试。",
+    "haltedDescription": "发生严重错误。解决问题后重试同步。",
     "clearHalt": "清除错误状态",
+    "retrySync": "重试同步",
     "webdavConnection": "WebDAV 连接",
     "autoSaveHint": "关闭此对话框时会自动保存设置。",
     "syncEnabledLabel": "同步到 WebDAV",
@@ -452,7 +453,16 @@
     "lastSynced": "上次同步：{{date}}",
     "neverSynced": "从未",
     "saveClose": "保存并关闭",
-    "provider": "服务提供方"
+    "provider": "服务提供方",
+    "managedDescription": "云同步由此服务器托管。WebDAV 连接设置和凭据由服务器端配置。",
+    "managedStorage": "存储",
+    "managedWebdav": "托管 WebDAV",
+    "managedFolder": "同步文件夹",
+    "status": "状态",
+    "statusIdle": "空闲",
+    "statusConnected": "已连接",
+    "statusSyncing": "同步中",
+    "close": "关闭"
   },
   "users": {
     "title": "用户",
