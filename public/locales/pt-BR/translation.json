@@ -178,7 +178,7 @@
     "daysAgo": "há {{count}} d"
   },
   "nextDue": {
-    "dueNow": "vence agora",
+    "dueNow": "hora de fazer",
     "today": "hoje",
     "tomorrow": "amanhã",
     "inDays": "daqui a {{count}} d",

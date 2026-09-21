@@ -178,7 +178,7 @@
     "daysAgo": "vor {{count}} T."
   },
   "nextDue": {
-    "dueNow": "jetzt fällig",
+    "dueNow": "jetzt dran",
     "today": "heute",
     "tomorrow": "morgen",
     "inDays": "in {{count}} T.",
