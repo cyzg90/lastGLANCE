@@ -31,9 +31,4 @@ const server = http.createServer((req, res) => {
   })
 })
 
-server.listen(3001, '127.0.0.1', () => {
-  const posture = defaultAllowPrivate()
-    ? 'private/LAN targets allowed; set WEBDAV_PROXY_BLOCK_PRIVATE=1 to refuse them'
-    : 'private/LAN targets refused'
-  console.log(`[proxy] listening on 127.0.0.1:3001 [${posture}]`)
-})
+server.listen(3001, '127.0.0.1', () => console.log('[proxy] listening on 127.0.0.1:3001'))
