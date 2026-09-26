@@ -87,6 +87,20 @@ describe('display formatting', () => {
     expect(formatDayHeading(SAMPLE)).toMatch(/星期三/)
   })
 
+  // Polish and Ukrainian decline the month: genitive after a day number
+  // ("12 sierpnia"), nominative when it stands alone ("sierpień 2026"). dayjs
+  // handles the switch inside the locale, so a format that concatenated a
+  // month name onto a day would regress to "12 sierpień" without failing
+  // anything else.
+  it('declines the month in Polish and Ukrainian', () => {
+    applyDateLocale('pl')
+    expect(formatDayHeading(SAMPLE)).toMatch(/środa, 12 sierpnia/)
+    expect(formatMonthYear(SAMPLE)).toMatch(/^sierpień 2026/)
+    applyDateLocale('uk')
+    expect(formatDayHeading(SAMPLE)).toMatch(/середа, 12 серпня/)
+    expect(formatMonthYear(SAMPLE)).toMatch(/^серпень 2026/)
+  })
+
   it('orders the short month-and-day form per locale', () => {
     applyDateLocale('en')
     expect(formatMonthDay(SAMPLE)).toBe('Aug 12')

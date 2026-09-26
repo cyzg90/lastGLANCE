@@ -8,7 +8,7 @@ import { languages, loaders, resolveLanguage } from './locales'
 // user. The backlog is translated, so this is a strict parity check: a key
 // added to en without translations fails here instead of silently falling back.
 describe('locale bundles', () => {
-  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'pt-BR', 'pt-PT', 'zh-CN']
+  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'pl', 'pt-BR', 'pt-PT', 'uk', 'zh-CN']
   const TRANSLATED = EXPECTED.filter((l) => l !== 'en')
 
   const bundles: Record<string, Record<string, unknown>> = {}
@@ -125,18 +125,54 @@ describe('locale bundles', () => {
     expect(Object.keys(bundles[lng]).length).toBeGreaterThan(0)
   })
 
+  // Plural keys differ by language on purpose: English has one/other, Polish
+  // and Ukrainian need one/few/many/other, and Chinese selects only other.
+  // Comparing key-for-key would force a language to carry forms its rules never
+  // select, or forbid the ones they do, so plural keys are compared by family
+  // ("heatmap.completions") and each language is held to its own categories.
+  const PLURAL = /_(zero|one|two|few|many|other)$/
+  const family = (key: string) => key.replace(PLURAL, '')
+  const categoryOf = (key: string) => key.match(PLURAL)?.[1]
+  const isPlural = (key: string) => PLURAL.test(key)
+  const enFamilies = () => new Set([...keysOf('en')].filter(isPlural).map(family))
+  const categoriesOf = (lng: string) =>
+    new Intl.PluralRules(lng).resolvedOptions().pluralCategories as string[]
+
   describe('coverage against en', () => {
     it.each(TRANSLATED)('%s covers every key in en', (lng) => {
-      const missing = [...keysOf('en')].filter((k) => !keysOf(lng).has(k))
+      const have = new Set([...keysOf(lng)].map(family))
+      const missing = [...keysOf('en')].filter((k) => (isPlural(k) ? !have.has(family(k)) : !keysOf(lng).has(k)))
       expect(
         missing,
         `${lng} is missing keys that en has — translate them:\n  ${missing.slice(0, 10).join('\n  ')}`,
       ).toEqual([])
     })
 
+    // A plural form en has no key for (Polish `_few`) is allowed only when en
+    // carries the family and the language's own rules select that category —
+    // a stray `_few` in German would never be read.
     it.each(TRANSLATED)('%s carries no keys that en does not', (lng) => {
-      const extra = [...keysOf(lng)].filter((k) => !keysOf('en').has(k))
+      const known = enFamilies()
+      const own = categoriesOf(lng)
+      const extra = [...keysOf(lng)].filter(
+        (k) => !keysOf('en').has(k) && !(isPlural(k) && known.has(family(k)) && own.includes(categoryOf(k)!)),
+      )
       expect(extra, `${lng} has keys absent from en`).toEqual([])
+    })
+
+    // The other half of allowing different plural keys: each language must
+    // actually define the forms its rules select, or i18next falls back to the
+    // base key and a count like 3 renders with the wrong noun. Scoped to counts
+    // the app can produce (0-1000): es/fr/it/pt reserve "many" for millions,
+    // which drops out on its own instead of needing a list of exempt languages.
+    it.each(TRANSLATED)('%s defines every plural category its rules select', (lng) => {
+      const rules = new Intl.PluralRules(lng)
+      const selected = new Set<string>()
+      for (let n = 0; n <= 1000; n++) selected.add(rules.select(n))
+      const problems = [...enFamilies()].flatMap((fam) =>
+        [...selected].filter((cat) => !keysOf(lng).has(`${fam}_${cat}`)).map((cat) => `${fam}_${cat}`),
+      )
+      expect(problems, `${lng} lacks plural forms its language selects`).toEqual([])
     })
   })
 
@@ -150,8 +186,45 @@ describe('locale bundles', () => {
     it.each(TRANSLATED)('%s keeps every {{placeholder}} en uses', (lng) => {
       const en = new Map(flatten(bundles.en))
       const mismatched = flatten(bundles[lng])
-        .filter(([key, value]) => en.has(key) && slotsOf(value).join() !== slotsOf(en.get(key)).join())
+        .filter(([key, value]) => !isPlural(key) && en.has(key) && slotsOf(value).join() !== slotsOf(en.get(key)).join())
         .map(([key, value]) => `  ${key}: [${slotsOf(en.get(key))}] became [${slotsOf(value)}]`)
+      expect(mismatched, `${lng} placeholder mismatches:\n${mismatched.join('\n')}`).toEqual([])
+    })
+
+    // A plural form is checked against its whole en family, since Polish
+    // `_few` has no en counterpart of its own. {{count}} is the one slot whose
+    // presence depends on the language: a form may spell the number out
+    // ("został 1") only if its category is selected by exactly one count.
+    // That holds for German or Polish `_one`, but Ukrainian `_one` also covers
+    // 21, 31, 101…, so a literal "1" there would tell someone with 21 left
+    // that they have 1. Nothing may be invented.
+    //
+    // Counts start at 1: every plural call site renders only for a positive
+    // count (completionsLabel routes 0 to its own key, the rest are guarded),
+    // so French `_one` selecting {0, 1} does not make its "1 restante" wrong.
+    // A form no such count selects (Chinese `_one`) is never read, so it is
+    // held only to inventing nothing.
+    it.each(TRANSLATED)('%s keeps every {{placeholder}} of each plural family', (lng) => {
+      const en = new Map(flatten(bundles.en))
+      const familySlots = (fam: string) =>
+        [...new Set([...en].filter(([k]) => isPlural(k) && family(k) === fam).flatMap(([, v]) => slotsOf(v)))].sort()
+      const noCount = (slots: string[]) => slots.filter((s) => s !== '{{count}}')
+      const rules = new Intl.PluralRules(lng)
+      const integersIn = new Map<string, number>()
+      for (let n = 1; n <= 1000; n++) integersIn.set(rules.select(n), (integersIn.get(rules.select(n)) ?? 0) + 1)
+      const mismatched = flatten(bundles[lng])
+        .filter(([key]) => isPlural(key) && enFamilies().has(family(key)))
+        .filter(([key, value]) => {
+          const want = familySlots(family(key))
+          const got = slotsOf(value)
+          const countOptional = (integersIn.get(categoryOf(key)!) ?? 0) <= 1
+          return (
+            noCount(got).join() !== noCount(want).join() ||
+            got.some((s) => !want.includes(s)) ||
+            (want.includes('{{count}}') && !countOptional && !got.includes('{{count}}'))
+          )
+        })
+        .map(([key, value]) => `  ${key}: [${familySlots(family(key))}] became [${slotsOf(value)}]`)
       expect(mismatched, `${lng} placeholder mismatches:\n${mismatched.join('\n')}`).toEqual([])
     })
   })
