@@ -165,6 +165,18 @@ export function formatTime(value: DateInput): string {
   return formatter({ hour: 'numeric', minute: '2-digit' }).format(toDate(value))
 }
 
+/** Whether the active locale writes times on a 24-hour clock (everything but en here). */
+export function uses24HourClock(): boolean {
+  return formatter({ hour: 'numeric' }).resolvedOptions().hour12 === false
+}
+
+/** The locale's own "AM"/"PM" label (e.g. "上午"/"下午" in zh-CN). */
+export function formatDayPeriod(am: boolean): string {
+  const f = new Intl.DateTimeFormat(activeLocale, { hour: 'numeric', hour12: true, timeZone: 'UTC' })
+  return f.formatToParts(new Date(Date.UTC(2024, 0, 1, am ? 9 : 15)))
+    .find(p => p.type === 'dayPeriod')?.value ?? (am ? 'AM' : 'PM')
+}
+
 /** "Aug 12, 2026, 2:05 PM" · "12 août 2026, 14:05" */
 export function formatDateTime(value: DateInput): string {
   return formatter({
