@@ -60,6 +60,14 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
     setOpen(false)
   }
 
+  // With the picker indicator hidden, some mobile WebViews only focus the
+  // input's hour segment on tap and never raise the native time dialog.
+  // Open it explicitly; showPicker() needs this user gesture and throws when
+  // unsupported or already open, in which case native behavior still applies.
+  function openTimePicker(e: React.MouseEvent<HTMLInputElement>) {
+    try { e.currentTarget.showPicker?.() } catch { /* fall back to native tap handling */ }
+  }
+
   const displayLabel = date
     ? `${formatDate(date)}${time ? ` · ${time}` : ''}`
     : null
@@ -158,6 +166,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
               type="time"
               value={time}
               onChange={e => onTimeChange(e.target.value)}
+              onClick={openTimePicker}
               disabled={!date}
               style={{ colorScheme: 'dark' }}
               className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 text-right focus:outline-none disabled:text-slate-300 dark:disabled:text-slate-700 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden"
