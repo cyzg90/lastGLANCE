@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="heatmap_widget_description">Ваша нещодавня активність одним поглядом.</string>
+    <string name="single_chore_widget_description">Справа, що найбільше потребує уваги, з позначкою «виконано» одним дотиком.</string>
+    <string name="soon_list_widget_description">Справи, що незабаром потребуватимуть уваги, з позначкою «виконано» одним дотиком.</string>
+    <string name="soon_list_widget_title">Незабаром</string>
+    <string name="widget_done">Виконано</string>
+    <string name="widget_all_caught_up">Усе виконано</string>
+    <string name="widget_config_auto">Найбільш протермінована (автоматично)</string>
+    <string name="widget_config_title">Виберіть справу</string>
+    <string name="widget_config_search">Шукати справи</string>
+    <string name="widget_label_activity">lastGLANCE Активність</string>
+    <string name="widget_label_chore">lastGLANCE Справа</string>
+    <string name="widget_label_soon">lastGLANCE Незабаром</string>
+    <string name="widget_label_add">lastGLANCE Додати</string>
+    <string name="add_chore_widget_description">Один дотик, щоб додати нову справу.</string>
+    <string name="widget_add_chore">Додати справу</string>
+    <string name="shortcut_soon_short">Незабаром</string>
+    <string name="shortcut_soon_long">Що потребує уваги</string>
+    <string name="shortcut_search_short">Пошук</string>
+    <string name="shortcut_search_long">Шукати справи</string>
+    <string name="shortcut_add_short">Додати</string>
+    <string name="shortcut_add_long">Додати нову справу</string>
+    <string name="tile_add_chore">Додати справу</string>
+    <string name="tile_soon">Незабаром</string>
+    <string name="widget_never">ніколи</string>
+    <string name="widget_today">сьогодні</string>
+    <string name="widget_yesterday">учора</string>
+    <string name="widget_days_ago">%1$d дн. тому</string>
+    <string name="widget_count_overdue">Протерміновано: %1$d</string>
+    <string name="widget_count_soon">Незабаром: %1$d</string>
+</resources>

@@ -44,6 +44,18 @@
             "state": "translated",
             "value": "%@\n\n下次打开应用时，它会作为一个新事项等待你处理。"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@\n\nPojawi się jako nowy obowiązek, gdy następnym razem otworzysz aplikację."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@\n\nНаступного разу, коли ви відкриєте застосунок, на вас чекатиме нова справа."
+          }
         }
       }
     },
@@ -89,6 +101,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gotowe"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Готово"
           }
         }
       }
@@ -136,6 +160,18 @@
             "state": "translated",
             "value": "没有可保存的内容"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie ma nic do zapisania"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Нічого зберігати"
+          }
         }
       }
     },
@@ -182,6 +218,18 @@
             "state": "translated",
             "value": "已保存到 lastGLANCE"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapisano w lastGLANCE"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Збережено в lastGLANCE"
+          }
         }
       }
     },
@@ -227,6 +275,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "此内容不包含 lastGLANCE 可使用的文本或链接。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten element nie zawierał tekstu ani linku, którego lastGLANCE mógłby użyć."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Цей елемент не містив тексту чи посилання, які lastGLANCE міг би використати."
           }
         }
       }

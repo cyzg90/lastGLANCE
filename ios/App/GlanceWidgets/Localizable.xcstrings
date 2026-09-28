@@ -44,6 +44,18 @@
             "state": "translated",
             "value": "%@ · %lld 个逾期"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · zaległe: %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ · протерміновано: %lld"
+          }
         }
       }
     },
@@ -89,6 +101,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 个逾期"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaległe: %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Протерміновано: %lld"
           }
         }
       }
@@ -136,6 +160,18 @@
             "state": "translated",
             "value": "%lld 个逾期 · %lld 个即将到期"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaległe: %lld · wkrótce: %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Протерміновано: %lld · незабаром: %lld"
+          }
         }
       }
     },
@@ -181,6 +217,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "%lld 天前"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld dn. temu"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld дн. тому"
           }
         }
       }
@@ -228,6 +276,18 @@
             "state": "translated",
             "value": "另有 %lld 个"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld więcej"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "+%lld ще"
+          }
         }
       }
     },
@@ -273,6 +333,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "一键添加新事项。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Skrót, który jednym dotknięciem dodaje nowy obowiązek."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Швидкий доступ, щоб додати нову справу одним дотиком."
           }
         }
       }
@@ -320,6 +392,18 @@
             "state": "translated",
             "value": "活动"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aktywność"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Активність"
+          }
         }
       }
     },
@@ -365,6 +449,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "添加事项"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodaj obowiązek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Додати справу"
           }
         }
       }
@@ -412,6 +508,18 @@
             "state": "translated",
             "value": "都处理好了"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wszystko zrobione"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Усе виконано"
+          }
         }
       }
     },
@@ -457,6 +565,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择事项"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz obowiązek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть справу"
           }
         }
       }
@@ -504,6 +624,18 @@
             "state": "translated",
             "value": "事项"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obowiązek"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Справа"
+          }
         }
       }
     },
@@ -549,6 +681,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示近期或逾期的事项，并可一键标记完成。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obowiązki z bliskim terminem lub zaległe, z oznaczaniem jednym dotknięciem."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Справи з близьким терміном або протерміновані, з позначкою «виконано» одним дотиком."
           }
         }
       }
@@ -596,6 +740,18 @@
             "state": "translated",
             "value": "完成"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zrobione"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виконано"
+          }
         }
       }
     },
@@ -641,6 +797,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "在锁定屏幕上查看有多少事项需要关注。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ile obowiązków wymaga uwagi, na ekranie blokady."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Скільки справ потребує уваги, на екрані блокування."
           }
         }
       }
@@ -688,6 +856,18 @@
             "state": "translated",
             "value": "少"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mniej"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Менше"
+          }
         }
       }
     },
@@ -733,6 +913,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "将事项标记为完成"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Oznacz obowiązek jako zrobiony"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Позначити справу виконаною"
           }
         }
       }
@@ -780,6 +972,18 @@
             "state": "translated",
             "value": "多"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Więcej"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Більше"
+          }
         }
       }
     },
@@ -825,6 +1029,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示一个事项及距上次完成的时间，并可一键标记完成。编辑小组件可选择要显示的事项。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Jeden obowiązek i ile czasu minęło, z oznaczaniem jednym dotknięciem. Edytuj widżet, aby wybrać który."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Одна справа і скільки часу минуло, з позначкою «виконано» одним дотиком. Відредагуйте віджет, щоб вибрати, яка саме."
           }
         }
       }
@@ -872,6 +1088,18 @@
             "state": "translated",
             "value": "打开一次 lastGLANCE 以完成同步。"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz lastGLANCE raz, aby zsynchronizować."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкрийте lastGLANCE один раз, щоб синхронізувати."
+          }
         }
       }
     },
@@ -917,6 +1145,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "打开 lastGLANCE 并直接进入添加新事项界面。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwiera lastGLANCE od razu w dodawaniu nowego obowiązku."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Відкриває lastGLANCE одразу для додавання нової справи."
           }
         }
       }
@@ -964,6 +1204,18 @@
             "state": "translated",
             "value": "逾期概览"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaległe w skrócie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Протерміноване одним поглядом"
+          }
         }
       }
     },
@@ -1009,6 +1261,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "选择此小组件要跟踪的事项。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz obowiązek, który śledzi ten widżet."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Виберіть справу, яку відстежує цей віджет."
           }
         }
       }
@@ -1056,6 +1320,18 @@
             "state": "translated",
             "value": "近期"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "WKRÓTCE"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "НЕЗАБАРОМ"
+          }
         }
       }
     },
@@ -1101,6 +1377,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "无法读取快照。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można odczytać migawki."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Не вдалося прочитати знімок."
           }
         }
       }
@@ -1148,6 +1436,18 @@
             "state": "translated",
             "value": "近期"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wkrótce"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Незабаром"
+          }
         }
       }
     },
@@ -1193,6 +1493,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "一览你的完成历史。"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Twoja historia wykonań w skrócie."
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ваша історія виконань одним поглядом."
           }
         }
       }
@@ -1240,6 +1552,18 @@
             "state": "translated",
             "value": "活跃天数"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktywny dzień"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "активний день"
+          }
         }
       }
     },
@@ -1285,6 +1609,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "活跃天数"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "aktywne dni"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "активні дні"
           }
         }
       }
@@ -1332,6 +1668,18 @@
             "state": "translated",
             "value": "完成记录"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wykonanie"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "виконання"
+          }
         }
       }
     },
@@ -1377,6 +1725,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "完成记录"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wykonania"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "виконання"
           }
         }
       }
@@ -1424,6 +1784,18 @@
             "state": "translated",
             "value": "连续天数"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "seria dni"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "серія днів"
+          }
         }
       }
     },
@@ -1469,6 +1841,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "逾期"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "zaległe"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "протерм."
           }
         }
       }
@@ -1516,6 +1900,18 @@
             "state": "translated",
             "value": "lastGLANCE · %lld 个逾期，%lld 个即将到期"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lastGLANCE · zaległe: %lld, wkrótce: %lld"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "lastGLANCE · протерміновано: %lld, незабаром: %lld"
+          }
         }
       }
     },
@@ -1561,6 +1957,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "从未"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "nigdy"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ніколи"
           }
         }
       }
@@ -1608,6 +2016,18 @@
             "state": "translated",
             "value": "今天"
           }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "dziś"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "сьогодні"
+          }
         }
       }
     },
@@ -1653,6 +2073,18 @@
           "stringUnit": {
             "state": "translated",
             "value": "昨天"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "wczoraj"
+          }
+        },
+        "uk": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "учора"
           }
         }
       }
