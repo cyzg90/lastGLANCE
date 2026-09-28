@@ -29,6 +29,8 @@ export function ClockTimePicker({ value, onChange, onClose }: Props) {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') { e.stopPropagation(); onClose() }
+      else if (e.key === 'ArrowUp' || e.key === 'ArrowRight') { e.preventDefault(); setMode('minute'); setMinute(m => (m + 1) % 60) }
+      else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') { e.preventDefault(); setMode('minute'); setMinute(m => (m + 59) % 60) }
     }
     document.addEventListener('keydown', onKeyDown, true)
     return () => document.removeEventListener('keydown', onKeyDown, true)
@@ -65,19 +67,39 @@ export function ClockTimePicker({ value, onChange, onClose }: Props) {
   const idleInnerCls = 'text-slate-500 dark:text-slate-400 hover:bg-black/5 dark:hover:bg-white/10'
   const numSize = wide ? 'text-sm' : 'text-xs'
 
-  function dialButton(key: string, label: string, deg: number, r: number, size: number, selected: boolean, onClick: () => void, inner = false) {
+  function dialButton(key: string, label: string, deg: number, r: number, size: number, selected: boolean, onClick: () => void, inner = false, passive = false) {
     const { x, y } = pos(deg, r)
     return (
       <button
         type="button"
         key={key}
         onClick={onClick}
-        className={`absolute rounded-full flex items-center justify-center transition-all ${inner ? (wide ? 'text-xs' : 'text-[10px]') : `font-medium ${numSize}`} ${selected ? selectedCls : inner ? idleInnerCls : idleCls}`}
+        tabIndex={passive ? -1 : undefined}
+        className={`absolute rounded-full${passive ? ' pointer-events-none' : ''} flex items-center justify-center transition-all ${inner ? (wide ? 'text-xs' : 'text-[10px]') : `font-medium ${numSize}`} ${selected ? selectedCls : inner ? idleInnerCls : idleCls}`}
         style={{ width: size, height: size, left: x - size / 2, top: y - size / 2 }}
       >
         {label}
       </button>
     )
+  }
+
+  // Minutes: tap or drag anywhere on the face to land on any minute, like the
+  // Android clock dial; the 5-minute labels are just markings.
+  function minuteFromPointer(e: React.PointerEvent<HTMLDivElement>) {
+    const r = e.currentTarget.getBoundingClientRect()
+    const dx = e.clientX - (r.left + r.width / 2)
+    const dy = e.clientY - (r.top + r.height / 2)
+    const deg = (Math.atan2(dy, dx) * 180 / Math.PI + 90 + 360) % 360
+    setMinute(Math.round(deg / 6) % 60)
+  }
+
+  function onFacePointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    minuteFromPointer(e)
+  }
+
+  function onFacePointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) minuteFromPointer(e)
   }
 
   function renderClock() {
@@ -89,7 +111,7 @@ export function ClockTimePicker({ value, onChange, onClose }: Props) {
       handDeg = minute * 6
       for (let i = 0; i < 12; i++) {
         const min = i * 5
-        buttons.push(dialButton(`m${min}`, String(min).padStart(2, '0'), min * 6, outerR, outerBtn, min === minute, () => setMinute(min)))
+        buttons.push(dialButton(`m${min}`, String(min).padStart(2, '0'), min * 6, outerR, outerBtn, min === minute, () => setMinute(min), false, true))
       }
     } else if (use24) {
       if (hour >= 1 && hour <= 12) handDeg = (hour % 12) * 30
@@ -113,14 +135,19 @@ export function ClockTimePicker({ value, onChange, onClose }: Props) {
     }
 
     const { x: hx, y: hy } = pos(handDeg, handR)
+    // A minute between the 5-minute labels has no highlighted label, so mark
+    // the hand's tip instead.
+    const offLabel = mode === 'minute' && minute % 5 !== 0
     return (
       <div
+        onPointerDown={mode === 'minute' ? onFacePointerDown : undefined}
+        onPointerMove={mode === 'minute' ? onFacePointerMove : undefined}
         className="relative rounded-full bg-[radial-gradient(circle_at_38%_33%,#ffffff_0%,#dde1e7_80%)] shadow-[inset_0_3px_12px_rgba(0,0,0,0.09),inset_0_-1px_4px_rgba(255,255,255,0.95)] dark:bg-[radial-gradient(circle_at_38%_33%,#334155_0%,#172033_80%)] dark:shadow-[inset_0_3px_12px_rgba(0,0,0,0.55),inset_0_-1px_4px_rgba(255,255,255,0.04)]"
-        style={{ width: clockSize, height: clockSize }}
+        style={{ width: clockSize, height: clockSize, touchAction: mode === 'minute' ? 'none' : undefined }}
       >
         <svg width={clockSize} height={clockSize} className="absolute inset-0 pointer-events-none text-green-500">
           <line x1={cx} y1={cx} x2={hx} y2={hy} stroke="currentColor" strokeWidth="3" strokeLinecap="round" opacity="0.65" />
-          <circle cx={hx} cy={hy} r="5" fill="currentColor" opacity="0.35" />
+          <circle cx={hx} cy={hy} r={offLabel ? 7 : 5} fill="currentColor" opacity={offLabel ? 1 : 0.35} />
           <circle cx={cx} cy={cx} r="5" fill="currentColor" />
         </svg>
         {buttons}
