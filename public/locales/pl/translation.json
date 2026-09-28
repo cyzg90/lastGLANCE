@@ -169,7 +169,10 @@
     "clearTime": "wyczyść",
     "clear": "Wyczyść",
     "today": "Dzisiaj",
-    "noTimeHint": "Nie ustawiono godziny — zostanie użyte południe"
+    "noTimeHint": "Nie ustawiono godziny — zostanie użyte południe",
+    "setTime": "Ustaw godzinę",
+    "cancel": "Anuluj",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "nigdy",

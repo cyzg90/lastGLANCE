@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react'
 import { ChevronLeft, ChevronRight, Clock, CalendarDays } from 'lucide-react'
 import dayjs from 'dayjs'
-import { formatDate, formatMonthYear, weekdayMinLabels } from '@/utils/datetime'
+import { formatDate, formatMonthYear, formatTime, weekdayMinLabels } from '@/utils/datetime'
+import { ClockTimePicker } from '@/components/ClockTimePicker/ClockTimePicker'
 import { useTranslation } from 'react-i18next'
 
 interface Props {
@@ -28,6 +29,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
   const today = dayjs().format('YYYY-MM-DD')
   const limit = maxDate ?? today
   const [open, setOpen] = useState(false)
+  const [timeOpen, setTimeOpen] = useState(false)
   const [viewDate, setViewDate] = useState(() => date ? dayjs(date) : dayjs())
 
   const cells = useMemo<DayCell[]>(() => {
@@ -61,7 +63,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
   }
 
   const displayLabel = date
-    ? `${formatDate(date)}${time ? ` · ${time}` : ''}`
+    ? `${formatDate(date)}${time ? ` · ${formatTime(`${date}T${time}`)}` : ''}`
     : null
 
   return (
@@ -154,14 +156,14 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
           <div className="flex items-center gap-3 px-4 py-3 border-t border-slate-100 dark:border-slate-800">
             <Clock size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
             <span className="text-xs text-slate-400 dark:text-slate-500">{t('dateTimePicker.time')}</span>
-            <input
-              type="time"
-              value={time}
-              onChange={e => onTimeChange(e.target.value)}
+            <button
+              type="button"
+              onClick={() => setTimeOpen(true)}
               disabled={!date}
-              style={{ colorScheme: 'dark' }}
-              className="flex-1 bg-transparent text-sm text-slate-700 dark:text-slate-200 text-right focus:outline-none disabled:text-slate-300 dark:disabled:text-slate-700 disabled:cursor-not-allowed [&::-webkit-calendar-picker-indicator]:hidden"
-            />
+              className="flex-1 text-sm text-slate-700 dark:text-slate-200 text-right focus:outline-none disabled:text-slate-300 dark:disabled:text-slate-700 disabled:cursor-not-allowed"
+            >
+              {time ? formatTime(`${date}T${time}`) : '--:--'}
+            </button>
             {time && (
               <button
                 onClick={() => onTimeChange('')}
@@ -192,6 +194,14 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, maxDate
 
       {date && !time && open && (
         <p className="text-xs text-slate-400 dark:text-slate-600">{t('dateTimePicker.noTimeHint')}</p>
+      )}
+
+      {timeOpen && (
+        <ClockTimePicker
+          value={time || '12:00'}
+          onChange={onTimeChange}
+          onClose={() => setTimeOpen(false)}
+        />
       )}
     </div>
   )

@@ -167,7 +167,10 @@
     "clearTime": "cancella",
     "clear": "Cancella",
     "today": "Oggi",
-    "noTimeHint": "Nessun orario — verrà usato mezzogiorno"
+    "noTimeHint": "Nessun orario — verrà usato mezzogiorno",
+    "setTime": "Imposta ora",
+    "cancel": "Annulla",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "mai",
