@@ -167,7 +167,10 @@
     "clearTime": "löschen",
     "clear": "Zurücksetzen",
     "today": "Heute",
-    "noTimeHint": "Keine Uhrzeit — es wird 12 Uhr verwendet"
+    "noTimeHint": "Keine Uhrzeit — es wird 12 Uhr verwendet",
+    "setTime": "Zeit festlegen",
+    "cancel": "Abbrechen",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "nie",

@@ -167,7 +167,10 @@
     "clearTime": "effacer",
     "clear": "Effacer",
     "today": "Aujourd'hui",
-    "noTimeHint": "Aucune heure — midi sera utilisé"
+    "noTimeHint": "Aucune heure — midi sera utilisé",
+    "setTime": "Définir l'heure",
+    "cancel": "Annuler",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "jamais",

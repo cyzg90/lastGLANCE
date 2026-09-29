@@ -167,7 +167,10 @@
     "clearTime": "清除",
     "clear": "清除",
     "today": "今天",
-    "noTimeHint": "未设置时间，将使用中午 12:00"
+    "noTimeHint": "未设置时间，将使用中午 12:00",
+    "setTime": "设定时间",
+    "cancel": "取消",
+    "ok": "确定"
   },
   "elapsed": {
     "never": "从未",

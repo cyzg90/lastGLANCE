@@ -167,7 +167,10 @@
     "clearTime": "clear",
     "clear": "Clear",
     "today": "Today",
-    "noTimeHint": "No time set — will use noon"
+    "noTimeHint": "No time set — will use noon",
+    "setTime": "Set time",
+    "cancel": "Cancel",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "never",

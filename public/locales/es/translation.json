@@ -167,7 +167,10 @@
     "clearTime": "borrar",
     "clear": "Borrar",
     "today": "Hoy",
-    "noTimeHint": "Sin hora — se usará el mediodía"
+    "noTimeHint": "Sin hora — se usará el mediodía",
+    "setTime": "Establecer hora",
+    "cancel": "Cancelar",
+    "ok": "OK"
   },
   "elapsed": {
     "never": "nunca",

@@ -33,7 +33,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    // URL opens, home-screen shortcuts and user activities are delivered to
+    // SceneDelegate (UIScene lifecycle, see UIApplicationSceneManifest in
+    // Info.plist), which calls the handlers below.
+    static func handleOpenURL(_ url: URL, options: UIScene.OpenURLOptions) {
         // lastglance:// is the app's own navigation scheme (widget body-taps,
         // home-screen shortcuts). Map it to the internal token the web router
         // consumes and stash it in the App Group — the same hand-off
@@ -45,26 +48,38 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             if let token = AppDelegate.deepLinkToken(from: url) {
                 SharedDataStore.writePendingDeepLink(token)
             }
-            return true
+            return
         }
         // Anything else (OAuth callbacks etc.) keeps the Capacitor path.
-        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)
+        var appOptions: [UIApplication.OpenURLOptionsKey: Any] = [:]
+        if let source = options.sourceApplication {
+            appOptions[.sourceApplication] = source
+        }
+        if let annotation = options.annotation {
+            appOptions[.annotation] = annotation
+        }
+        appOptions[.openInPlace] = options.openInPlace
+        _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, open: url, options: appOptions)
     }
 
     // Home-screen quick actions (long-press the app icon). The item's `type` IS
     // the internal deep-link token — WidgetBridgePlugin builds the items that
-    // way — so handling is a validity check and a store, nothing more. UIKit
-    // calls this for both warm taps and cold starts (after didFinishLaunching).
-    func application(_ application: UIApplication,
-                     performActionFor shortcutItem: UIApplicationShortcutItem,
-                     completionHandler: @escaping (Bool) -> Void) {
+    // way — so handling is a validity check and a store, nothing more.
+    // SceneDelegate calls this for both warm taps and cold starts.
+    static func handleShortcut(_ shortcutItem: UIApplicationShortcutItem) -> Bool {
         let token = shortcutItem.type
         let valid = token.hasPrefix("chore:")
             || token == "filter:soon" || token == "action:add" || token == "action:search"
         if valid {
             SharedDataStore.writePendingDeepLink(token)
         }
-        completionHandler(valid)
+        return valid
+    }
+
+    // Activities the app was launched or resumed with, including Universal
+    // Links. Keep the Capacitor call so the App API can track app url opens.
+    static func handleUserActivity(_ userActivity: NSUserActivity) {
+        _ = ApplicationDelegateProxy.shared.application(UIApplication.shared, continue: userActivity, restorationHandler: { _ in })
     }
 
     // Map a lastglance:// URL to the internal pending-deep-link token the web
@@ -86,13 +101,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         default:
             return nil
         }
-    }
-
-    func application(_ application: UIApplication, continue userActivity: NSUserActivity, restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void) -> Bool {
-        // Called when the app was launched with an activity, including Universal Links.
-        // Feel free to add additional processing here, but if you want the App API to support
-        // tracking app url opens, make sure to keep this call
-        return ApplicationDelegateProxy.shared.application(application, continue: userActivity, restorationHandler: restorationHandler)
     }
 
 }
