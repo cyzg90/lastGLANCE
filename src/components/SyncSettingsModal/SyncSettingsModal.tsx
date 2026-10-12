@@ -12,6 +12,7 @@ import { cloudSyncProviders } from '@/utils/cloudSyncProviders'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { useTranslation } from 'react-i18next'
 import { isWebCryptoAvailable } from '@/utils/secureContext'
+import { formatDateTime } from '@/utils/datetime'
 import { buildSyncConfigToSave } from './buildSyncConfig'
 import { MANAGED_WEBDAV } from '@/sync/managedWebdav'
 import { ManagedSyncStatus } from './ManagedSyncStatus'
@@ -359,8 +360,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
 
   function formatLastSynced(iso: string | null): string {
     if (!iso) return t('sync.neverSynced')
-    const d = new Date(iso)
-    return d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    return formatDateTime(iso)
   }
 
   return createPortal(
@@ -370,7 +370,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     >
       <div className="w-full sm:max-w-md bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[90svh]">
         {/* Header */}
-        <div className="flex items-center gap-3 px-6 pt-6 pb-4 shrink-0">
+        <div className="flex items-center gap-3 px-6 pt-6 pb-3 shrink-0">
           <Cloud size={18} className="text-green-400 shrink-0" />
           <h2 className="text-base font-semibold text-slate-800 dark:text-slate-100 flex-1">{t('sync.title')}</h2>
           <button
@@ -382,7 +382,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
         </div>
 
         {/* Scrollable body */}
-        <div className="overflow-y-auto flex-1 px-6 pb-4 space-y-5">
+        <div className="overflow-y-auto flex-1 px-6 pt-1 pb-4 space-y-5">
 
           <p className="text-sm text-slate-400 dark:text-slate-500">{t('sync.autoSaveHint')}</p>
 
@@ -792,9 +792,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
                     <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
                     <p className="text-xs text-amber-700 dark:text-amber-300">
-                      {vaultSkipped} {vaultSkipped === 1 ? 'item' : 'items'} couldn’t be read on the last sync.
-                      This usually means a wrong sync passphrase on some rows. They’re skipped and retried
-                      automatically on later syncs — nothing was lost or overwritten.
+                      {t('sync.vaultSkipped', { count: vaultSkipped })} {t('sync.vaultSkippedHint')}
                     </p>
                   </div>
                 )}

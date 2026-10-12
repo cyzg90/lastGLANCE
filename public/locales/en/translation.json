@@ -5,9 +5,6 @@
     "dayglanceIntegration": "dayGLANCE Integration",
     "journal": "Journal",
     "journalTooltip": "Review everything that's been completed",
-    "users": "Users",
-    "lightMode": "Light Mode",
-    "darkMode": "Dark Mode",
     "backupRestore": "Backup & Restore",
     "helpFeedback": "Help & Feedback",
     "toggleTheme": "Toggle theme",
@@ -22,8 +19,7 @@
     "done": "Done",
     "edit": "Edit",
     "settings": "Settings",
-    "language": "Language",
-    "subscription": "Subscription"
+    "language": "Language"
   },
   "activityLog": {
     "title": "Activity Log",
@@ -205,6 +201,50 @@
     "storageInfo": "Storage: {{used}} / ~{{quota}}",
     "versionInfo": "v{{version}} · {{date}}",
     "shortcuts": "shortcuts"
+  },
+  "iconPicker": {
+    "results_one": "{{count}} result",
+    "results_other": "{{count}} results",
+    "searchPlaceholder": "Search icons…",
+    "selected": "Selected:",
+    "remove": "Remove",
+    "noMatch": "No icons match “{{query}}”",
+    "groups": {
+      "accessibility": "Accessibility",
+      "animals": "Animals",
+      "arrows": "Arrows",
+      "buildings": "Buildings & Places",
+      "charts": "Charts & Data",
+      "coding": "Coding & Development",
+      "communication": "Communication",
+      "connectivity": "Connectivity",
+      "design": "Design & Creativity",
+      "devices": "Devices",
+      "emojis": "Emojis & Expressions",
+      "files": "Files & Folders",
+      "finance": "Finance & Money",
+      "food": "Food & Drink",
+      "gaming": "Gaming",
+      "health": "Health & Medical",
+      "home": "Home & Furnishings",
+      "layout": "Layout & UI",
+      "maps": "Maps & Navigation",
+      "math": "Math",
+      "media": "Media & Playback",
+      "nature": "Nature & Weather",
+      "people": "People & Social",
+      "science": "Science & Research",
+      "security": "Security",
+      "shapes": "Shapes",
+      "shopping": "Shopping",
+      "sports": "Sports & Fitness",
+      "text": "Text & Typography",
+      "time": "Time & Calendar",
+      "tools": "Tools & Settings",
+      "transportation": "Transportation",
+      "travel": "Travel",
+      "other": "Other"
+    }
   },
   "integration": {
     "title": "dayGLANCE Integration",
@@ -465,7 +505,10 @@
     "statusIdle": "Idle",
     "statusConnected": "Connected",
     "statusSyncing": "Syncing",
-    "close": "Close"
+    "close": "Close",
+    "vaultSkipped_one": "{{count}} item couldn’t be read on the last sync.",
+    "vaultSkipped_other": "{{count}} items couldn’t be read on the last sync.",
+    "vaultSkippedHint": "This usually means a wrong sync passphrase on some rows. They’re skipped and retried automatically on later syncs — nothing was lost or overwritten."
   },
   "users": {
     "title": "Users",
@@ -493,8 +536,7 @@
     "syncNow": "Sync now",
     "syncOk": "Synced!",
     "syncFailed": "Sync failed",
-    "syncNotConfigured": "Cloud sync is not configured. Set up WebDAV under Settings → Cloud Sync first.",
-    "done": "Done"
+    "syncNotConfigured": "Cloud sync is not configured. Set up WebDAV under Settings → Cloud Sync first."
   },
   "welcome": {
     "title": "Welcome to lastGLANCE",
@@ -561,5 +603,23 @@
     "bannerActive": "Reviewer access active — the app is unlocked without a purchase.",
     "bannerExit": "Exit & view plans",
     "bestValue": "Best value"
+  },
+  "settings": {
+    "title": "Settings",
+    "close": "Close settings",
+    "appearance": "Appearance",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System",
+    "timeFormat": "Time format",
+    "timeAuto": "Automatic",
+    "timeAutoHint": "Automatic uses your language's clock ({{example}}).",
+    "syncAttention": "Needs attention",
+    "syncDesc": "Keep your chores and history in step across your devices.",
+    "household": "Household",
+    "integrations": "Integrations",
+    "integrationsDesc": "Connect lastGLANCE with dayGLANCE and with automation apps.",
+    "about": "About"
   }
 }

@@ -5,9 +5,6 @@
     "dayglanceIntegration": "dayGLANCE 集成",
     "journal": "日志",
     "journalTooltip": "查看所有已完成记录",
-    "users": "用户",
-    "lightMode": "浅色模式",
-    "darkMode": "深色模式",
     "backupRestore": "备份与恢复",
     "helpFeedback": "帮助与反馈",
     "toggleTheme": "切换主题",
@@ -22,8 +19,7 @@
     "done": "完成",
     "edit": "编辑",
     "settings": "设置",
-    "language": "语言",
-    "subscription": "订阅"
+    "language": "语言"
   },
   "activityLog": {
     "title": "活动记录",
@@ -205,6 +201,50 @@
     "storageInfo": "存储：{{used}} / ~{{quota}}",
     "versionInfo": "v{{version}} · {{date}}",
     "shortcuts": "快捷键"
+  },
+  "iconPicker": {
+    "results_one": "{{count}} 个结果",
+    "results_other": "{{count}} 个结果",
+    "searchPlaceholder": "搜索图标…",
+    "selected": "已选择：",
+    "remove": "移除",
+    "noMatch": "没有与“{{query}}”匹配的图标",
+    "groups": {
+      "accessibility": "无障碍",
+      "animals": "动物",
+      "arrows": "箭头",
+      "buildings": "建筑与地点",
+      "charts": "图表与数据",
+      "coding": "编程与开发",
+      "communication": "通讯",
+      "connectivity": "网络连接",
+      "design": "设计与创意",
+      "devices": "设备",
+      "emojis": "表情符号",
+      "files": "文件与文件夹",
+      "finance": "金融与货币",
+      "food": "餐饮",
+      "gaming": "游戏",
+      "health": "健康与医疗",
+      "home": "家居与家具",
+      "layout": "布局与界面",
+      "maps": "地图与导航",
+      "math": "数学",
+      "media": "媒体与播放",
+      "nature": "自然与天气",
+      "people": "人物与社交",
+      "science": "科学与研究",
+      "security": "安全",
+      "shapes": "形状",
+      "shopping": "购物",
+      "sports": "运动与健身",
+      "text": "文本与排版",
+      "time": "时间与日历",
+      "tools": "工具与设置",
+      "transportation": "交通",
+      "travel": "旅行",
+      "other": "其他"
+    }
   },
   "integration": {
     "title": "dayGLANCE 集成",
@@ -465,7 +505,10 @@
     "statusIdle": "空闲",
     "statusConnected": "已连接",
     "statusSyncing": "同步中",
-    "close": "关闭"
+    "close": "关闭",
+    "vaultSkipped_one": "上次同步时有 {{count}} 项无法读取。",
+    "vaultSkipped_other": "上次同步时有 {{count}} 项无法读取。",
+    "vaultSkippedHint": "这通常是因为部分条目的同步加密口令不正确。这些条目会被跳过，并在之后的同步中自动重试，不会丢失或覆盖任何数据。"
   },
   "users": {
     "title": "用户",
@@ -493,8 +536,7 @@
     "syncNow": "立即同步",
     "syncOk": "已同步！",
     "syncFailed": "同步失败",
-    "syncNotConfigured": "尚未配置云同步。请先在“设置 → 云同步”中配置 WebDAV。",
-    "done": "完成"
+    "syncNotConfigured": "尚未配置云同步。请先在“设置 → 云同步”中配置 WebDAV。"
   },
   "welcome": {
     "title": "欢迎使用 lastGLANCE",
@@ -561,5 +603,23 @@
     "bannerActive": "审核员访问权限已生效，无需购买即可解锁应用。",
     "bannerExit": "退出并查看方案",
     "bestValue": "最划算"
+  },
+  "settings": {
+    "title": "设置",
+    "close": "关闭设置",
+    "appearance": "外观",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "timeFormat": "时间格式",
+    "timeAuto": "自动",
+    "timeAutoHint": "自动将使用你所选语言的时钟格式（{{example}}）。",
+    "syncAttention": "需要处理",
+    "syncDesc": "在你的各台设备之间同步家务和历史记录。",
+    "household": "家庭",
+    "integrations": "集成",
+    "integrationsDesc": "将 lastGLANCE 与 dayGLANCE 及自动化应用连接。",
+    "about": "关于"
   }
 }

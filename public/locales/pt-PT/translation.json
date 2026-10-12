@@ -5,9 +5,6 @@
     "dayglanceIntegration": "Integração dayGLANCE",
     "journal": "Diário",
     "journalTooltip": "Reveja tudo o que foi concluído",
-    "users": "Utilizadores",
-    "lightMode": "Modo claro",
-    "darkMode": "Modo escuro",
     "backupRestore": "Cópia de segurança e restauro",
     "helpFeedback": "Ajuda e feedback",
     "toggleTheme": "Alternar tema",
@@ -22,8 +19,7 @@
     "done": "Concluído",
     "edit": "Editar",
     "settings": "Definições",
-    "language": "Idioma",
-    "subscription": "Subscrição"
+    "language": "Idioma"
   },
   "activityLog": {
     "title": "Registo de atividade",
@@ -205,6 +201,50 @@
     "storageInfo": "Armazenamento: {{used}} / ~{{quota}}",
     "versionInfo": "v{{version}} · {{date}}",
     "shortcuts": "atalhos"
+  },
+  "iconPicker": {
+    "results_one": "{{count}} resultado",
+    "results_other": "{{count}} resultados",
+    "searchPlaceholder": "Pesquisar ícones…",
+    "selected": "Selecionado:",
+    "remove": "Remover",
+    "noMatch": "Nenhum ícone corresponde a «{{query}}»",
+    "groups": {
+      "accessibility": "Acessibilidade",
+      "animals": "Animais",
+      "arrows": "Setas",
+      "buildings": "Edifícios e locais",
+      "charts": "Gráficos e dados",
+      "coding": "Programação e desenvolvimento",
+      "communication": "Comunicação",
+      "connectivity": "Conectividade",
+      "design": "Design e criatividade",
+      "devices": "Dispositivos",
+      "emojis": "Emojis e expressões",
+      "files": "Ficheiros e pastas",
+      "finance": "Finanças e dinheiro",
+      "food": "Comida e bebida",
+      "gaming": "Jogos",
+      "health": "Saúde e medicina",
+      "home": "Casa e mobiliário",
+      "layout": "Layout e interface",
+      "maps": "Mapas e navegação",
+      "math": "Matemática",
+      "media": "Multimédia e reprodução",
+      "nature": "Natureza e tempo",
+      "people": "Pessoas e redes sociais",
+      "science": "Ciência e investigação",
+      "security": "Segurança",
+      "shapes": "Formas",
+      "shopping": "Compras",
+      "sports": "Desporto e fitness",
+      "text": "Texto e tipografia",
+      "time": "Hora e calendário",
+      "tools": "Ferramentas e definições",
+      "transportation": "Transportes",
+      "travel": "Viagens",
+      "other": "Outros"
+    }
   },
   "integration": {
     "title": "Integração dayGLANCE",
@@ -465,7 +505,10 @@
     "statusIdle": "Inativo",
     "statusConnected": "Ligado",
     "statusSyncing": "A sincronizar",
-    "close": "Fechar"
+    "close": "Fechar",
+    "vaultSkipped_one": "Não foi possível ler {{count}} item na última sincronização.",
+    "vaultSkipped_other": "Não foi possível ler {{count}} itens na última sincronização.",
+    "vaultSkippedHint": "Normalmente, a causa é uma frase-passe de sincronização errada em alguns itens. São ignorados e tentados novamente de forma automática nas sincronizações seguintes — nada foi perdido nem substituído."
   },
   "users": {
     "title": "Utilizadores",
@@ -493,8 +536,7 @@
     "syncNow": "Sincronizar agora",
     "syncOk": "Sincronizado!",
     "syncFailed": "Sincronização falhada",
-    "syncNotConfigured": "A sincronização na nuvem não está configurada. Configure o WebDAV em Definições → Sincronização na nuvem.",
-    "done": "Concluído"
+    "syncNotConfigured": "A sincronização na nuvem não está configurada. Configure o WebDAV em Definições → Sincronização na nuvem."
   },
   "welcome": {
     "title": "Bem-vindo ao lastGLANCE",
@@ -561,5 +603,23 @@
     "bannerActive": "Acesso de revisão ativo — a aplicação está desbloqueada sem compra.",
     "bannerExit": "Sair e ver planos",
     "bestValue": "Melhor valor"
+  },
+  "settings": {
+    "title": "Definições",
+    "close": "Fechar definições",
+    "appearance": "Aspeto",
+    "theme": "Tema",
+    "themeLight": "Claro",
+    "themeDark": "Escuro",
+    "themeSystem": "Sistema",
+    "timeFormat": "Formato da hora",
+    "timeAuto": "Automático",
+    "timeAutoHint": "Automático usa o relógio do seu idioma ({{example}}).",
+    "syncAttention": "Requer atenção",
+    "syncDesc": "Mantenha as suas tarefas e o histórico sincronizados entre os seus dispositivos.",
+    "household": "Casa",
+    "integrations": "Integrações",
+    "integrationsDesc": "Ligue o lastGLANCE ao dayGLANCE e a aplicações de automatização.",
+    "about": "Acerca de"
   }
 }

@@ -7,6 +7,7 @@ import { ensureSyncFolder } from '@/sync/engine'
 import { MANAGED_SYNC_FOLDER } from '@/sync/managedWebdav'
 import { syncErrorText } from '@/sync/syncErrorText'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
+import { formatDateTime } from '@/utils/datetime'
 import { getManagedSyncDisplayState, type ManagedSyncDisplayState } from './managedSyncDisplayState'
 
 interface Props {
@@ -79,7 +80,7 @@ export function ManagedSyncStatus({
 
   function formatLastSynced(iso: string | null): string {
     if (!iso) return t('sync.neverSynced')
-    return new Date(iso).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })
+    return formatDateTime(iso)
   }
 
   const statusLabel = {

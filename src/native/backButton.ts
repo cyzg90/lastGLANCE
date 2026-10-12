@@ -1,5 +1,6 @@
 import { App as CapacitorApp } from '@capacitor/app'
 import { Capacitor } from '@capacitor/core'
+import { dismissTop } from '@/utils/dismissStack'
 
 // Restores the hardware back button that adding @capacitor/app silently broke.
 // The plugin registers an always-enabled OnBackPressedDispatcher callback on
@@ -21,6 +22,8 @@ export function leaveApp(): void {
 export function initHardwareBackButton(): void {
   if (Capacitor.getPlatform() !== 'android') return
   void CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+    // An open window closes first (see utils/dismissStack), one per press.
+    if (dismissTop()) return
     if (canGoBack) window.history.back()
     else leaveApp()
   })

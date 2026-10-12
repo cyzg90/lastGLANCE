@@ -222,6 +222,9 @@ const RULES = [
   ['agregado familiar', 'família'],
   ['atribuído a si', 'atribuído a você'],
   ['é altura de', 'é hora de'],
+  ['Multimédia', 'Multimídia'],
+  ['Desporto', 'Esporte'],
+  ['investigação', 'pesquisa'],
 ]
 
 // Whole-string replacements for the handful of sentences a word-level rule
@@ -239,6 +242,14 @@ const OVERRIDES = {
     'A sincronização na nuvem é gerenciada por este servidor. As configurações de conexão e as credenciais são configuradas pelo provedor de hospedagem.',
   'sync.managedWebdav': 'WebDAV gerenciado',
   'sync.statusSyncing': 'Sincronizando',
+  // Settings panel. Brazilian product vocabulary differs here beyond word
+  // swaps: Aparência (not Aspeto), Sobre (not Acerca de), Conectar (not
+  // Ligar), and "você" phrasing without the European possessive article.
+  'settings.appearance': 'Aparência',
+  'settings.timeFormat': 'Formato de hora',
+  'settings.syncDesc': 'Mantenha suas tarefas e seu histórico sincronizados entre seus dispositivos.',
+  'settings.integrationsDesc': 'Conecte o lastGLANCE ao dayGLANCE e a apps de automação.',
+  'settings.about': 'Sobre',
 }
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

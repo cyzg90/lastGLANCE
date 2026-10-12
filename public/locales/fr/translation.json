@@ -5,9 +5,6 @@
     "dayglanceIntegration": "Intégration dayGLANCE",
     "journal": "Historique",
     "journalTooltip": "Revoir tout ce qui a été fait",
-    "users": "Utilisateurs",
-    "lightMode": "Mode clair",
-    "darkMode": "Mode sombre",
     "backupRestore": "Sauvegarde & Restauration",
     "helpFeedback": "Aide & Retours",
     "toggleTheme": "Basculer le thème",
@@ -22,8 +19,7 @@
     "done": "Terminer",
     "edit": "Modifier",
     "settings": "Paramètres",
-    "language": "Langue",
-    "subscription": "Abonnement"
+    "language": "Langue"
   },
   "activityLog": {
     "title": "Journal d'activité",
@@ -205,6 +201,50 @@
     "storageInfo": "Stockage : {{used}} / ~{{quota}}",
     "versionInfo": "v{{version}} · {{date}}",
     "shortcuts": "raccourcis"
+  },
+  "iconPicker": {
+    "results_one": "{{count}} résultat",
+    "results_other": "{{count}} résultats",
+    "searchPlaceholder": "Rechercher des icônes…",
+    "selected": "Sélection :",
+    "remove": "Retirer",
+    "noMatch": "Aucune icône ne correspond à « {{query}} »",
+    "groups": {
+      "accessibility": "Accessibilité",
+      "animals": "Animaux",
+      "arrows": "Flèches",
+      "buildings": "Bâtiments et lieux",
+      "charts": "Graphiques et données",
+      "coding": "Code et développement",
+      "communication": "Communication",
+      "connectivity": "Connectivité",
+      "design": "Design et créativité",
+      "devices": "Appareils",
+      "emojis": "Émojis et expressions",
+      "files": "Fichiers et dossiers",
+      "finance": "Finance et argent",
+      "food": "Nourriture et boissons",
+      "gaming": "Jeux",
+      "health": "Santé et médecine",
+      "home": "Maison et ameublement",
+      "layout": "Mise en page et interface",
+      "maps": "Cartes et navigation",
+      "math": "Mathématiques",
+      "media": "Médias et lecture",
+      "nature": "Nature et météo",
+      "people": "Personnes et social",
+      "science": "Science et recherche",
+      "security": "Sécurité",
+      "shapes": "Formes",
+      "shopping": "Achats",
+      "sports": "Sport et fitness",
+      "text": "Texte et typographie",
+      "time": "Heure et calendrier",
+      "tools": "Outils et réglages",
+      "transportation": "Transports",
+      "travel": "Voyage",
+      "other": "Autres"
+    }
   },
   "integration": {
     "title": "Intégration dayGLANCE",
@@ -465,7 +505,10 @@
     "statusIdle": "Inactif",
     "statusConnected": "Connecté",
     "statusSyncing": "Synchronisation en cours",
-    "close": "Fermer"
+    "close": "Fermer",
+    "vaultSkipped_one": "{{count}} élément n’a pas pu être lu lors de la dernière sync.",
+    "vaultSkipped_other": "{{count}} éléments n’ont pas pu être lus lors de la dernière sync.",
+    "vaultSkippedHint": "Cela vient généralement d’une phrase secrète de sync erronée sur certains éléments. Ils sont ignorés puis réessayés automatiquement lors des prochaines syncs — rien n’a été perdu ni écrasé."
   },
   "users": {
     "title": "Utilisateurs",
@@ -493,8 +536,7 @@
     "syncNow": "Synchroniser",
     "syncOk": "Synchronisé !",
     "syncFailed": "Échec de la sync",
-    "syncNotConfigured": "La sync cloud n'est pas configurée. Configurez WebDAV dans Paramètres → Sync cloud.",
-    "done": "Terminer"
+    "syncNotConfigured": "La sync cloud n'est pas configurée. Configurez WebDAV dans Paramètres → Sync cloud."
   },
   "welcome": {
     "title": "Bienvenue sur lastGLANCE",
@@ -561,5 +603,23 @@
     "bannerActive": "Accès évaluateur actif — l'application est déverrouillée sans achat.",
     "bannerExit": "Quitter et voir les offres",
     "bestValue": "Meilleure offre"
+  },
+  "settings": {
+    "title": "Paramètres",
+    "close": "Fermer les paramètres",
+    "appearance": "Apparence",
+    "theme": "Thème",
+    "themeLight": "Clair",
+    "themeDark": "Sombre",
+    "themeSystem": "Système",
+    "timeFormat": "Format de l'heure",
+    "timeAuto": "Automatique",
+    "timeAutoHint": "Automatique utilise l'horloge de votre langue ({{example}}).",
+    "syncAttention": "Action requise",
+    "syncDesc": "Gardez vos tâches et votre historique synchronisés sur tous vos appareils.",
+    "household": "Foyer",
+    "integrations": "Intégrations",
+    "integrationsDesc": "Connectez lastGLANCE à dayGLANCE et aux applications d'automatisation.",
+    "about": "À propos"
   }
 }

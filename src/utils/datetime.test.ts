@@ -1,16 +1,25 @@
 import { describe, it, expect, afterEach, vi } from 'vitest'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join } from 'node:path'
 import dayjs from 'dayjs'
 import {
   applyDateLocale,
   getActiveLocale,
   formatDate,
   formatTime,
+  formatDateTime,
   formatDayHeading,
   formatMonthDay,
+  formatMonthDayTime,
   formatMonthYear,
   firstDayOfWeek,
   weekdayMinLabels,
   weekdayAtOffset,
+  setTimeFormat,
+  getTimeFormat,
+  loadTimeFormat,
+  uses24HourClock,
+  formatTimeSample,
 } from './datetime'
 
 // A Wednesday, deliberately in the afternoon so the 12-/24-hour split shows.
@@ -18,6 +27,7 @@ const SAMPLE = '2026-08-12T14:05:00'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  setTimeFormat('auto')
   applyDateLocale('en')
 })
 
@@ -109,6 +119,26 @@ describe('display formatting', () => {
     expect(formatMonthDay(SAMPLE)).toMatch(/^12/)
   })
 
+  it('stamps date and time in the app language', () => {
+    applyDateLocale('en')
+    expect(formatDateTime(SAMPLE)).toMatch(/^Aug 12, 2026, 2:05\sPM$/)
+    applyDateLocale('pl')
+    expect(formatDateTime(SAMPLE)).toMatch(/12 sie/)
+    expect(formatDateTime(SAMPLE)).toMatch(/14:05/)
+    applyDateLocale('uk')
+    expect(formatDateTime(SAMPLE)).toMatch(/12 серп/)
+    expect(formatDateTime(SAMPLE)).toMatch(/14:05/)
+  })
+
+  it('zero-pads the hour in log timestamps so the column lines up', () => {
+    const morning = '2026-08-02T09:05:00'
+    applyDateLocale('en')
+    expect(formatMonthDayTime(morning)).toMatch(/^Aug 2, 09:05\sAM$/)
+    applyDateLocale('fr')
+    expect(formatMonthDayTime(morning)).toMatch(/^2 août/)
+    expect(formatMonthDayTime(morning)).toMatch(/09:05$/)
+  })
+
   it('localizes the month-and-year label', () => {
     applyDateLocale('en')
     expect(formatMonthYear(SAMPLE)).toBe('August 2026')
@@ -123,6 +153,63 @@ describe('display formatting', () => {
     expect(formatDate(SAMPLE)).not.toBe(english)
     applyDateLocale('en')
     expect(formatDate(SAMPLE)).toBe(english)
+  })
+})
+
+describe('time format preference', () => {
+  it('follows the locale on auto', () => {
+    expect(uses24HourClock()).toBe(false)
+    applyDateLocale('de')
+    expect(uses24HourClock()).toBe(true)
+    expect(formatTime(SAMPLE)).toBe('14:05')
+  })
+
+  it('forces a 24-hour clock in English', () => {
+    setTimeFormat('24')
+    expect(uses24HourClock()).toBe(true)
+    expect(formatTime(SAMPLE)).toBe('14:05')
+    expect(formatDateTime(SAMPLE)).toContain('14:05')
+    expect(formatMonthDayTime(SAMPLE)).toContain('14:05')
+  })
+
+  it('renders midnight as 00, never 24', () => {
+    setTimeFormat('24')
+    expect(formatTime('2026-08-12T00:05:00')).toBe('00:05')
+  })
+
+  it('forces a 12-hour clock in a 24-hour locale', () => {
+    applyDateLocale('de')
+    setTimeFormat('12')
+    expect(uses24HourClock()).toBe(false)
+    expect(formatTime(SAMPLE)).toMatch(/^2:05/)
+  })
+
+  it('leaves date-only formats alone', () => {
+    const before = formatDate(SAMPLE)
+    setTimeFormat('24')
+    expect(formatDate(SAMPLE)).toBe(before)
+  })
+
+  it('samples each choice without changing the active one', () => {
+    expect(formatTimeSample(SAMPLE, '24')).toBe('14:05')
+    expect(formatTimeSample(SAMPLE, '12')).toMatch(/2:05\s?PM/i)
+    expect(getTimeFormat()).toBe('auto')
+  })
+
+  it('persists and reloads the choice', () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v) },
+    })
+    setTimeFormat('24')
+    expect(store.get('lg-time-format')).toBe('24')
+    store.set('lg-time-format', 'bogus')
+    loadTimeFormat()
+    expect(getTimeFormat()).toBe('24')
+    store.set('lg-time-format', '12')
+    loadTimeFormat()
+    expect(getTimeFormat()).toBe('12')
   })
 })
 
@@ -220,5 +307,36 @@ describe('week start', () => {
     // Monday-start: Monday is row 0 instead.
     expect(weekdayAtOffset(0).weekday).toBe(1)
     expect(weekdayAtOffset(6).weekday).toBe(0)
+  })
+})
+
+// Called with no locale, `undefined` or `[]`, these format in the browser's
+// language, not the app's: the sync "Last synced" stamps, the build date in
+// Help and the activity log all did, so a Polish UI on an English-language
+// phone showed "Oct 6, 2026". Dates go through this module instead.
+describe('nothing is formatted in the browser locale', () => {
+  const SRC = join(__dirname, '..')
+  // Matched against whole files, so a call wrapped onto the next line counts.
+  const DEFAULT_LOCALE =
+    /\.toLocale(?:Date|Time)?String\(\s*(?:\)|undefined\b|\[\s*\])|new Intl\.\w+Format\(\s*(?:\)|undefined\b|\[\s*\])/g
+  const sources = (readdirSync(SRC, { recursive: true }) as string[])
+    .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
+
+  it('scans the app sources', () => {
+    expect(sources).toContain(join('components', 'HelpModal', 'HelpModal.tsx'))
+  })
+
+  it('finds no call that leaves the locale to the browser', () => {
+    const hits = sources.flatMap((file) => {
+      const text = readFileSync(join(SRC, file), 'utf8')
+      return [...text.matchAll(DEFAULT_LOCALE)].map(
+        (m) => `  ${file}:${text.slice(0, m.index).split('\n').length}: ${m[0].replace(/\s+/g, ' ')}`,
+      )
+    })
+    expect(
+      hits,
+      `Formatted with the browser locale; use src/utils/datetime.ts for dates, ` +
+        `or pass getActiveLocale() for anything else:\n${hits.join('\n')}`,
+    ).toEqual([])
   })
 })
