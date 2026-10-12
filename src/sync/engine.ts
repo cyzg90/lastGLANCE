@@ -16,6 +16,7 @@ import { DB_ROOT_KEY_HOOKS, FILE_SYNC_KEY_HOOKS } from './nativeKeyHooks'
 import type { SyncPayload, SyncSettings } from './types'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 import { MANAGED_SYNC_FOLDER, MANAGED_WEBDAV, managedWebdavFetch } from './managedWebdav'
+import { getSyncFolder } from './syncFolder'
 
 // On Android the spread hooks route key storage to the Keystore-backed
 // SecureStore instead of IndexedDB (issue #210); elsewhere they spread to
@@ -24,8 +25,7 @@ import { MANAGED_SYNC_FOLDER, MANAGED_WEBDAV, managedWebdavFetch } from './manag
 // key and the vault root key, so sharing one pair would cross the tiers.
 export const CRYPTO_CONFIG = { cryptoDBName: 'lastglance-crypto', ...FILE_SYNC_KEY_HOOKS }
 export const DB_CRYPTO_CONFIG = { cryptoDBName: 'lastglance-crypto', ...DB_ROOT_KEY_HOOKS }
-export const DEFAULT_SYNC_FOLDER = 'GLANCE/lastglance'
-export const SYNC_FOLDER_KEY = 'lastglance-cloud-sync-folder'
+export { DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from './syncFolder'
 
 export { initSessionKey, setupEncryptionKey, clearEncryptionKey }
 
@@ -508,7 +508,7 @@ export async function ensureSyncFolder(engine: SyncEngine): Promise<void> {
   try {
     const url = new URL(webdavUrl)
     const baseUrl = `${url.protocol}//${url.host}${url.pathname.replace(/\/+$/, '')}`
-    const folder = localStorage.getItem(SYNC_FOLDER_KEY) || DEFAULT_SYNC_FOLDER
+    const folder = getSyncFolder()
     await ensureFolder(baseUrl, folder, buildAuthHeader(username, appPassword))
   } catch {
     // non-fatal — if we can't create the folder the sync will surface its own error
@@ -525,7 +525,7 @@ interface EngineCallbacks {
 export function createEngine(proxyUrl: string | undefined, callbacks: EngineCallbacks): SyncEngine {
   const appFolderName = MANAGED_WEBDAV
     ? MANAGED_SYNC_FOLDER
-    : localStorage.getItem(SYNC_FOLDER_KEY) || DEFAULT_SYNC_FOLDER
+    : getSyncFolder()
   // If this device has never synced, seed the last-synced timestamp so the
   // engine skips the conflict-dialog path (which lastGLANCE doesn't implement)
   // and goes straight to the normal CRDT merge on first contact with the server.

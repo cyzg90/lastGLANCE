@@ -1,0 +1,109 @@
+# Direct Access sync
+
+Sync through a folder a third-party tool already keeps in step across devices
+(Nextcloud, Syncthing, FolderSync, Google Drive, Dropbox, OneDrive): lastGLANCE
+reads and writes one file there, and the tool moves it. The design is
+dayGLANCE's `docs/direct-access-sync.md`; this tier is its Phase 7b, built
+in the order that document gives, so the same folder carries all three apps:
+
+1. **The folder bridge (this page).** `DirectAccessPlugin` on both shells,
+   behind `src/native/directAccess.ts`, which hands the transport the same
+   bridge shape dayGLANCE's shells produce. Android holds a folder (a SAF tree
+   with a persistable grant, walked with DocumentFile; crash-safe writes
+   through `SafeReplace`; paths confined by `DirectAccessPath`). iOS holds
+   files, one security-scoped bookmark each for the snapshot
+   (`lastglance-sync.json`), the household roster (`glance-users.json`) and the
+   intents event set (`glance-events.json`), because the Files providers of
+   the common cloud tools cannot hand an app a folder (Apple FB9703910). The
+   read classification is the one every shell answers: `absent` only when the
+   folder is there and the file is not; a zero-length file is `downloading`,
+   never absent; a vanished folder or revoked grant is `error`. Web/PWA has no
+   plugin and no tier.
+2. **Snapshot sync through the folder (done).** `@glance-apps/sync` 2.1.0's
+   `runSnapshotFileCycle` (the cycle dayGLANCE's iCloud and Direct Access
+   tiers run: the seed guard, the content gate, the made-here-or-relayed rule
+   with staggered relays, the envelope rules) over `src/sync/directAccess.ts`,
+   the transport. `src/sync/directAccessCycle.ts` fills in what is this
+   app's: the payload is built from Dexie before the cycle, the apply is the
+   WebDAV tier's `applyPayload` and is awaited, chores + categories +
+   completion events count as data, and the two device-local stamps are the
+   WebDAV engine's local-modified key (so a change that arrived through the
+   folder is pushed on by WebDAV) and `lastglance-local-edit-at`, which the
+   data layer sets on every write of its own through `dirtyTracker.markDirty`
+   and no apply ever touches. `hooks/useDirectAccessSync.ts` owns the 15 s
+   poll, the foreground kick, the in-flight guard and the prompts; the
+   section in the Cloud Sync dialog (`DirectAccessSection.tsx`) connects the
+   folder (Android) or the file (iOS), with the per-device on/off and encrypt
+   switches, "Sync now" and the last-synced stamp. Picking is the decision,
+   so there is no first-run prompt; an encrypted file this device cannot
+   read is never written over; a device without the key tries its cached key
+   once, then raises the passphrase prompt the other tiers use.
+3. **The roster and the intents transport (done).** The roster is Phase 5's
+   `GLANCE/users/glance-users.json`, the same file WebDAV uses, through the
+   transport's roster slot (`syncSharedUsersViaDirectAccess` in
+   `src/multiuser/sharedUsers.ts`): merged last-writer-wins by `updatedAt` and
+   applied locally on every run, but written only when the file would change,
+   at once for an edit made in the Users panel (`lastglance-users-local-edit-at`)
+   and for a member that arrived by another road only after the file has sat
+   unchanged without it. The intents transport is Phase 7's single event-set
+   file `GLANCE/events/glance-events.json` (`src/intents/eventSet.ts`): a
+   union keyed by `event_id` that drops expired envelopes, a sender ledger
+   that re-adds this device's own events to a copy that lost them, a cursor
+   per transport, and drops written only under the relay rule. The deliverer
+   (`directAccessDeliverer`) seals envelopes, whenever the Direct Access
+   encrypt switch is on, under the root key for the salt the event set names:
+   the salt travels in the file header, since a folder-only device can never
+   reach the WebDAV salt file and an iPhone holds a bookmark to the event set
+   alone; a sender that finds none brings the one it seeded before, else the
+   WebDAV salt when it also runs WebDAV intents, else a fresh one, and the key
+   is derived from the sync passphrase and cached with its salt
+   (`src/intents/directAccessIntentsKey.ts`). The deliverer holds while no
+   passphrase is in memory and no cached key matches, and the opt-in asks for
+   the passphrase once in that case; the poll (`hooks/useDirectAccessIntents.ts`) hands each foreign
+   envelope to the same `processNotifyEnvelope` the other transports use. Its
+   own opt-in in the Integration dialog; on iOS the roster and the event set
+   are bookmarked files of their own, offered in the Cloud Sync dialog.
+
+## The plugin contract
+
+Every method answers JSON shapes, promise-based (Capacitor):
+
+| method | answer |
+| --- | --- |
+| `status()` (and on iOS `usersStatus()`, `eventsStatus()`) | `{ configured, name, path, reachable }` |
+| `pickFolder()` (Android) | the status after the pick, or `{ cancelled: true }` |
+| `pickFile({slot})`, `createFile({slot})` (iOS) | the status with `slot`, `{ cancelled: true }`, or a rejection naming why (a wrong file, a bookmark failure, with `data.path`) |
+| `read()` (and `readUsers()`, `readEvents()`) | `{ kind: absent \| downloading \| error \| text, text?, error? }` |
+| `write({text})` (and `writeUsers`, `writeEvents`) | `{ ok }` |
+| `deleteFile()` | `{ ok }`; on iOS the bookmark is forgotten with the file |
+| `disconnect()`, `forgetUsers()`, `forgetEvents()` | `{}` |
+| `listFiles({rel})` (Android) | `{ names: [...] \| null }`; null when the path escapes the folder or the folder is unusable |
+| `readFile({rel})`, `writeFile({rel,text})`, `deleteFileAt({rel})`, `makeDir({rel})` (Android) | as above, by path |
+
+The JVM tests pin the confinement rule (`DirectAccessPathTest`), every branch
+of the read classification (`DirectAccessReadTest`) and every crash window of
+the write (`SafeReplaceTest`); `src/native/directAccess.test.ts` pins the
+bridge shape on both platforms; `src/sync/directAccess.test.ts` the transport's
+state machine over a fake bridge; `src/sync/directAccessCycle.test.ts` two
+devices over one folder through the real package cycle and the real merge
+(seed, apply, an edit made here written at once, a relayed change deferred
+and staggered, the envelope rules, a device without the key held);
+`src/intents/eventSet.test.ts` the event set (the union, the ledger, receive,
+the cycle, two devices on one file through a lost append and retention);
+`src/multiuser/sharedUsers.directAccess.test.ts` the roster's write rules;
+`src/intents/directAccessDeliverer.test.ts` the deliverer's hold and seal.
+
+## Storage keys
+
+| key | holds |
+| --- | --- |
+| `lastglance-direct-access-enabled` | `'true'` / `'false'` / absent (absent is on once connected) |
+| `lastglance-direct-access-encrypt` | `'true'` when this device seeds or upgrades the file as an envelope |
+| `lastglance-direct-access-last-synced` | stamped on every read of a real snapshot; the seed guard's "has synced before" |
+| `lastglance-direct-access-last-synced:writers` | the `writtenBy` ids seen in the file header; ranks this device's relay wait |
+| `lastglance-local-edit-at` | when this device itself last changed its data |
+| `lastglance-users-local-edit-at` | when the roster was last edited in the Users panel on this device |
+| `lg_direct_access_intents_enabled` | `'true'` when the intents opt-in is on |
+| `lg_direct_access_intents_cursor` | the last event id this device looked at in the event set |
+| `lg_direct_access_intents_ledger` | `{ [event_id]: envelope }` this device emitted, within retention |
+| `lastglance_direct_access` (shell preferences) | the Android tree URI / the iOS bookmarks |

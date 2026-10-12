@@ -17,6 +17,7 @@
 
 import type { DbSyncEngine } from '@glance-apps/sync'
 import { scheduleFileSync } from './fileSyncScheduler'
+import { markLocalEdit } from './localEditStamp'
 
 // Wait this long after the last write before pushing, so a burst of writes
 // (e.g. reordering, a restore, logging several completions) collapses into one
@@ -58,6 +59,7 @@ export function registerDbEngine(engine: DbSyncEngine | null): void {
 // Managed file sync is independent and may still be scheduled without a vault.
 export function markDirty(syncId: string | null | undefined): void {
   if (!syncId) return
+  markLocalEdit()
   if (dbEngine) {
     dbEngine.markDirty(syncId)
     schedulePush()
@@ -72,6 +74,7 @@ export function markDirty(syncId: string | null | undefined): void {
 // gives us one place to switch if the engine later gains a delete API.
 export function markDeleted(syncId: string | null | undefined): void {
   if (!syncId) return
+  markLocalEdit()
   if (dbEngine) {
     dbEngine.markDirty(syncId)
     schedulePush()

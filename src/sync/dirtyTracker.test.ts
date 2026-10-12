@@ -1,11 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { registerDbEngine, markDirty, markDeleted } from './dirtyTracker'
 import { registerFileSyncRunner } from './fileSyncScheduler'
+import { lastLocalEditAt } from './localEditStamp'
 import type { DbSyncEngine } from '@glance-apps/sync'
 
 describe('dirtyTracker debounced push', () => {
   beforeEach(() => { vi.useFakeTimers() })
-  afterEach(() => { registerDbEngine(null); registerFileSyncRunner(null); vi.useRealTimers() })
+  afterEach(() => { registerDbEngine(null); registerFileSyncRunner(null); vi.unstubAllGlobals(); vi.useRealTimers() })
 
   it('does nothing when no engine is registered', () => {
     registerDbEngine(null)
@@ -16,11 +17,19 @@ describe('dirtyTracker debounced push', () => {
 
   it('schedules file sync without a DB engine', () => {
     let cycles = 0
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => { store.set(key, value) },
+    })
     registerDbEngine(null)
     registerFileSyncRunner(async () => { cycles++ })
 
     markDirty('a')
+    expect(lastLocalEditAt()).toBe(new Date().toISOString())
+    store.clear()
     markDeleted('b')
+    expect(lastLocalEditAt()).toBe(new Date().toISOString())
     vi.advanceTimersByTime(999)
     expect(cycles).toBe(0)
     vi.advanceTimersByTime(1)

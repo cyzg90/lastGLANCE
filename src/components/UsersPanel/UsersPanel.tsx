@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react'
 import { X, Plus, Pencil, Trash2, Check, RefreshCw } from 'lucide-react'
 import { getUsers, createUser, updateUser, deleteUser } from '@/db/queries'
 import { getMultiUserEnabled, setMultiUserEnabled, getMeUserSyncId, setMeUserSyncId, getUsersPath, setUsersPath as saveUsersPath } from '@/multiuser/settings'
-import { syncSharedUsers } from '@/multiuser/sharedUsers'
+import { syncSharedUsers, syncSharedUsersViaDirectAccess, markRosterEdited, type SyncSharedUsersResult } from '@/multiuser/sharedUsers'
+import { directAccessTransport } from '@/sync/directAccess'
+import { DirectAccessFileRow } from '@/components/SyncSettingsModal/DirectAccessFileRow'
 import { getSyncWebdavConfig } from '@/sync/engine'
 import type { SyncEngine } from '@glance-apps/sync'
 import type { User } from '@/types'
@@ -50,6 +52,7 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
     }
     try {
       const id = await createUser(name)
+      markRosterEdited()
       setAddingName('')
       setIsAdding(false)
       setError('')
@@ -74,6 +77,7 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
     }
     try {
       await updateUser(editingId!, { name })
+      markRosterEdited()
       setEditingId(null)
       setEditingName('')
       setError('')
@@ -90,6 +94,7 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
       setMeId(null)
     }
     await deleteUser(user.id)
+    markRosterEdited()
     await loadUsers()
     onUserMutated?.()
   }
@@ -109,16 +114,19 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
     setSyncing(true)
     setSyncStatus('idle')
     try {
+      // The roster travels over every connected road: the WebDAV file, and
+      // the same file in the Direct Access folder (docs/direct-access.md).
       const syncConfig = getSyncWebdavConfig(engine)
-      if (!syncConfig) {
+      const directAccess = directAccessTransport.isConnected()
+      if (!syncConfig && !directAccess) {
         setError(t('users.syncNotConfigured'))
         setSyncStatus('error')
         setTimeout(() => setSyncStatus('idle'), 4000)
         return
       }
-      const fresh = await getUsers()
-      const result = await syncSharedUsers(syncConfig, usersPath, fresh)
-      if (result) {
+      const apply = async (result: SyncSharedUsersResult | null) => {
+        if (!result) return
+        const fresh = await getUsers()
         for (const ru of result.merged) {
           const existing = fresh.find(u => u.sync_id === ru.id)
           if (!existing) {
@@ -127,8 +135,10 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
             await updateUser(existing.id, { name: ru.name })
           }
         }
-        await loadUsers()
       }
+      if (syncConfig) await apply(await syncSharedUsers(syncConfig, usersPath, await getUsers()))
+      if (directAccess) await apply(await syncSharedUsersViaDirectAccess(usersPath, await getUsers()))
+      await loadUsers()
       setSyncStatus('ok')
       setTimeout(() => setSyncStatus('idle'), 3000)
     } catch {
@@ -272,6 +282,7 @@ export function UsersPanel({ engine, onUserMutated }: Props) {
 
           {/* Shared roster sync */}
           <div className="pt-1 border-t border-slate-100 dark:border-slate-700/40 space-y-2">
+            <DirectAccessFileRow slot="users" />
             <div>
               <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
                 {t('users.sharedUsersPath')}

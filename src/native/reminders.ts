@@ -10,8 +10,7 @@ import { getCategories, getChoresForCategory, logCompletion } from '@/db/queries
 import { db } from '@/db/client'
 import { setPendingOpenChore } from './pendingOpenChore'
 import { emitCreateIntent } from '@/intents/emitter'
-import { getIntentsConfig, isIntentsConfigured } from '@/intents/config'
-import { isDbIntentsEnabled } from '@/intents/dbConfig'
+import { anyIntentsTransportOn, intentsTransportsOn } from '@/intents/intentsAvailable'
 import { ownedByMe } from '@/utils/choreFilter'
 import { isInSeasonalWindow } from '@/utils/seasonal'
 import { getMeUserSyncId } from '@/multiuser/settings'
@@ -217,10 +216,10 @@ export async function syncReminders(): Promise<void> {
     await ensureChannel()
     await ensureActionTypes()
 
-    // "Configured" means EITHER transport is enabled — WebDAV intents or the
-    // GLANCEvault DB transport — mirroring IntentsContext.isConfigured. Checking
-    // WebDAV alone hid the action on vault-only setups.
-    const dgEnabled = isIntentsConfigured(getIntentsConfig()) || isDbIntentsEnabled()
+    // "Configured" means ANY transport is enabled (WebDAV intents, the
+    // GLANCEvault DB transport, the Direct Access event set), the same question
+    // IntentsContext.isConfigured answers. Checking fewer hid the action.
+    const dgEnabled = anyIntentsTransportOn(intentsTransportsOn())
     const all = await buildReminders(dgEnabled)
     // iOS-only cap. On Android the full set is scheduled; there is no limit.
     const desired = isAndroid() ? all : soonest(all, IOS_PENDING_LIMIT)

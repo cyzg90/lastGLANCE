@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { X, Loader, AlertTriangle, CheckCircle, XCircle, ShieldAlert, Cloud } from 'lucide-react'
 import type { SyncEngine, DbSyncEngine, SyncErrorCode, SyncStatus } from '@glance-apps/sync'
+import { getSyncFolder, normalizeSyncFolder } from '@/sync/syncFolder'
 import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredFolder, CRYPTO_CONFIG, getRemoteBackupsEnabled, setRemoteBackupsEnabled, DEFAULT_SYNC_FOLDER, SYNC_FOLDER_KEY } from '@/sync/engine'
 import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
@@ -16,6 +17,7 @@ import { formatDateTime } from '@/utils/datetime'
 import { buildSyncConfigToSave } from './buildSyncConfig'
 import { MANAGED_WEBDAV } from '@/sync/managedWebdav'
 import { ManagedSyncStatus } from './ManagedSyncStatus'
+import { DirectAccessSection } from './DirectAccessSection'
 
 interface Props {
   engine: SyncEngine | null
@@ -35,6 +37,9 @@ interface Props {
   // visible after the transient toast dismisses.
   vaultSkipped: number
   onClearSyncHalt: () => void
+  // Direct Access (docs/direct-access.md): a cycle on demand and the last
+  // folder error, from useDirectAccessSync in App.
+  directAccess: { runSync: () => Promise<void>; lastError: string | null }
   onClose: () => void
 }
 
@@ -67,10 +72,10 @@ export function SyncSettingsModal(props: Props) {
   return <ConfigurableSyncSettingsView {...props} />
 }
 
-function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, onClose }: Props) {
+function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, directAccess, onClose }: Props) {
   const { t } = useTranslation()
   const existingConfig = engine?.getConfig() ?? null
-  const initFolder = localStorage.getItem(SYNC_FOLDER_KEY) ?? DEFAULT_SYNC_FOLDER
+  const initFolder = getSyncFolder()
 
   const [provider, setProvider] = useState<string>(() => (existingConfig?.provider as string) ?? 'nextcloud')
   const [formData, setFormData] = useState<Record<string, string>>(() => {
@@ -166,15 +171,18 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
       (prevVault?.vaultToken ?? '') !== (nextVault?.vaultToken ?? '') ||
       (prevVault?.accountId ?? '') !== (nextVault?.accountId ?? '')
 
+    // Stored normalized, so a leading or trailing slash can't double up in the
+    // WebDAV URL (krelltunez/dayGLANCE#2037).
+    const savedFolder = normalizeSyncFolder(folderPath)
     if (engine) {
       // Persist enabled:false (and keep credentials) when disabling; only clear the
       // config when every field is blank. Never drop it just because a required
       // field is empty — that reset the toggle back to on and wiped creds (#204).
       engine.setConfig(buildSyncConfigToSave({
         provider, formData, configFields: activeProvider?.configFields ?? [],
-        folderPath, syncEnabled, encEnabled,
+        folderPath: savedFolder, syncEnabled, encEnabled,
       }))
-      localStorage.setItem(SYNC_FOLDER_KEY, folderPath)
+      localStorage.setItem(SYNC_FOLDER_KEY, savedFolder)
       resetEnsuredFolder()
     }
     // A folder change or any vault change requires a reload so the engines are
@@ -196,7 +204,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     } else if (vaultChanged && nextVault) {
       clearCredentialHalt()
     }
-    if (folderPath !== originalFolder.current || vaultChanged) {
+    if (savedFolder !== originalFolder.current || vaultChanged) {
       flushSecureWrites().finally(() => window.location.reload())
     }
   }
@@ -647,6 +655,9 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
               </button>
             </div>
           </div>
+
+          {/* Direct Access section: a folder a third-party tool keeps in step */}
+          <DirectAccessSection runSync={directAccess.runSync} lastError={directAccess.lastError} />
 
           {/* GLANCEvault (beta) section */}
           <div className="space-y-3">

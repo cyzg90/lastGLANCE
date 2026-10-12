@@ -1,6 +1,7 @@
-import { createContext, useContext, useState } from 'react'
-import { getIntentsConfig, isIntentsConfigured, type IntentsConfig } from './config'
-import { isDbIntentsEnabled } from './dbConfig'
+import { createContext, useContext, useState, useSyncExternalStore } from 'react'
+import { getIntentsConfig, type IntentsConfig } from './config'
+import { anyIntentsTransportOn, intentsTransportsOn } from './intentsAvailable'
+import { directAccessTransport } from '@/sync/directAccess'
 
 interface IntentsContextValue {
   isConfigured: boolean
@@ -18,10 +19,13 @@ export function IntentsProvider({ children }: { children: React.ReactNode }) {
   }
 
   // Intents are "configured" (so the send-to-dayGLANCE buttons show) when ANY
-  // transport is enabled: the WebDAV intents config above, OR the GLANCEvault DB
-  // intents transport. Gating on WebDAV alone hid the buttons for vault-only
-  // setups. Mirrors enabledIntentTargets() in the emitter.
-  const isConfigured = isIntentsConfigured(config) || isDbIntentsEnabled()
+  // transport is enabled: the WebDAV intents config above, the GLANCEvault DB
+  // intents transport, or the Direct Access event set. Gating on fewer hid the
+  // buttons for setups that used only the other, twice. The Direct Access
+  // folder is restored asynchronously after launch, so its status is
+  // subscribed to rather than read once: the buttons appear when it connects.
+  const directAccess = useSyncExternalStore(directAccessTransport.subscribe, directAccessTransport.getSnapshot, directAccessTransport.getSnapshot)
+  const isConfigured = anyIntentsTransportOn(intentsTransportsOn(directAccess))
 
   return (
     <IntentsContext.Provider value={{ isConfigured, config, refreshConfig }}>

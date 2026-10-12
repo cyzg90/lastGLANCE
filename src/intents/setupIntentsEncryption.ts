@@ -22,6 +22,23 @@ async function fetchOrCreateSharedSalt(config: IntentsConfig, authHeader: string
   return new Uint8Array(buf)
 }
 
+/**
+ * The WebDAV salt as stored, base64, or null when there is none or WebDAV
+ * cannot be reached. Never creates one: a device that also runs WebDAV intents
+ * seeds the folder's event set with THIS salt, so the key it already holds is
+ * the key the folder uses (intents/directAccessIntentsKey.ts).
+ */
+export async function fetchSharedSaltB64(config: IntentsConfig): Promise<string | null> {
+  try {
+    const raw = await getFileOrNull(config.webdavUrl, config.folderPath, SALT_FILENAME, buildAuthHeader(config.webdavUsername, config.webdavPassword))
+    if (raw === null) return null
+    const parsed = JSON.parse(raw) as { salt?: unknown }
+    return typeof parsed.salt === 'string' && parsed.salt ? parsed.salt : null
+  } catch {
+    return null
+  }
+}
+
 export async function setupIntentsEncryption(config: IntentsConfig, passphrase: string): Promise<void> {
   const authHeader = buildAuthHeader(config.webdavUsername, config.webdavPassword)
   await ensureFolder(config.webdavUrl, config.folderPath, authHeader)

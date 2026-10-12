@@ -10,6 +10,10 @@ import {
   getActivityLog,
 } from '@/intents/config'
 import { getDbIntentsConfig, saveDbIntentsConfig } from '@/intents/dbConfig'
+import { getDirectAccessIntentsEnabledFlag, setDirectAccessIntentsEnabled } from '@/intents/directAccessIntentsConfig'
+import { directAccessTransport, directAccessEncryptsWrites } from '@/sync/directAccess'
+import { ensureDirectAccessIntentsKey, resolveDirectAccessIntentsKey } from '@/intents/directAccessIntentsKey'
+import { DirectAccessFileRow } from '@/components/SyncSettingsModal/DirectAccessFileRow'
 import { getVaultConfig } from '@/sync/vaultConfig'
 import { ActivityLogModal } from '@/components/ActivityLogModal/ActivityLogModal'
 import { PassphraseModal } from '@/components/PassphraseModal/PassphraseModal'
@@ -77,6 +81,13 @@ export function IntegrationSettingsModal({ onClose, onSaved }: Props) {
   // than duplicating the fields.
   const [dbIntentsEnabled, setDbIntentsEnabled] = useState(() => getDbIntentsConfig().enabled)
   const initialDbIntentsEnabled = useRef(getDbIntentsConfig().enabled)
+  // Direct Access intents (docs/direct-access.md, step 3): the event-set file
+  // in the folder Cloud Sync connected. Its own opt-in, off by default; the
+  // folder itself is connected in Sync settings.
+  const [daIntentsEnabled, setDaIntentsEnabled] = useState(() => getDirectAccessIntentsEnabledFlag())
+  const initialDaIntentsEnabled = useRef(getDirectAccessIntentsEnabledFlag())
+  const daSupported = directAccessTransport.isSupported()
+  const daConnected = directAccessTransport.isConnected()
   const vaultConn = getVaultConfig()
   const vaultConfigured = !!(vaultConn?.vaultUrl && vaultConn?.vaultToken && vaultConn?.accountId)
 
@@ -195,6 +206,23 @@ export function IntegrationSettingsModal({ onClose, onSaved }: Props) {
       // written object matches the exact shape getDbIntentsConfig() reads.
       const dbIntentsChanged = dbIntentsEnabled !== initialDbIntentsEnabled.current
       saveDbIntentsConfig({ ...getDbIntentsConfig(), enabled: dbIntentsEnabled })
+      // Direct Access intents with the encrypt switch on need the key for the
+      // folder's salt (intents/directAccessIntentsKey.ts): from the cache or
+      // the passphrase in memory, else from one prompt. Never enabled without.
+      if (daIntentsEnabled && daConnected && directAccessEncryptsWrites()) {
+        const r = await ensureDirectAccessIntentsKey({
+          resolve: (passphrase) => resolveDirectAccessIntentsKey({ transport: directAccessTransport, ...(passphrase !== undefined ? { passphrase } : {}) }),
+          promptForPassphrase: promptForVaultPassphrase,
+        })
+        if (r.status !== 'ready') {
+          setDaIntentsEnabled(false)
+          setSetupError(r.status === 'cancelled' ? t('integration.directAccessIntents.passphraseRequired') : t('integration.setupFailed'))
+          return
+        }
+        flushIntents().catch(() => { /* surfaced via deliverers/outbox */ })
+      }
+      const daIntentsChanged = daIntentsEnabled !== initialDaIntentsEnabled.current
+      setDirectAccessIntentsEnabled(daIntentsEnabled)
 
       onSaved()
       onClose()
@@ -203,7 +231,7 @@ export function IntegrationSettingsModal({ onClose, onSaved }: Props) {
       // config, mirroring how the vault sync toggle reloads to reconstruct its
       // engine. (Sending already re-reads the gate per call; this is for the
       // receive poller's cadence/startup.)
-      if (dbIntentsChanged) window.location.reload()
+      if (dbIntentsChanged || daIntentsChanged) window.location.reload()
     } catch (err) {
       setSetupError(err instanceof Error ? err.message : t('integration.setupFailed'))
     } finally {
@@ -483,6 +511,45 @@ export function IntegrationSettingsModal({ onClose, onSaved }: Props) {
               )
             )}
           </div>
+
+          {/* Direct Access intents: the event-set file in the folder Cloud Sync
+              connected. Independent toggle; the folder comes from Sync settings. */}
+          {daSupported && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
+                {t('integration.directAccessIntents.title')}
+              </h3>
+              <div className="flex items-center justify-between gap-3 py-1">
+                <div className="min-w-0">
+                  <p className="text-sm text-slate-700 dark:text-slate-300">{t('integration.directAccessIntents.label')}</p>
+                  <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                    {t('integration.directAccessIntents.hint')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDaIntentsEnabled(v => !v)}
+                  className={`relative shrink-0 w-10 h-6 rounded-full transition-colors ${daIntentsEnabled ? 'bg-green-400' : 'bg-slate-300 dark:bg-slate-600'}`}
+                  aria-checked={daIntentsEnabled}
+                  role="switch"
+                >
+                  <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${daIntentsEnabled ? 'translate-x-4' : ''}`} />
+                </button>
+              </div>
+              {daIntentsEnabled && (
+                daConnected ? (
+                  <>
+                    <DirectAccessFileRow slot="events" />
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{t('integration.directAccessIntents.reload')}</p>
+                  </>
+                ) : (
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
+                    <p className="text-xs text-amber-700 dark:text-amber-300">{t('integration.directAccessIntents.notConnected')}</p>
+                  </div>
+                )
+              )}
+            </div>
+          )}
 
           {/* Activity log */}
           <div className="flex items-center justify-between py-1">
