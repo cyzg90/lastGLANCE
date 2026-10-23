@@ -217,28 +217,47 @@ public final class SharedDataStore {
         return arr.length() == 0 ? null : arr.optJSONObject(arr.length() - 1);
     }
 
+    // Guards the refresh log's read-modify-write: the receiver, the web layer
+    // and the workers each write it.
+    private static final Object REFRESH_LOG_LOCK = new Object();
+
     public static void appendLauncherRefresh(Context context, JSONObject entry) {
-        JSONArray arr = launcherRefreshEntries(context);
-        arr.put(entry);
-        while (arr.length() > MAX_LAUNCHER_REFRESH_LOG) arr.remove(0);
-        prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
+        synchronized (REFRESH_LOG_LOCK) {
+            JSONArray arr = launcherRefreshEntries(context);
+            arr.put(entry);
+            while (arr.length() > MAX_LAUNCHER_REFRESH_LOG) arr.remove(0);
+            prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
+        }
     }
 
     public static void updateLauncherRefresh(Context context, String clientId, JSONObject patch) {
-        JSONArray arr = launcherRefreshEntries(context);
-        for (int i = arr.length() - 1; i >= 0; i--) {
-            JSONObject e = arr.optJSONObject(i);
-            if (e == null || !clientId.equals(e.optString("clientId"))) continue;
-            try {
-                for (java.util.Iterator<String> it = patch.keys(); it.hasNext(); ) {
-                    String key = it.next();
-                    e.put(key, patch.get(key));
+        updateLauncherRefreshIf(context, clientId, e -> patch);
+    }
+
+    // Merges the patch `decide` returns for the entry with this client id, or
+    // nothing when it returns null; read and write under one lock, so the
+    // decision cannot be made against an answer that has since landed.
+    // Returns whether it wrote.
+    public static boolean updateLauncherRefreshIf(Context context, String clientId, java.util.function.Function<JSONObject, JSONObject> decide) {
+        synchronized (REFRESH_LOG_LOCK) {
+            JSONArray arr = launcherRefreshEntries(context);
+            for (int i = arr.length() - 1; i >= 0; i--) {
+                JSONObject e = arr.optJSONObject(i);
+                if (e == null || !clientId.equals(e.optString("clientId"))) continue;
+                JSONObject patch = decide.apply(e);
+                if (patch == null) return false;
+                try {
+                    for (java.util.Iterator<String> it = patch.keys(); it.hasNext(); ) {
+                        String key = it.next();
+                        e.put(key, patch.get(key));
+                    }
+                } catch (Exception ex) {
+                    return false;
                 }
-            } catch (Exception ex) {
-                return;
+                prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
+                return true;
             }
-            prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
-            return;
+            return false;
         }
     }
 
