@@ -35,7 +35,7 @@ class LauncherRefreshWaitTest {
             JSONObject("""{"clientId":"c1","outcome":"queued","requestedAt":1000}"""), heldFrom = 4_000, now = 64_000,
         )!!
         assertEquals("unanswered", patch.getString("outcome"))
-        assertEquals("the app did not answer while held awake for 60 s (the hold began 3 s after the request)", patch.getString("reason"))
+        assertEquals("the wake never reached the app while it was held awake for 60 s (the hold began 3 s after the request)", patch.getString("reason"))
         assertEquals(64_000L, patch.getLong("finishedAt"))
         assertTrue(LauncherRefreshWait.answered(JSONObject(patch.toString())))
     }
@@ -44,5 +44,32 @@ class LauncherRefreshWaitTest {
     fun `an answer that landed before the hold ran out is never overwritten`() {
         assertNull(LauncherRefreshWait.unansweredPatch(JSONObject("""{"clientId":"c1","outcome":"ran","requestedAt":1000}"""), 4_000, 64_000))
         assertNull(LauncherRefreshWait.unansweredPatch(JSONObject("""{"clientId":"c1","outcome":"failed","reason":"x"}"""), 4_000, 64_000))
+    }
+
+    @Test
+    fun `an unanswered request says how far it got`() {
+        val woken = LauncherRefreshWait.unansweredPatch(
+            JSONObject("""{"clientId":"c1","outcome":"queued","requestedAt":1000,"wokenAt":1400}"""), heldFrom = 1_000, now = 61_000,
+        )!!
+        assertEquals("the app was woken 0 s after the request, but the page never took it while held awake for 60 s (the hold began 0 s after the request)", woken.getString("reason"))
+        val taken = LauncherRefreshWait.unansweredPatch(
+            JSONObject("""{"clientId":"c1","outcome":"queued","requestedAt":1000,"wokenAt":1400,"pickedUpAt":3600}"""), heldFrom = 1_000, now = 61_000,
+        )!!
+        assertEquals("the page took the request 3 s after it was sent, but had not finished when the hold ended after 60 s (the hold began 0 s after the request)", taken.getString("reason"))
+    }
+
+    @Test
+    fun `a stamp is written once, and never on an answered request`() {
+        val waiting = JSONObject("""{"clientId":"c1","outcome":"queued","requestedAt":1000}""")
+        assertEquals(2_000L, LauncherRefreshWait.stampPatch(waiting, LauncherRefreshWait.WOKEN_AT, 2_000)!!.getLong("wokenAt"))
+        assertNull(LauncherRefreshWait.stampPatch(JSONObject("""{"clientId":"c1","outcome":"queued","wokenAt":1500}"""), LauncherRefreshWait.WOKEN_AT, 2_000))
+        assertNull(LauncherRefreshWait.stampPatch(JSONObject("""{"clientId":"c1","outcome":"ran","finishedAt":1}"""), LauncherRefreshWait.PICKED_UP_AT, 2_000))
+    }
+
+    @Test
+    fun `only the REFRESH requests in a drained queue are picked out`() {
+        val drained = """[{"action":"R","clientId":"r1"},{"action":"C","clientId":"w1"},{"action":"R","clientId":""},{"action":"R","clientId":"r2"}]"""
+        assertEquals(listOf("r1", "r2"), LauncherRefreshWait.refreshIds(drained, "R"))
+        assertEquals(emptyList<String>(), LauncherRefreshWait.refreshIds("not json", "R"))
     }
 }
