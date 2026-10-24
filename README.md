@@ -1,6 +1,6 @@
 # lastGLANCE
 
-**when did you last...?** A privacy-first recency tracker for the chores and upkeep that don't fit a calendar. Runs in your browser, with no account and no server unless you bring your own.
+**when did you last...?** A privacy-first recency tracker for the chores and upkeep that don't fit a calendar, and for the people you mean to stay in touch with. Runs in your browser, with no account and no server unless you bring your own.
 
 Part of the **GLANCE family**: focused, standalone apps connected through a shared intent protocol. See also [dayGLANCE](https://github.com/krelltunez/dayGLANCE) (today), lastGLANCE (recent upkeep), and [lifeGLANCE](https://github.com/krelltunez/lifeGLANCE) (your whole timeline).
 
@@ -11,9 +11,13 @@ Part of the **GLANCE family**: focused, standalone apps connected through a shar
 
 ---
 
-![lastGLANCE dashboard](public/screenshot.png)
+![lastGLANCE dashboard](docs/screenshots/screenshot.png)
 
-lastGLANCE is a chore-tracking progressive web app that answers one question: *when did I last do this?* It tracks recency, not schedules. The emotional register is information, not guilt.
+lastGLANCE is a progressive web app that answers one question: *when did I last do this?* It tracks recency, not schedules. The emotional register is information, not guilt.
+
+It has two workspaces, switched under the wordmark:
+- **Chores**: recurring upkeep, colored by how long ago you last did it.
+- **People**: the people who matter to you, who you're overdue to reach out to, and the birthdays and dates coming up.
 
 ---
 
@@ -78,37 +82,66 @@ The Android app ships the full web app in a WebView with native enhancements tha
 
 | Feature | Details |
 |---|---|
-| 🏠 **Home screen widgets** | A completion heatmap, a "soon" list, the single most-overdue chore, and a quick-add button, each with one-tap done |
+| 🏠 **Home screen widgets** | A completion heatmap, a "soon" list, the single most-overdue chore, and a quick-add button, each with one-tap done. For People, a Reach out widget (tap to quick-log) and a Coming up widget for the next dates |
 | ⚡ **Quick Settings tiles** | An "Add chore" tile and a "Soon" tile that shows a live overdue and soon count right in the notification shade |
-| 🔔 **Background reminders** | Overdue notifications fire reliably even when the app is closed |
-| 🔗 **Native dayGLANCE intents** | Hand overdue chores to dayGLANCE through the GLANCE intents protocol, with no browser round trip |
+| 🔔 **Background reminders** | Overdue chores, birthdays and dates, and a daily catch-up digest fire reliably even when the app is closed |
+| 📇 **Phone contacts** | Optional and read-only: import people with their birthdays, link a person to a contact, and call, text or email them in one tap |
+| 🔗 **Native intents** | Hand overdue chores to dayGLANCE through the GLANCE intents protocol, and drive lastGLANCE from Tasker and other automation apps |
 | ☁️ **Proxy-free sync** | CapacitorHttp connects straight to WebDAV and Nextcloud with no CORS proxy required |
 | 🌗 **Offline-first shell** | The full app runs installable and offline, with dark and light themes |
 
-| Dashboard | Chore detail |
+| Chores | Chore detail |
 |:-:|:-:|
-| ![lastGLANCE Android dashboard](public/screenshot_phone_dashboard.png) | ![lastGLANCE chore detail and history](public/screenshot_phone_detail.png) |
+| ![lastGLANCE Android dashboard](docs/screenshots/screenshot_phone_dashboard.png) | ![lastGLANCE chore detail and history](docs/screenshots/screenshot_phone_detail.png) |
+
+| People | Person detail |
+|:-:|:-:|
+| ![lastGLANCE People on Android](docs/screenshots/screenshot_phone_people.png) | ![lastGLANCE person detail and timeline](docs/screenshots/screenshot_phone_person.png) |
 
 ---
 
 ## Features
 
+### Chores
+
 - **Recency tracking**: each chore shows how long ago it was last done, encoded as a color gradient from fresh green through amber to red
 - **Cadence**: set a target interval in days; overdue chores sort to the top automatically
 - **Categories & subcategories**: organize chores into collapsible groups with custom icons
 - **Freeform masonry layout**: category cards size to their content and arrange across columns; your spatial organization is preserved
-- **Activity heatmap**: a GitHub-style contribution graph in the header gives an at-a-glance view of completion history
+- **Activity heatmap**: a GitHub-style contribution graph in the header gives an at-a-glance view of completion history; tap a day to open it in the Journal
 - **Completion history**: per-chore stats (total completions, average interval vs. target), a per-chore contribution graph, and a timestamped log with per-entry notes
+- **Journal**: every completion across all chores, grouped by day, with date ranges and CSV export
 - **Backdate entry**: log completions in the past to bootstrap history from day one
-- **Reminders**: browser notifications when a chore is overdue (opt-in per chore)
+- **Reminders**: notifications when a chore is overdue (opt-in per chore)
 - **Seasonal chores**: hide chores outside their active date range each year
-- **Cloud sync**: keep data in sync across devices via WebDAV or Nextcloud (CRDT merge, end-to-end encryption optional)
-- **Auto-backups**: periodic remote snapshots (hourly/daily/weekly) in a `backups/` subfolder alongside the sync file
-- **dayGLANCE integration**: send overdue chores as tasks to dayGLANCE via WebDAV intents
-- **PWA**: installable, works offline, auto-updates
-- **Dark/light mode**
+- **Household**: share chores with the people you live with, assign them, and see "Mine" at a glance
 
-![lastGLANCE details view](public/screenshot_details.png)
+![lastGLANCE chore detail](docs/screenshots/screenshot_details.png)
+
+![lastGLANCE Journal](docs/screenshots/screenshot_journal.png)
+
+### People
+
+- **People and circles**: add the people who matter to you and group them into circles (family, friends, work, or your own), each with a bar showing how recently you were in touch
+- **Quick-log**: record a contact in a couple of taps: how (in person, call, video call, text, email or other), when, a note, everyone involved, and who reached out
+- **Reach out**: suggestions of who to contact next, from the cadence you set, upcoming dates and who got in touch last. Each card says why it's there, and "Not now" hides someone for 3, 7 or 14 days
+- **Coming up**: birthdays and other dates in the next 30 days
+- **Reciprocity**: see the balance of who reaches out ("You 5, them 2") and runs of unanswered reach-outs, or hide it all in Settings > People
+- **Reminders**: a notification on each date, with an optional heads-up 1 to 14 days before, and one daily catch-up digest for the people you want reminding about; both times are adjustable
+- **Phone contacts** (Android and iOS): optional and read-only. Import people with their birthdays, link a person to a contact, and call, text or email them from lastGLANCE. Nothing leaves your phone unless you use sync
+- **Heatmap and Journal**: in People mode the header heatmap counts contacts per day and the Journal lists them, with the same ranges and CSV export
+- **Household aware**: People is personal; each household member sees only their own
+
+![lastGLANCE People](docs/screenshots/screenshot_people.png)
+
+### Everywhere
+
+- **Cloud sync**: keep data in step across devices through WebDAV or Nextcloud, GLANCEvault, or a folder a sync tool already keeps in step (Direct Access); end-to-end encryption available
+- **Auto-backups**: periodic remote snapshots (hourly/daily/weekly) in a `backups/` subfolder alongside the sync file
+- **GLANCE integrations**: send chores and People catch-ups to dayGLANCE, and logged contacts to your lifeGLANCE timeline
+- **Languages**: English, French, German, Spanish, Italian, Portuguese (Portugal and Brazil), Polish, Ukrainian and Chinese
+- **PWA**: installable, works offline, auto-updates
+- **Light, dark and system themes**, 12- or 24-hour clock, and your choice of first day of the week
 
 ---
 
@@ -118,7 +151,7 @@ The Android app ships the full web app in a WebView with native enhancements tha
 |---|---|
 | UI | React 19, Tailwind CSS, Lucide icons |
 | Local storage | Dexie (IndexedDB) |
-| Sync | `@glance-apps/sync` (WebDAV CRDT engine) |
+| Sync | `@glance-apps/sync` (WebDAV, GLANCEvault and Direct Access engines) |
 | Intents | `@glance-apps/intents` |
 | Build | Vite 6, TypeScript |
 | PWA | vite-plugin-pwa (Workbox) |
@@ -212,42 +245,61 @@ The `api/` directory contains a lightweight server-side proxy (`webdav-proxy.js`
 
 ## Sync & Storage
 
-All data is stored locally in IndexedDB (via Dexie). Cloud sync is optional and configured in-app under the **Cloud** button.
+All data is stored locally in IndexedDB (via Dexie). Cloud sync is optional and configured in **Settings > Cloud Sync**.
 
 **Supported providers:**
 - Generic WebDAV (pCloud, Seafile, self-hosted, etc.)
 - Nextcloud (uses the native WebDAV endpoint)
 - Koofr (self-hosted app recommended; Koofr blocks browser requests from Vercel-hosted origins)
+- [GLANCEvault](https://github.com/glance-apps/glance-vault), a sync server you host, always end-to-end encrypted
+- Direct Access: a folder that Syncthing, Nextcloud, Google Drive, Dropbox, OneDrive or FolderSync already keeps in step across your devices (Android: pick the folder; iPhone and iPad: pick the file). See [docs/direct-access.md](docs/direct-access.md)
 
 **File layout on the server** (default folder `GLANCE/lastglance`, configurable in sync settings):
 ```
 GLANCE/lastglance/
-  lastglance-sync.json      <- live sync file
+  lastglance-sync.json      <- live sync file (chores)
+  lastglance-people.json    <- People, synced separately so older versions never see it
   backups/
     lastglance-backup-hourly-...json
     lastglance-backup-daily-...json
     lastglance-backup-weekly-...json
 ```
 
-**Encryption:** end-to-end AES-256-GCM encryption is optional. When enabled, the sync file and all backup files are encrypted before upload. The passphrase never leaves the device, and there is no recovery mechanism, so store it somewhere safe.
+People syncs over WebDAV and GLANCEvault (as its own `lastglance-people` vault app). It is not carried by Direct Access yet. **Settings > People** can keep People off a vault you share.
+
+**Encryption:** end-to-end AES-256-GCM encryption is optional for WebDAV and Direct Access, and always on for GLANCEvault. When enabled, the sync files and all backup files are encrypted before upload; People uses the same key as chores. The passphrase never leaves the device, and there is no recovery mechanism, so store it somewhere safe.
 
 ---
 
 ## Integrations
 
+Integrations travel over the GLANCE intents protocol, through your own WebDAV server, GLANCEvault or Direct Access folder. Configure them in **Settings > Integrations**.
+
 ### dayGLANCE
 
-lastGLANCE can send overdue chores to [dayGLANCE](https://github.com/krelltunez/dayGLANCE) as scheduled tasks via the GLANCE intents protocol. Configure the integration under the **Plug** button.
+lastGLANCE can send chores to [dayGLANCE](https://github.com/krelltunez/dayGLANCE) as scheduled tasks. Completing the task in dayGLANCE logs the chore here.
 
 Two delivery modes are available per chore:
 - **Manual**: the -> dG button on a chore card sends it immediately
 - **Auto**: the chore is sent once per day whenever it's overdue (requires the intents poller to be running)
 
+People can use it too, both off by default:
+- **Per person, "Add to dayGLANCE when overdue"**: a "Call Sam" task once per overdue stretch, worded by their usual channel. Done in dayGLANCE, it logs an outbound contact here.
+- **Settings > People**: today's birthdays and dates go to dayGLANCE as all-day items (per device).
+
+### lifeGLANCE
+
+Per person, **"Add contacts to lifeGLANCE"** adds each contact you log with them to your [lifeGLANCE](https://github.com/krelltunez/lifeGLANCE) timeline as a milestone.
+
+### Tasker and automation (Android)
+
+Other apps can drive lastGLANCE through `app.lastglance.*` intents: create, complete or open a chore, query counts, and log a contact with a person (`LOG_INTERACTION`). See [docs/tasker-integration.md](docs/tasker-integration.md).
+
 ---
 
 ## Data & Backups
 
-- **Export**: download a full JSON backup at any time from the Archive menu
+- **Export**: download a full JSON backup at any time from **Settings > Backup & Restore**
 - **Import**: restore from a local JSON file (replaces all current data)
 - **Remote restore**: browse and restore from any auto-backup on your WebDAV server
 - **Clear sample data**: remove the example categories and chores from a fresh install (also offered in the welcome modal)
@@ -256,7 +308,7 @@ Two delivery modes are available per chore:
 
 ## Privacy
 
-lastGLANCE has no backend, no analytics, and no accounts. All data is stored locally on your device. Cloud sync is optional, goes only to a server you control, and can be end-to-end encrypted so the server never sees plaintext.
+lastGLANCE has no backend, no analytics, and no accounts. All data is stored locally on your device. Cloud sync is optional, goes only to a server or folder you control, and can be end-to-end encrypted so the server never sees plaintext. Phone contacts are read only when you turn them on, and never leave your phone except as people you imported, through your own sync. See the [privacy policy](https://www.glance-apps.com/lastglance/privacy).
 
 ---
 
