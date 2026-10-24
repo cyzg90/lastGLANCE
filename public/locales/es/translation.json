@@ -462,6 +462,7 @@
       "AUTH_FAILURE": "Error al iniciar sesión. Comprueba tu usuario y contraseña.",
       "LOCKED": "Otro dispositivo está sincronizando ahora mismo. Inténtalo de nuevo en un momento.",
       "NETWORK_ERROR": "No se pudo conectar con el servidor de sincronización. Comprueba tu conexión e inténtalo de nuevo.",
+      "PAYLOAD_TOO_LARGE": "El servidor de sincronización rechazó la subida porque es demasiado grande. Tus cambios están guardados en este dispositivo. Pide a quien administra tu servidor de sincronización que aumente su límite de tamaño de subida.",
       "KEY_MISMATCH": "Contraseña de sincronización incorrecta: debe coincidir exactamente con la de tus otros dispositivos.",
       "ROW_DECRYPT_FAILED": "Algunos datos sincronizados no se pudieron descifrar. Comprueba tu contraseña de sincronización.",
       "VERIFIER_UNSUPPORTED": "Tu servidor de sincronización necesita actualizarse para admitir la verificación de claves.",

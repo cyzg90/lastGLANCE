@@ -462,6 +462,7 @@
       "AUTH_FAILURE": "Sign-in failed. Check your username and password.",
       "LOCKED": "Another device is syncing right now. Try again in a moment.",
       "NETWORK_ERROR": "Couldn't reach the sync server. Check your connection and try again.",
+      "PAYLOAD_TOO_LARGE": "The sync server refused the upload because it is too large. Your changes are saved on this device. Ask whoever runs your sync server to raise its upload size limit.",
       "KEY_MISMATCH": "Wrong sync passphrase — it must exactly match the passphrase used on your other devices.",
       "ROW_DECRYPT_FAILED": "Some synced data couldn't be decrypted. Check your sync passphrase.",
       "VERIFIER_UNSUPPORTED": "Your sync server needs to be updated to support key verification.",

@@ -462,6 +462,7 @@
       "AUTH_FAILURE": "Anmeldung fehlgeschlagen. Prüfe Benutzername und Passwort.",
       "LOCKED": "Ein anderes Gerät synchronisiert gerade. Versuche es gleich noch einmal.",
       "NETWORK_ERROR": "Der Sync-Server ist nicht erreichbar. Prüfe deine Verbindung und versuche es erneut.",
+      "PAYLOAD_TOO_LARGE": "Der Sync-Server hat den Upload abgelehnt, weil er zu groß ist. Deine Änderungen sind auf diesem Gerät gespeichert. Bitte die Person, die deinen Sync-Server betreibt, das Upload-Limit zu erhöhen.",
       "KEY_MISMATCH": "Falsche Sync-Passphrase – sie muss exakt mit der Passphrase deiner anderen Geräte übereinstimmen.",
       "ROW_DECRYPT_FAILED": "Einige synchronisierte Daten konnten nicht entschlüsselt werden. Prüfe deine Sync-Passphrase.",
       "VERIFIER_UNSUPPORTED": "Dein Sync-Server muss aktualisiert werden, um die Schlüsselprüfung zu unterstützen.",

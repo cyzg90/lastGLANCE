@@ -462,6 +462,7 @@
       "AUTH_FAILURE": "Échec de la connexion. Vérifiez votre nom d'utilisateur et votre mot de passe.",
       "LOCKED": "Un autre appareil synchronise en ce moment. Réessayez dans un instant.",
       "NETWORK_ERROR": "Impossible de joindre le serveur de synchronisation. Vérifiez votre connexion et réessayez.",
+      "PAYLOAD_TOO_LARGE": "Le serveur de synchronisation a refusé l'envoi car il est trop volumineux. Vos modifications sont enregistrées sur cet appareil. Demandez à la personne qui gère votre serveur de synchronisation d'augmenter sa limite de taille d'envoi.",
       "KEY_MISMATCH": "Phrase secrète incorrecte — elle doit correspondre exactement à celle de vos autres appareils.",
       "ROW_DECRYPT_FAILED": "Certaines données synchronisées n'ont pas pu être déchiffrées. Vérifiez votre phrase secrète.",
       "VERIFIER_UNSUPPORTED": "Votre serveur de synchronisation doit être mis à jour pour prendre en charge la vérification des clés.",

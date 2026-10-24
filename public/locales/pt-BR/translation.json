@@ -462,6 +462,7 @@
       "AUTH_FAILURE": "Falha ao fazer login. Verifique o nome de usuário e a senha.",
       "LOCKED": "Outro dispositivo está sincronizando neste momento. Tente novamente daqui a pouco.",
       "NETWORK_ERROR": "Não foi possível contatar o servidor de sincronização. Verifique a conexão e tente novamente.",
+      "PAYLOAD_TOO_LARGE": "O servidor de sincronização recusou o envio porque é demasiado grande. As suas alterações estão salvas neste dispositivo. Peça a quem gerencia o seu servidor de sincronização para aumentar o limite de tamanho dos envios.",
       "KEY_MISMATCH": "Frase de sincronização incorreta — precisa corresponder exatamente à dos seus outros dispositivos.",
       "ROW_DECRYPT_FAILED": "Alguns dados sincronizados não puderam ser decifrados. Verifique a sua frase de sincronização.",
       "VERIFIER_UNSUPPORTED": "O seu servidor de sincronização precisa ser atualizado para suportar a verificação de chaves.",

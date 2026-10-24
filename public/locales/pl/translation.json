@@ -482,6 +482,7 @@
       "AUTH_FAILURE": "Logowanie nie powiodło się. Sprawdź nazwę użytkownika i hasło.",
       "LOCKED": "Inne urządzenie właśnie synchronizuje. Spróbuj ponownie za chwilę.",
       "NETWORK_ERROR": "Nie udało się połączyć z serwerem synchronizacji. Sprawdź połączenie i spróbuj ponownie.",
+      "PAYLOAD_TOO_LARGE": "Serwer synchronizacji odrzucił przesyłanie, ponieważ jest zbyt duże. Twoje zmiany są zapisane na tym urządzeniu. Poproś osobę zarządzającą serwerem synchronizacji o zwiększenie limitu rozmiaru przesyłanych plików.",
       "KEY_MISMATCH": "Nieprawidłowe hasło synchronizacji — musi być dokładnie takie samo jak na Twoich pozostałych urządzeniach.",
       "ROW_DECRYPT_FAILED": "Nie udało się odszyfrować części zsynchronizowanych danych. Sprawdź swoje hasło synchronizacji.",
       "VERIFIER_UNSUPPORTED": "Twój serwer synchronizacji wymaga aktualizacji, aby obsługiwać weryfikację klucza.",
