@@ -265,7 +265,7 @@ GLANCE/lastglance/
     lastglance-backup-weekly-...json
 ```
 
-People syncs over WebDAV and GLANCEvault (as its own `lastglance-people` vault app). It is not carried by Direct Access yet. **Settings > People** can keep People off a vault you share.
+People syncs on every road chores do, as its own file or vault app so older versions never see it: `lastglance-people.json` next to the chore file on WebDAV and in a Direct Access folder (on iPhone and iPad you choose or create that file too), and the `lastglance-people` app on GLANCEvault. **Settings > People** can keep People off a vault you share.
 
 **Encryption:** end-to-end AES-256-GCM encryption is optional for WebDAV and Direct Access, and always on for GLANCEvault. When enabled, the sync files and all backup files are encrypted before upload; People uses the same key as chores. The passphrase never leaves the device, and there is no recovery mechanism, so store it somewhere safe.
 

@@ -12,8 +12,9 @@ in the order that document gives, so the same folder carries all three apps:
    with a persistable grant, walked with DocumentFile; crash-safe writes
    through `SafeReplace`; paths confined by `DirectAccessPath`). iOS holds
    files, one security-scoped bookmark each for the snapshot
-   (`lastglance-sync.json`), the household roster (`glance-users.json`) and the
-   intents event set (`glance-events.json`), because the Files providers of
+   (`lastglance-sync.json`), People's snapshot (`lastglance-people.json`), the
+   household roster (`glance-users.json`) and the intents event set
+   (`glance-events.json`), because the Files providers of
    the common cloud tools cannot hand an app a folder (Apple FB9703910). The
    read classification is the one every shell answers: `absent` only when the
    folder is there and the file is not; a zero-length file is `downloading`,
@@ -38,6 +39,21 @@ in the order that document gives, so the same folder carries all three apps:
    so there is no first-run prompt; an encrypted file this device cannot
    read is never written over; a device without the key tries its cached key
    once, then raises the passphrase prompt the other tiers use.
+   People's records ride in a second snapshot file beside the chore file,
+   `lastglance-people.json`, the same file the People WebDAV engine writes,
+   so an older build that merges the chore file from the arrays it knows
+   never meets them (`src/people/sync/directAccessCycle.ts`). It is the same
+   cycle with People's seams: the People engine's payload, merge and apply;
+   people, interactions, dates and circles as data; its own seed-guard stamp
+   (`lastglance-direct-access-people-last-synced`); People's own "made here"
+   stamp (`lastglance-people-local-edit-at`, set by `markPeopleDirty`, so a
+   chore edit never makes a device write the People file at once); and an
+   apply stamps the People WebDAV engine's local-modified key. The folder,
+   the switch, the encrypt choice and the key are the chore file's, and
+   `useDirectAccessSync` runs it right after the chore cycle under the same
+   guard. Android reaches it by path in the folder; iOS holds it as a fourth
+   bookmark (the `people` slot), chosen or created from the Direct Access
+   section, and skips it until then.
 3. **The roster and the intents transport (done).** The roster is Phase 5's
    `GLANCE/users/glance-users.json`, the same file WebDAV uses, through the
    transport's roster slot (`syncSharedUsersViaDirectAccess` in

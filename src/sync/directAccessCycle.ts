@@ -22,6 +22,10 @@
 //   • the empty-state guard is moot: the payload IS the store (Dexie), so a
 //     payload of nothing means a store of nothing, and `localItemCount` is
 //     left at its default of zero.
+//
+// People runs the same cycle over its own file (people/sync/directAccessCycle.ts)
+// by overriding the payload, the merge, the apply, what counts as data and the
+// two stamps; everything else here is shared.
 
 import {
   runSnapshotFileCycle,
@@ -67,6 +71,10 @@ export interface DirectAccessCycleDeps {
   }
   storage?: Pick<Storage, 'getItem' | 'setItem'>
   lastLocalEditAt?: () => string | null
+  /** Stamped on every apply so this data's WebDAV engine pushes a change that arrived through the folder. */
+  localModifiedKey?: string
+  /** Does a payload carry anything worth restoring. */
+  hasData?: (data: unknown) => boolean
   deviceId?: () => string
   now?: () => number
   log?: Pick<Console, 'warn' | 'error'>
@@ -92,6 +100,8 @@ export async function runDirectAccessCycle(
     crypto = defaultCrypto,
     storage = localStorage,
     lastLocalEditAt = defaultLastLocalEditAt,
+    localModifiedKey = LOCAL_MODIFIED_KEY,
+    hasData = payloadHasData,
     deviceId = getDeviceId,
     now,
     log,
@@ -116,8 +126,8 @@ export async function runDirectAccessCycle(
       encryptionReady: crypto.encryptionReady,
       storage,
       lastLocalEditAt,
-      localModifiedKey: LOCAL_MODIFIED_KEY,
-      hasData: payloadHasData,
+      localModifiedKey,
+      hasData,
       deviceId,
       ...(now ? { now } : {}),
       ...(log ? { log } : {}),

@@ -14,27 +14,28 @@ import UniformTypeIdentifiers
 // makes it upload the new version.
 //
 // So the user picks an existing file (a folder another device seeded) or
-// creates it in a folder of their choice through the export picker. Three
-// files, three bookmarks: the snapshot (lastglance-sync.json), the household
-// roster (glance-users.json) and the intents event set (glance-events.json),
-// each held as a security-scoped bookmark in UserDefaults. The web layer's
-// bridge (src/native/directAccess.ts) offers the roster and the event set as
-// slots without a path, since there is no folder to find them in.
+// creates it in a folder of their choice through the export picker. Four
+// files, four bookmarks: the snapshot (lastglance-sync.json), People's
+// snapshot (lastglance-people.json), the household roster (glance-users.json)
+// and the intents event set (glance-events.json), each held as a
+// security-scoped bookmark in UserDefaults. The web layer's bridge
+// (src/native/directAccess.ts) offers all but the snapshot as slots without a
+// path, since there is no folder to find them in.
 //
 // Read classification is the one every shell answers (see DirectAccessRead.kt
 // on Android), with one difference: a bookmarked file that is gone is `error`,
 // never `absent`, because there is no folder to seed into; the user re-picks
 // or re-creates the file.
 //
-//   status / usersStatus / eventsStatus → { configured, name, path, reachable }
+//   status / peopleStatus / usersStatus / eventsStatus → { configured, name, path, reachable }
 //   pickFile({slot}) / createFile({slot}) → the status (with slot) once picked,
 //       { cancelled: true } when dismissed; rejected with the reason otherwise
 //   pickFolder()                        → as pickFile for the snapshot (shared callers)
-//   read / readUsers / readEvents        → { kind: downloading|error|text, text?, error? }
-//   write / writeUsers / writeEvents ({text}) → { ok }
+//   read / readPeople / readUsers / readEvents  → { kind: downloading|error|text, text?, error? }
+//   write / writePeople / writeUsers / writeEvents ({text}) → { ok }
 //   deleteFile()                         → { ok }   the snapshot, bookmark forgotten with it
 //   disconnect()                         → {}       forgets every file
-//   forgetUsers / forgetEvents           → {}
+//   forgetPeople / forgetUsers / forgetEvents → {}
 //
 // Registered in BridgeViewController.capacitorDidLoad().
 @objc(DirectAccessPlugin)
@@ -43,20 +44,21 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "DirectAccessPlugin"
     public let jsName = "DirectAccess"
     public let pluginMethods: [CAPPluginMethod] = [
-        "status", "usersStatus", "eventsStatus",
+        "status", "peopleStatus", "usersStatus", "eventsStatus",
         "pickFile", "createFile", "pickFolder",
-        "read", "readUsers", "readEvents",
-        "write", "writeUsers", "writeEvents",
-        "deleteFile", "disconnect", "forgetUsers", "forgetEvents",
+        "read", "readPeople", "readUsers", "readEvents",
+        "write", "writePeople", "writeUsers", "writeEvents",
+        "deleteFile", "disconnect", "forgetPeople", "forgetUsers", "forgetEvents",
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
-    /// The three files this plugin holds, each by its own bookmark.
+    /// The four files this plugin holds, each by its own bookmark.
     enum Slot: String {
-        case snapshot, users, events
+        case snapshot, people, users, events
 
         var fileName: String {
             switch self {
             case .snapshot: return "lastglance-sync.json"
+            case .people: return "lastglance-people.json"
             case .users: return "glance-users.json"
             case .events: return "glance-events.json"
             }
@@ -64,17 +66,18 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
         var bookmarkKey: String {
             switch self {
             case .snapshot: return "lastglance.directAccess.fileBookmark"
+            case .people: return "lastglance.directAccess.peopleBookmark"
             case .users: return "lastglance.directAccess.usersBookmark"
             case .events: return "lastglance.directAccess.eventsBookmark"
             }
         }
-        /// What createFile moves into the chosen folder. The snapshot's "null"
-        /// classifies as absent so the first cycle seeds it; the roster's is
+        /// What createFile moves into the chosen folder. The snapshot's and
+        /// People's "null" classifies as absent so the first cycle seeds it; the roster's is
         /// an empty roster the first roster sync merges into; the event set's
         /// an empty set the first cycle unions into.
         var seed: String {
             switch self {
-            case .snapshot: return "null"
+            case .snapshot, .people: return "null"
             case .users: return #"{"version":1,"users":[]}"#
             case .events: return #"{"version":1,"events":[]}"#
             }
@@ -83,6 +86,7 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
         var missingMessage: String {
             switch self {
             case .snapshot: return "no file connected"
+            case .people: return "no People file chosen"
             case .users: return "no roster file chosen"
             case .events: return "no events file chosen"
             }
@@ -103,6 +107,7 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - Plugin methods
 
     @objc func status(_ call: CAPPluginCall) { call.resolve(statusObject(.snapshot)) }
+    @objc func peopleStatus(_ call: CAPPluginCall) { call.resolve(statusObject(.people)) }
     @objc func usersStatus(_ call: CAPPluginCall) { call.resolve(statusObject(.users)) }
     @objc func eventsStatus(_ call: CAPPluginCall) { call.resolve(statusObject(.events)) }
 
@@ -123,10 +128,12 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func read(_ call: CAPPluginCall) { call.resolve(readSlot(.snapshot)) }
+    @objc func readPeople(_ call: CAPPluginCall) { call.resolve(readSlot(.people)) }
     @objc func readUsers(_ call: CAPPluginCall) { call.resolve(readSlot(.users)) }
     @objc func readEvents(_ call: CAPPluginCall) { call.resolve(readSlot(.events)) }
 
     @objc func write(_ call: CAPPluginCall) { writeCall(call, .snapshot) }
+    @objc func writePeople(_ call: CAPPluginCall) { writeCall(call, .people) }
     @objc func writeUsers(_ call: CAPPluginCall) { writeCall(call, .users) }
     @objc func writeEvents(_ call: CAPPluginCall) { writeCall(call, .events) }
 
@@ -142,10 +149,11 @@ public class DirectAccessPlugin: CAPPlugin, CAPBridgedPlugin {
 
     /// Forgets every file. The files themselves are left where they are.
     @objc func disconnect(_ call: CAPPluginCall) {
-        for slot in [Slot.snapshot, .users, .events] { forget(slot) }
+        for slot in [Slot.snapshot, .people, .users, .events] { forget(slot) }
         call.resolve()
     }
 
+    @objc func forgetPeople(_ call: CAPPluginCall) { forget(.people); call.resolve() }
     @objc func forgetUsers(_ call: CAPPluginCall) { forget(.users); call.resolve() }
     @objc func forgetEvents(_ call: CAPPluginCall) { forget(.events); call.resolve() }
 
