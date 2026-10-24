@@ -69,7 +69,7 @@ receiver routes it by liveness and logs every request with the liveness it saw:
 | `queued` | the renderer is alive: queued and woken, and held awake (below); the web layer runs every road (chores and People, file and vault) to completion, re-pushes, re-stamps the heartbeat, then reports `ran` (with `durationMs`) or `failed` (with `reason`) into the same entry |
 | `scheduled` | no renderer in the process: a headless run is enqueued (below); the worker adds `startedAt`, `waitMs` (how long the OS held the job) and `headless: true` when it runs, then the outcome |
 | `coalesced` | a queued or scheduled refresh from the last minute has no outcome yet |
-| `unanswered` | a `queued` refresh the web layer did not answer while `LauncherAwakeWorker` held the app awake; `reason` says how long it held and how late the hold began (Android can hold the job itself back), `holdStartedAt` and `finishedAt` stamp it |
+| `unanswered` | a `queued` refresh the web layer did not answer while `LauncherAwakeWorker` held the app awake; `reason` says how far it got (the wake never reached the app; the app was woken but the page never took it; or the page took it and did not finish), how long the hold lasted and how late it began (Android can hold the job itself back). `wokenAt` and `pickedUpAt` stamp the first two steps (`LauncherRefreshTrace`), `holdStartedAt` and `finishedAt` the hold. A cycle that hangs once taken reports `failed` after 45 s instead, naming the tiers still running (`REFRESH_CAP_MS`) |
 | `throttled` | a headless run started less than ten minutes ago (reported by the worker) |
 | `aborted` | the user opened the app during a headless run (the reverse lock, below) |
 | `deferred` | no renderer, and the headless run could not even be enqueued |

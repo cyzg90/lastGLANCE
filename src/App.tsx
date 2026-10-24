@@ -40,6 +40,7 @@ import { useVaultEventStream } from '@/hooks/useVaultEventStream'
 import { useDirectAccessSync } from '@/hooks/useDirectAccessSync'
 import { useDirectAccessIntents } from '@/hooks/useDirectAccessIntents'
 import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
+import { runCappedRefreshCycle, type RefreshTier } from '@/intents/launcherRefreshCycle'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { useDayRollover } from '@/hooks/useDayRollover'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
@@ -576,16 +577,18 @@ function AppInner() {
   }, [])
   // The launcher's REFRESH: every road to completion, then the heartbeat.
   const runLauncherSyncCycle = useCallback(async () => {
-    const jobs: Promise<unknown>[] = []
+    // Capped (intents/launcherRefreshCycle.ts): a tier that never returns fails
+    // the refresh with its name instead of leaving it unanswered.
+    const tiers: RefreshTier[] = []
     const file = engineRef.current
-    if (file) jobs.push(file.sync())
+    if (file) tiers.push(['the chores file sync', () => file.sync()])
     const vault = dbEngineRef.current
-    if (vault) jobs.push(vault.dbSyncCycle())
+    if (vault) tiers.push(['the chores vault sync', () => vault.dbSyncCycle()])
     const peopleFile = peopleFileEngineRef.current
-    if (peopleFile) jobs.push(peopleFile.sync())
+    if (peopleFile) tiers.push(['the people file sync', () => peopleFile.sync()])
     const peopleVault = peopleDbEngineRef.current
-    if (peopleVault) jobs.push(peopleVault.dbSyncCycle())
-    await Promise.all(jobs)
+    if (peopleVault) tiers.push(['the people vault sync', () => peopleVault.dbSyncCycle()])
+    await runCappedRefreshCycle(tiers)
   }, [])
   // Android/Tasker intents transport — lets another Android app drive lastGLANCE
   // via app.lastglance.* intents. No-op off native Android.

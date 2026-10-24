@@ -77,10 +77,17 @@ class LauncherBridgePlugin : Plugin() {
         call.resolve()
     }
 
+    /**
+     * The launcher's queued writes, oldest first; the queue is cleared. A REFRESH
+     * taken here is stamped as picked up, so one that then goes unanswered says
+     * the page had it (LauncherRefreshTrace).
+     */
     @PluginMethod
     fun drainPendingIntents(call: PluginCall) {
+        val drained = SharedDataStore.readAndClearPendingLauncherIntents(context)
+        LauncherRefreshTrace.markPickedUp(context, drained)
         val ret = JSObject()
-        ret.put("intents", SharedDataStore.readAndClearPendingLauncherIntents(context))
+        ret.put("intents", drained)
         call.resolve(ret)
     }
 
