@@ -131,7 +131,9 @@ describe('Direct Access cycle: two devices over one folder', () => {
     const s0b = await a.run(f.transport('a'), s0.state)
     a.tick(1000)
     const s1 = await a.run(f.transport('a'), s0b.state)
-    expect(s1.outcome).toMatchObject({ kind: 'merged', wrote: false })
+    // Nothing moved on either side since the settled cycle, so the idle gate
+    // (@glance-apps/sync 2.3.0) ends this poll before the merge.
+    expect(s1.outcome).toMatchObject({ kind: 'skipped', reason: 'unchanged' })
     // The vault delivers a change to A's store; A's local-edit stamp does not move.
     a.tick(5000)
     a.setStore({ ...a.store, chores: [chore('x', 'Water the plants', '2026-10-11T12:00:04.000Z')] })

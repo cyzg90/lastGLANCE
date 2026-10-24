@@ -1,5 +1,9 @@
 import { describe, it, expect, vi } from 'vitest'
-import { createDirectAccessTransport, DIRECT_ACCESS_ENCRYPT_KEY, DIRECT_ACCESS_LAST_SYNCED_KEY, DIRECT_ACCESS_PREF_KEY } from './directAccess'
+import {
+  createDirectAccessTransport, DIRECT_ACCESS_ENCRYPT_KEY, DIRECT_ACCESS_LAST_SYNCED_KEY, DIRECT_ACCESS_PREF_KEY,
+  DIRECT_ACCESS_PEOPLE_FILE, DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY,
+} from './directAccess'
+import { PEOPLE_SYNC_FILENAME } from '@/people/sync/fileEngine'
 import type { DirectAccessBridge, DirectAccessRead, DirectAccessStatus } from '@/native/directAccess'
 
 const memStorage = () => {
@@ -21,11 +25,18 @@ function fakeBridge(platform: 'android' | 'ios', overrides: Partial<DirectAccess
   const written: string[] = []
   const pathFiles = new Map<string, string>()
   const dirs = new Set<string>()
+  const unset: DirectAccessStatus = { configured: false, name: null, path: null, reachable: false }
+  let peopleStatus: DirectAccessStatus = unset
+  let peopleText: string | null = null
   const bridge: DirectAccessBridge = {
     restore: async () => status,
     status: async () => status,
     pick: async () => { status = connected; return status },
-    pickFile: async (slot) => ({ ...connected, slot }),
+    pickFile: async (slot) => {
+      const st = { ...connected, ...(slot === 'people' ? { name: 'lastglance-people.json' } : {}), slot }
+      if (slot === 'people') peopleStatus = st
+      return st
+    },
     createFile: async (slot) => ({ ...connected, slot }),
     disconnect: async () => { status = { configured: false, name: null, path: null, reachable: false }; return true },
     read: async () => read,
@@ -46,6 +57,12 @@ function fakeBridge(platform: 'android' | 'ios', overrides: Partial<DirectAccess
           },
         }
       : {
+          people: {
+            status: async () => peopleStatus,
+            read: async (): Promise<DirectAccessRead> => (peopleText === null ? { kind: 'error', error: 'no People file chosen' } : { kind: 'text', text: peopleText }),
+            write: async (t: string) => { peopleText = t; return true },
+            forget: async () => { peopleStatus = unset; return true },
+          },
           users: { status: async () => ({ configured: false, name: null, path: null, reachable: false }), read: async () => ({ kind: 'absent' as const }), write: async (t: string) => { written.push('users:' + t); return true }, forget: async () => true },
           events: { status: async () => ({ configured: true, name: 'glance-events.json', path: '/x', reachable: true }), read: async () => ({ kind: 'text' as const, text: '{"events":[]}' }), write: async () => true, forget: async () => true },
         }),
@@ -57,6 +74,7 @@ function fakeBridge(platform: 'android' | 'ios', overrides: Partial<DirectAccess
     pathFiles,
     setStatus: (s: DirectAccessStatus) => { status = s },
     setRead: (r: DirectAccessRead) => { read = r },
+    get peopleText() { return peopleText },
   }
 }
 
@@ -225,5 +243,73 @@ describe('Direct Access transport: files beside the snapshot', () => {
     expect(t.getSnapshot().status).toBe('disconnected')   // the snapshot's own state is untouched
     await t.forgetUsersFile()
     expect(t.getSnapshot().roster).toMatchObject({ configured: false })
+  })
+})
+
+describe('Direct Access transport: People\'s file', () => {
+  it('is the same file the People WebDAV engine writes', () => {
+    expect(DIRECT_ACCESS_PEOPLE_FILE).toBe(PEOPLE_SYNC_FILENAME)
+  })
+
+  it('Android: a path in the folder, available whenever the folder is connected and switched on', async () => {
+    const f = fakeBridge('android')
+    f.setStatus(connected)
+    const storage = sameStorage()
+    const t = createDirectAccessTransport({ bridge: () => f.bridge, storage })
+    expect(t.peopleFile.isAvailable()).toBe(false)          // before the shell restores
+    t.subscribe(() => {})
+    await settle()
+    expect(t.peopleFile.isAvailable()).toBe(true)
+    expect(t.peopleFile.lastSyncedKey).toBe(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY)
+    expect(t.peopleFile.lastSyncedKey).not.toBe(t.lastSyncedKey)
+    expect(await t.peopleFile.read()).toBeNull()              // absent: the first cycle seeds it
+    expect(await t.peopleFile.write('{"version":2}')).toBe(true)
+    expect(f.pathFiles.get('lastglance-people.json')).toBe('{"version":2}')
+    expect(await t.peopleFile.read()).toBe('{"version":2}')
+
+    t.setEnabled(false)
+    expect(t.peopleFile.isAvailable()).toBe(false)           // the one switch covers both files
+    t.setEnabled(true)
+    t.setEncryptsWrites(true)
+    expect(t.peopleFile.encryptsWrites()).toBe(true)          // and the one encrypt choice
+  })
+
+  it('iOS: unavailable until its own file is chosen; choosing clears its stamp and kicks a cycle', async () => {
+    const f = fakeBridge('ios')
+    f.setStatus(connected)
+    const storage = sameStorage()
+    storage()!.setItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY, '2026-10-01T00:00:00.000Z')
+    const t = createDirectAccessTransport({ bridge: () => f.bridge, storage })
+    t.subscribe(() => {})
+    await settle()
+    expect(t.getSnapshot().people).toEqual({ configured: false, name: null, path: null, reachable: false })
+    expect(t.peopleFile.isAvailable()).toBe(false)
+
+    const changed = vi.fn()
+    t.onChanged(changed)
+    await t.pickPeopleFile()
+    expect(t.getSnapshot().people).toMatchObject({ configured: true, name: 'lastglance-people.json' })
+    expect(t.getSnapshot().status).toBe('connected')           // the chore file is untouched
+    expect(storage()!.getItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY)).toBeNull()
+    expect(changed).toHaveBeenCalledTimes(1)
+    expect(t.peopleFile.isAvailable()).toBe(true)
+    expect(await t.peopleFile.write('{"version":2}')).toBe(true)
+    expect(f.peopleText).toBe('{"version":2}')
+
+    await t.forgetPeopleFile()
+    expect(t.getSnapshot().people).toMatchObject({ configured: false })
+    expect(t.peopleFile.isAvailable()).toBe(false)
+  })
+
+  it('a new folder and a disconnect forget People\'s seed-guard stamp with the chore file\'s', async () => {
+    const f = fakeBridge('android')
+    const storage = sameStorage()
+    storage()!.setItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY, 'x')
+    const t = createDirectAccessTransport({ bridge: () => f.bridge, storage })
+    await t.pickFolder()
+    expect(storage()!.getItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY)).toBeNull()
+    storage()!.setItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY, 'x')
+    await t.disconnect()
+    expect(storage()!.getItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY)).toBeNull()
   })
 })

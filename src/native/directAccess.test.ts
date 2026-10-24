@@ -26,6 +26,10 @@ const fakePlugin = (over: Partial<DirectAccessPluginType> = {}): DirectAccessPlu
   writeFile: vi.fn(async () => ({ ok: true })),
   deleteFileAt: vi.fn(async () => ({ ok: false })),
   makeDir: vi.fn(async () => ({ ok: true })),
+  peopleStatus: vi.fn(async () => ({ ...status, name: 'lastglance-people.json' })),
+  readPeople: vi.fn(async () => ({ kind: 'text' as const, text: 'null' })),
+  writePeople: vi.fn(async () => ({ ok: true })),
+  forgetPeople: vi.fn(async () => {}),
   usersStatus: vi.fn(async () => ({ ...status, name: 'glance-users.json' })),
   readUsers: vi.fn(async () => ({ kind: 'error' as const, error: 'no roster file chosen' })),
   writeUsers: vi.fn(async () => ({ ok: true })),
@@ -61,6 +65,7 @@ describe('createDirectAccessBridge', () => {
     expect(p.writeFile).toHaveBeenCalledWith({ rel: 'GLANCE/users/glance-users.json', text: '{}' })
     expect(await b.paths!.remove('x')).toBe(false)
     expect(await b.paths!.makeDir('GLANCE/users')).toBe(true)
+    expect(b.people).toBeUndefined()   // People's file is a path in the folder on Android
     expect(b.users).toBeUndefined()
     expect(b.events).toBeUndefined()
   })
@@ -89,6 +94,19 @@ describe('createDirectAccessBridge', () => {
     expect(await b.events!.read()).toEqual({ kind: 'text', text: '{"version":1,"events":[]}' })
     expect(await b.events!.write('x')).toBe(false)
     expect(await b.events!.forget()).toBe(false)                     // a throwing shell: reported, not thrown
+  })
+
+  it('iOS: People\'s snapshot is a bookmarked slot of its own', async () => {
+    const p = fakePlugin()
+    const b = createDirectAccessBridge(p, 'ios')
+    expect(await b.createFile('people')).toMatchObject({ slot: 'people' })
+    expect(p.createFile).toHaveBeenCalledWith({ slot: 'people' })
+    expect(await b.people!.status()).toMatchObject({ name: 'lastglance-people.json' })
+    expect(await b.people!.read()).toEqual({ kind: 'text', text: 'null' })
+    expect(await b.people!.write('{"version":2}')).toBe(true)
+    expect(p.writePeople).toHaveBeenCalledWith({ text: '{"version":2}' })
+    expect(await b.people!.forget()).toBe(true)
+    expect(p.forgetPeople).toHaveBeenCalled()
   })
 
   it('a dismissed picker is null; a refused pick carries the shell\'s reason and path', async () => {

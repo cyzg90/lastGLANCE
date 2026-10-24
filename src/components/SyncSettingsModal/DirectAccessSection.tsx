@@ -7,6 +7,7 @@ import { setupEncryptionKey, CRYPTO_CONFIG } from '@/sync/engine'
 import { isIOS } from '@/native/platform'
 import { formatDateTime } from '@/utils/datetime'
 import { decideEncryptToggle } from './directAccessToggle'
+import { DirectAccessFileRow } from './DirectAccessFileRow'
 
 // The Direct Access section of the Cloud Sync dialog (docs/direct-access.md):
 // connect a folder (Android) or the sync file (iOS), the per-device on/off
@@ -160,6 +161,9 @@ export function DirectAccessSection({ transport = directAccessTransport, runSync
               {t('sync.directAccess.disconnect')}
             </button>
           </div>
+
+          {/* iOS: People's own file beside the sync file; renders nothing elsewhere. */}
+          <DirectAccessFileRow slot="people" transport={transport} />
 
           {status.enabled && (
             <div className="space-y-2 pt-1">

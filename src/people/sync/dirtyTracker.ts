@@ -5,6 +5,7 @@
 // about a person's sync_id. No-op whenever the People vault engine is off.
 
 import type { DbSyncEngine } from '@glance-apps/sync'
+import { markPeopleLocalEdit } from '@/sync/localEditStamp'
 
 const PUSH_DEBOUNCE_MS = 3000
 
@@ -35,7 +36,11 @@ export function registerPeopleDbEngine(engine: DbSyncEngine | null): void {
 // Mark a People entity changed (or deleted: the engine resolves deletions by
 // absence, pushing a soft-delete when getLocalEntity returns null).
 export function markPeopleDirty(syncId: string | null | undefined): void {
-  if (!syncId || !peopleDbEngine) return
+  if (!syncId) return
+  // Every write of the People data layer's own, vault or not: the Direct
+  // Access People file writes a change made here at once (localEditStamp.ts).
+  markPeopleLocalEdit()
+  if (!peopleDbEngine) return
   peopleDbEngine.markDirty(syncId)
   schedulePush()
 }
