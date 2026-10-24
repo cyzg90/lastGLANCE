@@ -35,4 +35,6 @@
     <string name="widget_count_soon">Wkrótce: %1$d</string>
     <string name="launcher_permission_label">Odczyt danych lastGLANCE dla GLANCElauncher</string>
     <string name="launcher_permission_description">Pozwala GLANCElauncher odczytywać Twoje obowiązki i osoby oraz wysyłać mu obowiązki do dodania lub odhaczenia i kontakty do zapisania.</string>
+    <string name="launcher_refresh_notification">Odświeżanie dla GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Odświeżanie GLANCElauncher</string>
 </resources>

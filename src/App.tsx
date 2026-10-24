@@ -29,7 +29,7 @@ import { UsersContext } from '@/multiuser/UsersContext'
 import { useUsers } from '@/multiuser/useUsers'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useWidgetSnapshot } from '@/hooks/useWidgetSnapshot'
-import { useLauncherSnapshot, configureLauncherHeartbeat, touchHeartbeatNow } from '@/hooks/useLauncherSnapshot'
+import { useLauncherSnapshot, configureLauncherHeartbeat, latestSyncedAt, touchHeartbeatNow } from '@/hooks/useLauncherSnapshot'
 import { useReminders } from '@/hooks/useReminders'
 import { usePeopleIntents } from '@/hooks/usePeopleIntents'
 import { usePendingCompletions } from '@/hooks/usePendingCompletions'
@@ -572,12 +572,7 @@ function AppInner() {
   // The launcher heartbeat's syncedAt: the latest completed cycle across the
   // roads that are on (file, vault); null without one.
   useEffect(() => {
-    configureLauncherHeartbeat(() => {
-      const stamps = [engineRef.current?.getLastSynced?.() ?? null, dbEngineRef.current?.getLastSynced?.() ?? null]
-        .filter((v): v is string => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
-      if (!stamps.length) return null
-      return new Date(Math.max(...stamps.map(v => Date.parse(v)))).toISOString()
-    })
+    configureLauncherHeartbeat(() => latestSyncedAt([engineRef.current?.getLastSynced?.(), dbEngineRef.current?.getLastSynced?.()]))
   }, [])
   // The launcher's REFRESH: every road to completion, then the heartbeat.
   const runLauncherSyncCycle = useCallback(async () => {

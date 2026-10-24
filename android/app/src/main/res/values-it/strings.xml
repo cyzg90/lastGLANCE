@@ -35,4 +35,6 @@
     <string name="widget_count_soon">%1$d in scadenza</string>
     <string name="launcher_permission_label">Leggere i dati di lastGLANCE per GLANCElauncher</string>
     <string name="launcher_permission_description">Consente a GLANCElauncher di leggere le tue faccende e le tue persone e di inviargli faccende da aggiungere o registrare e contatti da annotare.</string>
+    <string name="launcher_refresh_notification">Aggiornamento per GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Aggiornamento di GLANCElauncher</string>
 </resources>

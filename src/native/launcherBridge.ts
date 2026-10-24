@@ -1,5 +1,6 @@
 import { registerPlugin } from '@capacitor/core'
 import { isAndroid } from './platform'
+import { headlessBridge } from '@/headless/headlessMode'
 
 // Native bridge to the GLANCElauncher integration (docs/launcher-integration.md).
 // The web app pushes the launcher snapshot here and the native LauncherProvider
@@ -26,7 +27,14 @@ export interface LauncherIntent {
   clientId: string
 }
 
+// A headless refresh (src/headless/) pushes through the shell's HeadlessBridge:
+// there is no Capacitor bridge in its WebView.
 export async function pushLauncherSnapshot(json: string): Promise<void> {
+  const headless = headlessBridge()
+  if (headless) {
+    headless.updateLauncherSnapshot(json)
+    return
+  }
   if (!isAndroid()) return
   try {
     await LauncherBridge.updateSnapshot({ json })
@@ -79,6 +87,11 @@ export interface RefreshRecord {
 // run of the snapshot builder, changed or not, so the launcher measures
 // staleness from the last confirmation rather than the last change.
 export async function touchLauncherHeartbeat(heartbeat: LauncherHeartbeat): Promise<void> {
+  const headless = headlessBridge()
+  if (headless) {
+    headless.touchLauncherHeartbeat(JSON.stringify(heartbeat))
+    return
+  }
   if (!isAndroid()) return
   try {
     await LauncherBridge.touchHeartbeat({ json: JSON.stringify(heartbeat) })

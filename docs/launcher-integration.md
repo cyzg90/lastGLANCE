@@ -55,7 +55,8 @@ that, written natively by `LauncherBridgePlugin.touchHeartbeat` and merged into
   devices' changes are known to be in. Null without one.
 
 `meta` also carries `rendererAlive` (whether the Capacitor bridge is loaded in
-the process at the moment of the read) and `refreshLog`, the last 20 REFRESH
+the process at the moment of the read), `headlessRunning` (whether a headless
+refresh's WebView exists, below) and `refreshLog`, the last 20 REFRESH
 requests.
 
 **`com.lastglance.app.launcher.REFRESH`** asks the app to confirm its data now.
@@ -65,9 +66,83 @@ receiver routes it by liveness and logs every request with the liveness it saw:
 
 | Outcome | When |
 | --- | --- |
-| `queued` | the renderer is alive: queued and woken; the web layer runs every road (chores and People, file and vault) to completion, re-pushes, re-stamps the heartbeat, then reports `ran` (with `durationMs`) or `failed` (with `reason`) into the same entry |
-| `coalesced` | a queued refresh from the last minute has no outcome yet |
-| `deferred` | no renderer in the process: nothing can run the sync (lastGLANCE stays on this path; a headless Capacitor bridge is a separate spike) |
+| `queued` | the renderer is alive: queued and woken, and held awake (below); the web layer runs every road (chores and People, file and vault) to completion, re-pushes, re-stamps the heartbeat, then reports `ran` (with `durationMs`) or `failed` (with `reason`) into the same entry |
+| `scheduled` | no renderer in the process: a headless run is enqueued (below); the worker adds `startedAt`, `waitMs` (how long the OS held the job) and `headless: true` when it runs, then the outcome |
+| `coalesced` | a queued or scheduled refresh from the last minute has no outcome yet |
+| `unanswered` | a `queued` refresh the web layer did not answer while `LauncherAwakeWorker` held the app awake; `reason` says how long it held and how late the hold began (Android can hold the job itself back), `holdStartedAt` and `finishedAt` stamp it |
+| `throttled` | a headless run started less than ten minutes ago (reported by the worker) |
+| `aborted` | the user opened the app during a headless run (the reverse lock, below) |
+| `deferred` | no renderer, and the headless run could not even be enqueued |
+
+Alive is not the same as running. Android freezes a backgrounded app's
+processes, the WebView's renderer among them, a couple of minutes after it goes
+idle: the receiver is thawed for the broadcast, the web layer is not, and a
+queued refresh would wait for the user to next open the app. So with every
+`queued` request the receiver also starts `LauncherAwakeWorker`, an expedited
+WorkManager job (an app running a job is not frozen) that runs nothing itself:
+it waits, at most the 60-second in-flight window, for the web layer to record
+an outcome on the entry, then ends so the app can be frozen again. The cycle is
+still the app's own, in its one WebView. Ported from dayGLANCE's worker of the
+same name.
+
+### The headless refresh (a dead process)
+
+With no renderer, the receiver enqueues `LauncherRefreshWorker`: an expedited,
+network-constrained, unique WorkManager job that boots the web bundle in a
+WebView with no Activity, at `https://localhost/index.html?headless=refresh&clientId=…`.
+main.tsx sees the query and runs `src/headless/headlessRefresh.ts` instead of
+App: the sync keys, then one cycle of the same roads the alive path runs (chores
+and People, file and vault), then the snapshot and heartbeat, then the outcome
+through `headlessDone`, which the worker writes into the entry and tears the
+WebView down.
+
+Capacitor cannot run without an Activity, so the headless WebView has no
+Capacitor bridge. It loads the app's own files (`assets/public`) at Capacitor's
+own origin, `https://localhost`, which is what makes it share the app's
+IndexedDB and localStorage; `HeadlessBridge` (`window.LastGlanceHeadless`)
+stands in for the plugins a run touches, and nothing else:
+
+- the secure store (`secureGet`, `secureSet`, `secureDelete`), over the same
+  Keystore-backed entries as `SecureStorePlugin` (`SecureStore.java`), so the
+  credentials shim and the sync-key hooks hydrate as in the app;
+- HTTP (`httpRequestAsync`), on OkHttp for every verb: `nativeHttpFetch` for
+  WebDAV and a `fetch` for the vault engines (`fetchImpl`), where the app has
+  CapacitorHttp;
+- the launcher push (`updateLauncherSnapshot`, `touchLauncherHeartbeat`);
+- the run's protocol (`headlessShouldAbort`, `headlessDone`).
+
+The list is `HEADLESS_BRIDGE_METHODS` in `src/headless/headlessMode.ts`, kept
+equal to `HeadlessBridge.kt`. Those four modules ask `headlessBridge()` first;
+it is null in the app, so the app's paths are unchanged.
+
+The rules, from dayGLANCE's headless refresh (its CLAUDE.md, "Headless
+refresh"):
+
+- **An allowlist, not App with features off.** The root imports only the keys,
+  the engines and the snapshot builder; main.tsx does not evaluate App's
+  modules in a headless run. No UI, reminders, widgets, intents, Direct Access
+  or SSE.
+- **The reverse lock is signal-abort.** `MainActivity.onCreate` destroys a
+  headless WebView in flight, on the main thread, before the bridge loads the
+  live one; the root also asks `headlessShouldAbort` at each phase boundary.
+  The app's own start runs a cycle, and a run makes no local edits, so stopping
+  loses nothing.
+- **Ten minutes between headless runs, a two-minute cap**
+  (`HeadlessRefreshPolicy`), and a renderer that appeared while the job waited
+  takes the refresh instead (`queued`, held awake as on the alive path).
+- **A run's outcome names its roads.** The engines report through callbacks,
+  not by throwing; a road whose last report is an error fails the run as
+  `failed` with `file: …`, `vault: …` in the reason. The snapshot is pushed
+  either way: another road may have applied, and `checkedAt` records the look.
+
+The app registers its PWA service worker in the native build too, and it
+controls `https://localhost`, so a headless page is served from the worker's
+cache. Right after an update that can be the previous bundle, which has no
+headless root and would render App instead. The worker routes the service
+worker's own requests to the installed files (as Capacitor does), so its update
+check sees the new version, and tears down any page that has not called the
+bridge within 20 seconds (`failed`: "the page did not start a headless run").
+The next run gets the new bundle.
 
 The launcher measures staleness per app from `syncedAt` when sync is
 configured and from `checkedAt` otherwise, and shows the log in its
@@ -108,6 +183,16 @@ the public transport exactly as before. No RESULT broadcast is sent for
 launcher writes; the launcher reads the outcome from the next snapshot. The
 activity log names the sender ("via GLANCElauncher").
 
+## Links the launcher opens
+
+Besides its writes, the launcher opens the app through `lastglance://` links
+(`MainActivity.linkFromUri` maps each to a pending token the web app routes):
+`chore/<id>`, `person/<id>`, `log/<id>`, `people`, `chores`, `filter/soon`,
+`action/search`, `action/add` (the new-chore form) and `action/addPerson`
+(People, with the add-person form open; the launcher's Add person). Adding a
+person stays in the app's own form rather than a launcher write: a person has
+circles, dates and a cadence that a one-line write would leave unset.
+
 ## Permission
 
 Both the provider and the receiver sit behind `com.lastglance.permission.LAUNCHER`,
@@ -147,10 +232,22 @@ With the launcher's real digests in `launcher_certs.xml` and both apps installed
    com.lastglance.app/.launcher.LauncherIntentReceiver --es clientId rf-1`.
    With the app alive, `meta.refreshLog` shows the entry go `queued` then
    `ran`; with the process killed (`adb shell am kill com.lastglance.app`,
-   never `force-stop`), the entry is `deferred` and `rendererAlive` reads false.
+   never `force-stop`), `rendererAlive` reads false and the entry goes
+   `scheduled`, then `ran` with `headless: true` and its `waitMs`. A second
+   killed-process refresh inside ten minutes reads `throttled`; opening the
+   app while a headless run is in flight makes it `aborted`.
+   Frozen: leave the app in the background until `adb shell dumpsys activity
+   processes com.lastglance.app` shows `isFrozen=true`, then send a refresh
+   with a new `clientId`; the entry still goes `queued` then `ran` within
+   seconds, not when the app is next opened.
 6. Permission: from any app without the permission the query is refused
    with a `SecurityException` and the broadcast is not delivered.
 
 Unit tests: `npx vitest run src/native/launcherSnapshot.test.ts
-src/intents/launcherWrites.test.ts` and, on the Android side,
-`./gradlew :app:testDebugUnitTest --tests '*LauncherSnapshotRowsTest*'`.
+src/intents/launcherWrites.test.ts src/headless/` and, on the Android side,
+`./gradlew :app:testDebugUnitTest --tests '*LauncherSnapshotRowsTest*' --tests '*LauncherRefreshWaitTest*' --tests '*HeadlessRefreshPolicyTest*'`.
+`src/headless/headlessRefresh.scenarios.test.ts` walks a headless run end to
+end against the real engines and Dexie under a fake bridge: credentials out of
+the secure store, the WebDAV file over the bridge's HTTP, the merge into
+IndexedDB, and the snapshot back to the launcher, and holds it to the
+allowlist.

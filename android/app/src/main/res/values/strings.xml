@@ -42,4 +42,6 @@
     <string name="widget_count_soon">%1$d soon</string>
     <string name="launcher_permission_label">Read lastGLANCE data for GLANCElauncher</string>
     <string name="launcher_permission_description">Lets GLANCElauncher read your chores and people, and send it chores to add or log and contacts to record.</string>
+    <string name="launcher_refresh_notification">Refreshing for GLANCElauncher</string>
+    <string name="launcher_refresh_channel">GLANCElauncher refresh</string>
 </resources>

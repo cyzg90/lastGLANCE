@@ -35,4 +35,6 @@
     <string name="widget_count_soon">Незабаром: %1$d</string>
     <string name="launcher_permission_label">Читання даних lastGLANCE для GLANCElauncher</string>
     <string name="launcher_permission_description">Дозволяє GLANCElauncher читати ваші справи та людей і надсилати йому справи для додавання чи відмітки та контакти для запису.</string>
+    <string name="launcher_refresh_notification">Оновлення для GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Оновлення GLANCElauncher</string>
 </resources>

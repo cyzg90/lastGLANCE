@@ -42,14 +42,16 @@ class LauncherSnapshotRowsTest {
     fun `meta carries the heartbeat, the refresh log and liveness, even without a snapshot`() {
         val hb = """{"checkedAt":1760000100000,"syncedAt":"2026-10-19T08:00:00.000Z"}"""
         val log = """[{"clientId":"r1","requestedAt":1,"outcome":"deferred","liveness":"dead","reason":"process not running"}]"""
-        val meta = JSONObject(LauncherSnapshotRows.rows(snapshot, "meta", hb, log, false)!!.single().json)
+        val meta = JSONObject(LauncherSnapshotRows.rows(snapshot, "meta", hb, log, false, headlessRunning = true)!!.single().json)
         assertEquals(1760000000000L, meta.getLong("updatedAt"))
         assertEquals(1760000100000L, meta.getLong("checkedAt"))
         assertEquals("2026-10-19T08:00:00.000Z", meta.getString("syncedAt"))
         assertTrue(!meta.getBoolean("rendererAlive"))
+        assertTrue(meta.getBoolean("headlessRunning"))
         assertEquals("deferred", meta.getJSONArray("refreshLog").getJSONObject(0).getString("outcome"))
         val bare = JSONObject(LauncherSnapshotRows.rows(null, "meta", hb, null, null)!!.single().json)
         assertEquals(1760000100000L, bare.getLong("checkedAt"))
+        assertTrue(!bare.has("headlessRunning"))
         assertEquals(0, LauncherSnapshotRows.rows(null, "meta", null, null, null)!!.size)
     }
 

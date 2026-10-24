@@ -36,6 +36,7 @@ class LauncherProvider : ContentProvider() {
             heartbeatJson = SharedDataStore.readLauncherHeartbeat(ctx),
             refreshLogJson = SharedDataStore.readLauncherRefreshLog(ctx),
             rendererAlive = LauncherBridgePlugin.rendererAlive,
+            headlessRunning = LauncherRefreshWorker.running,
         ) ?: return null
         val cursor = MatrixCursor(LauncherSnapshotRows.COLUMNS, rows.size)
         rows.forEachIndexed { i, row -> cursor.addRow(arrayOf<Any?>(i, row.id, row.json)) }

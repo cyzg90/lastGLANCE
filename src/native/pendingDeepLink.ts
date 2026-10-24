@@ -42,9 +42,11 @@ export async function routeWidgetDeepLink(): Promise<void> {
 }
 
 // A People widget token: "person:<id>" opens the person, "log:<id>" the
-// quick-log sheet for them, "people" the People home.
+// quick-log sheet for them, "people" the People home, "action:add-person" the
+// add-person form (the launcher's Add person).
 export function peopleRequest(link: string): PendingPeopleOpen | null {
   if (link === 'people') return { action: 'home' }
+  if (link === 'action:add-person') return { action: 'add' }
   const [kind, id] = [link.slice(0, link.indexOf(':')), link.slice(link.indexOf(':') + 1)]
   if (!id || link.indexOf(':') < 0) return null
   if (kind === 'person') return { action: 'open', personSyncId: id }

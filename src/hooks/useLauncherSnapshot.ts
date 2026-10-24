@@ -16,6 +16,13 @@ let lastFingerprint: string | null = null
 // configureLauncherHeartbeat so this module needs no engine refs.
 let syncedAtSource: () => string | null = () => null
 
+// The latest of the roads' last-synced stamps (ISO), or null without one.
+export function latestSyncedAt(stamps: (string | null | undefined)[]): string | null {
+  const valid = stamps.filter((v): v is string => typeof v === 'string' && !Number.isNaN(Date.parse(v)))
+  if (!valid.length) return null
+  return new Date(Math.max(...valid.map(v => Date.parse(v)))).toISOString()
+}
+
 export function configureLauncherHeartbeat(getSyncedAt: () => string | null): void {
   syncedAtSource = getSyncedAt
 }

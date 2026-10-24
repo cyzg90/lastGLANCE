@@ -22,6 +22,7 @@ import { db } from '@/db/client'
 import { getVaultConfig, isVaultEnabled } from '@/sync/vaultConfig'
 import { getDeviceId } from '@/sync/deviceId'
 import { DB_ROOT_KEY_HOOKS } from '@/sync/nativeKeyHooks'
+import { headlessFetchImpl } from '@/headless/headlessHttp'
 import { isPeopleVaultSyncEnabled } from '../vaultSync'
 import { deletePeopleRow, getLocalPeopleEntity, notifyPeopleApplied, upsertPeopleEntity } from './apply'
 import type { SyncPeopleEntity } from './types'
@@ -94,6 +95,8 @@ export function createPeopleDbEngine(callbacks: PeopleDbEngineCallbacks = {}): D
     ...DB_ROOT_KEY_HOOKS,
     vaultUrl: cfg.vaultUrl,
     vaultToken: cfg.vaultToken,
+    // A headless refresh has no CapacitorHttp; the shell's HTTP stands in.
+    fetchImpl: headlessFetchImpl(),
     accountId: cfg.accountId,
     deviceId: peopleDeviceId(),
     getLocalEntity: getLocalPeopleEntity,

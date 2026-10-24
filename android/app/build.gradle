@@ -130,6 +130,12 @@ dependencies {
     // classpath transitively via androidx.glance (which is coroutine-based), but
     // the reader must not depend on a transitive staying around.
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1"
+    // LauncherAwakeWorker and LauncherRefreshWorker: the launcher's REFRESH,
+    // held awake while the app answers it, or run headlessly while it is dead.
+    implementation "androidx.work:work-runtime-ktx:$workManagerVersion"
+    // LauncherRefreshWorker serves the web assets at Capacitor's origin. The
+    // version Capacitor itself uses (variables.gradle).
+    implementation "androidx.webkit:webkit:$androidxWebkitVersion"
     // DirectAccessPlugin: the SAF tree the user picks, walked with DocumentFile.
     implementation "androidx.documentfile:documentfile:1.0.1"
     testImplementation "junit:junit:$junitVersion"

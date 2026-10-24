@@ -35,4 +35,6 @@
     <string name="widget_count_soon">%1$d bald fällig</string>
     <string name="launcher_permission_label">lastGLANCE-Daten für GLANCElauncher lesen</string>
     <string name="launcher_permission_description">Erlaubt GLANCElauncher, deine Aufgaben und Personen zu lesen und ihm Aufgaben zum Anlegen oder Erledigen sowie Kontakte zum Eintragen zu senden.</string>
+    <string name="launcher_refresh_notification">Aktualisierung für GLANCElauncher</string>
+    <string name="launcher_refresh_channel">GLANCElauncher-Aktualisierung</string>
 </resources>

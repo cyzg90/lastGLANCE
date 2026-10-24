@@ -35,4 +35,6 @@
     <string name="widget_count_soon">%1$d por vencer</string>
     <string name="launcher_permission_label">Leer datos de lastGLANCE para GLANCElauncher</string>
     <string name="launcher_permission_description">Permite a GLANCElauncher leer tus tareas y personas, y enviarle tareas para añadir o registrar y contactos para anotar.</string>
+    <string name="launcher_refresh_notification">Actualizando para GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Actualización de GLANCElauncher</string>
 </resources>

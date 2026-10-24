@@ -221,6 +221,10 @@
     <!-- Exact alarms for Doze-proof overdue reminders (Android 12+). The plugin
          already declares POST_NOTIFICATIONS and RECEIVE_BOOT_COMPLETED. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Expedited WorkManager jobs run as a foreground service below Android 12
+         (launcher/LauncherAwakeWorker.kt); from 12 on they are JobScheduler
+         expedited jobs and this permission is unused. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" android:maxSdkVersion="30" />
     <!-- People: read-only address book access for importing and linking people
          (ContactsPlugin). Requested only when the user taps Import or Link,
          after the in-app disclosure, and only when the People contacts setting

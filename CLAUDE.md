@@ -39,3 +39,22 @@ Working notes for AI-assisted sessions in this repo.
   in-app Play Billing unlock. lifeGLANCE reported locked free as well (verify:
   the lock only applies once published to a track). dayGLANCE is free by
   design with its own in-app paywall.
+
+## Headless refresh (the launcher's REFRESH at a dead process)
+
+`android/.../launcher/LauncherRefreshWorker.kt` boots the web bundle in a
+WebView with no Activity and no Capacitor bridge; main.tsx runs
+`src/headless/headlessRefresh.ts` for it. Design and outcomes:
+`docs/launcher-integration.md`, "The headless refresh". The rules:
+
+- **An allowlist.** The run reaches native code only through
+  `HEADLESS_BRIDGE_METHODS` (`src/headless/headlessMode.ts`), kept equal to
+  `HeadlessBridge.kt`. A module the run needs that calls a Capacitor plugin gets
+  a `headlessBridge()` branch (secureStore, nativeHttp, the vault engines'
+  `fetchImpl`, launcherBridge are the ones today); anything else stays out of
+  the root. `headlessRefresh.scenarios.test.ts` fails on a method outside the list.
+- **Same origin, same storage.** The WebView loads `assets/public` at
+  `https://localhost`, Capacitor's origin, which is what shares IndexedDB and
+  localStorage with the app. Do not move either side off it.
+- **Signal-abort.** `MainActivity.onCreate` destroys a run in flight before the
+  bridge loads; the root checks `headlessShouldAbort` between phases.

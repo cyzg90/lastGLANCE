@@ -26,10 +26,11 @@ object LauncherSnapshotRows {
     /**
      * The rows of [collection] in [snapshotJson], or null for an unknown collection.
      * `meta` also carries the heartbeat ([heartbeatJson]: checkedAt, syncedAt), the
-     * refresh log and the renderer's liveness as of this read. A heartbeat without
-     * a snapshot still yields a meta row.
+     * refresh log, the renderer's liveness and whether a headless refresh is
+     * running, as of this read. A heartbeat without a snapshot still yields a
+     * meta row.
      */
-    fun rows(snapshotJson: String?, collection: String, heartbeatJson: String? = null, refreshLogJson: String? = null, rendererAlive: Boolean? = null): List<Row>? {
+    fun rows(snapshotJson: String?, collection: String, heartbeatJson: String? = null, refreshLogJson: String? = null, rendererAlive: Boolean? = null, headlessRunning: Boolean? = null): List<Row>? {
         if (collection !in COLLECTIONS) return null
         if (collection == "meta") {
             val meta = JSONObject()
@@ -44,6 +45,7 @@ object LauncherSnapshotRows {
             }
             refreshLogJson?.let { try { JSONArray(it) } catch (e: Exception) { null } }?.let { meta.put("refreshLog", it) }
             rendererAlive?.let { meta.put("rendererAlive", it) }
+            headlessRunning?.let { meta.put("headlessRunning", it) }
             return if (root == null && heartbeatJson == null) emptyList() else listOf(Row("meta", meta.toString()))
         }
         if (snapshotJson.isNullOrEmpty()) return emptyList()
