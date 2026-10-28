@@ -20,6 +20,12 @@ import {
   loadTimeFormat,
   uses24HourClock,
   formatTimeSample,
+  formatWeekdayShort,
+  loadWeekStart,
+  getWeekStartPref,
+  setWeekStartPref,
+  setSystemWeekStart,
+  WEEK_START_CHANGED_EVENT,
 } from './datetime'
 
 // A Wednesday, deliberately in the afternoon so the 12-/24-hour split shows.
@@ -28,6 +34,8 @@ const SAMPLE = '2026-08-12T14:05:00'
 afterEach(() => {
   vi.unstubAllGlobals()
   setTimeFormat('auto')
+  setWeekStartPref('auto')
+  setSystemWeekStart(null)
   applyDateLocale('en')
 })
 
@@ -338,5 +346,104 @@ describe('nothing is formatted in the browser locale', () => {
       `Formatted with the browser locale; use src/utils/datetime.ts for dates, ` +
         `or pass getActiveLocale() for anything else:\n${hits.join('\n')}`,
     ).toEqual([])
+  })
+})
+
+describe('week start preference (issue #362)', () => {
+  function inRegion(tag: string | undefined): void {
+    vi.stubGlobal('navigator', tag === undefined ? {} : { languages: [tag], language: tag })
+  }
+
+  it('the reported case: English with no region falls back to Sunday on Automatic', () => {
+    // What an Android 13+ per-app language of "en" hands the WebView.
+    inRegion('en')
+    applyDateLocale('en')
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('Automatic follows the operating system over the WebView tag', () => {
+    inRegion('en')
+    applyDateLocale('en')
+    setSystemWeekStart(1)
+    expect(firstDayOfWeek()).toBe(1)
+    expect(dayjs(SAMPLE).startOf('week').day()).toBe(1)
+    // And it survives a language switch.
+    applyDateLocale('fr')
+    expect(firstDayOfWeek()).toBe(1)
+    inRegion('en-US')
+    applyDateLocale('en')
+    expect(firstDayOfWeek()).toBe(1)
+  })
+
+  it('a pinned choice wins over the system and the region', () => {
+    inRegion('en-US')
+    applyDateLocale('en')
+    setSystemWeekStart(0)
+    setWeekStartPref('mon')
+    expect(firstDayOfWeek()).toBe(1)
+    expect(weekdayMinLabels()[0]).toBe('Mo')
+    setWeekStartPref('sat')
+    expect(firstDayOfWeek()).toBe(6)
+    expect(weekdayAtOffset(0).weekday).toBe(6)
+    // Pinned across a language switch too.
+    applyDateLocale('de')
+    expect(firstDayOfWeek()).toBe(6)
+    setWeekStartPref('sun')
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('going back to Automatic restores the region answer', () => {
+    inRegion('en-GB')
+    applyDateLocale('en')
+    setWeekStartPref('sun')
+    expect(firstDayOfWeek()).toBe(0)
+    setWeekStartPref('auto')
+    expect(firstDayOfWeek()).toBe(1)
+  })
+
+  it('ignores a system value out of range', () => {
+    inRegion('en-US')
+    applyDateLocale('en')
+    setSystemWeekStart(7)
+    expect(firstDayOfWeek()).toBe(0)
+    setSystemWeekStart(-1)
+    expect(firstDayOfWeek()).toBe(0)
+  })
+
+  it('persists the choice and reloads it', () => {
+    const store = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      getItem: (k: string) => store.get(k) ?? null,
+      setItem: (k: string, v: string) => { store.set(k, v) },
+    })
+    setWeekStartPref('mon')
+    expect(store.get('lg-week-start')).toBe('mon')
+    store.set('lg-week-start', 'sat')
+    loadWeekStart()
+    expect(getWeekStartPref()).toBe('sat')
+    store.set('lg-week-start', 'bogus')
+    loadWeekStart()
+    expect(getWeekStartPref()).toBe('sat')
+  })
+
+  it('announces a change so the grids and widgets rebuild', () => {
+    const target = new EventTarget()
+    vi.stubGlobal('window', target)
+    const seen = vi.fn()
+    target.addEventListener(WEEK_START_CHANGED_EVENT, seen)
+    setWeekStartPref('mon')
+    setSystemWeekStart(1)
+    expect(seen).toHaveBeenCalledTimes(2)
+    // An unchanged system value is not news.
+    setSystemWeekStart(1)
+    expect(seen).toHaveBeenCalledTimes(2)
+  })
+
+  it('names the options in the active language', () => {
+    applyDateLocale('en')
+    expect(formatWeekdayShort(1)).toBe('Mon')
+    expect(formatWeekdayShort(0)).toBe('Sun')
+    applyDateLocale('de')
+    expect(formatWeekdayShort(1)).toMatch(/^Mo/)
   })
 })

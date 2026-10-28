@@ -3,11 +3,19 @@ import { getFillRatio, getCadenceColor, needsAttention } from '@/utils/cadence'
 import { getMeUserSyncId, getMultiUserEnabled } from '@/multiuser/settings'
 import { ownedByMe } from '@/utils/choreFilter'
 import { pushWidgetSnapshot } from './widgetBridge'
+import { buildPeopleSnapshot, type PeopleSnapshot } from './peopleSnapshot'
+import { getAllPersonDates, getPeople } from '@/people/queries'
+import { visibleToMe } from '@/people/home'
+import { isReciprocityShown } from '@/people/settings'
+// The bare singleton, as in reminders.ts: '@/i18n' boots the detector and
+// HTTP backend as an import side effect.
+import i18n from 'i18next'
 import dayjs from 'dayjs'
+import { firstDayOfWeek } from '@/utils/datetime'
 
 // How many days of completion history to ship to the heatmap widget.
 // 53 weeks, so the widest grid we render (the 52-week iOS extra-large widget) is
-// fully covered even after the alignment walk back to the oldest visible Sunday.
+// fully covered even after the alignment walk back to the oldest visible week start.
 // Android's 26-week grid and the iOS medium widget read the same map and simply
 // ignore the older half.
 //
@@ -36,7 +44,14 @@ export interface WidgetSnapshot {
   generatedAt: string
   counts: { overdue: number; soon: number }
   heatmap: Record<string, number>
+  // The heatmap grid's first row, 0 = Sunday … 6 = Saturday: the app's own
+  // resolved week start, so the widgets line up with the in-app grid (issue
+  // #362). Widgets fall back to the system calendar when it is absent.
+  weekStart: number
   chores: SnapshotChore[]
+  // Added with the People widgets; widgets from before simply ignore it, and
+  // the People widgets treat its absence as empty.
+  people: PeopleSnapshot
 }
 
 function choreState(target: number | null, elapsed: number | null): ChoreState {
@@ -103,12 +118,18 @@ export async function buildSnapshot(): Promise<WidgetSnapshot> {
     if (!dayjs(date).isBefore(cutoff)) heatmap[date] = n
   }
 
+  // People, as this user sees them (household members' People stay hidden).
+  const [people, dates] = await Promise.all([getPeople(), getAllPersonDates()])
+  const mine = visibleToMe(people, getMultiUserEnabled(), meId)
+
   return {
     version: 1,
     generatedAt: new Date().toISOString(),
     counts: { overdue, soon },
     heatmap,
+    weekStart: firstDayOfWeek(),
     chores,
+    people: buildPeopleSnapshot(i18n.t.bind(i18n), mine, dates, dayjs(), isReciprocityShown()),
   }
 }
 

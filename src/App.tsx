@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Pencil, Check, Cloud, CloudOff, RefreshCw, HelpCircle, Settings, UserCircle, Clock, NotebookText } from 'lucide-react'
+import { Pencil, Check, Cloud, CloudOff, RefreshCw, HelpCircle, Settings, UserCircle, Clock, NotebookText, Settings2, UserPlus } from 'lucide-react'
 import { Ribbon } from '@/components/Ribbon/Ribbon'
 import { BackupModal } from '@/components/BackupModal/BackupModal'
 import { WelcomeModal } from '@/components/WelcomeModal/WelcomeModal'
@@ -11,11 +11,18 @@ import { HelpModal } from '@/components/HelpModal/HelpModal'
 import { ShortcutsModal } from '@/components/ShortcutsModal/ShortcutsModal'
 import { ActivityLogModal } from '@/components/ActivityLogModal/ActivityLogModal'
 import { JournalModal } from '@/components/JournalModal/JournalModal'
+import { PeopleJournalModal } from '@/components/JournalModal/PeopleJournalModal'
+import { getAllInteractions, getPeople, PEOPLE_CHANGED_EVENT } from '@/people/queries'
+import { interactionCountsByDay, visibleInteractions } from '@/people/journal'
+import { visibleToMe } from '@/people/home'
 import { TooltipHost } from '@/components/Tooltip/Tooltip'
 import { ToastProvider, useToast } from '@/components/Toast/Toast'
 import { PaywallModal } from '@/components/PaywallModal/PaywallModal'
 import { SettingsPanel, type ThemePref, type SettingsSection } from '@/components/SettingsPanel/SettingsPanel'
-import { getTimeFormat, setTimeFormat as applyTimeFormat, type TimeFormat } from '@/utils/datetime'
+import {
+  getTimeFormat, setTimeFormat as applyTimeFormat, type TimeFormat,
+  getWeekStartPref, setWeekStartPref as applyWeekStartPref, type WeekStartPref, WEEK_START_CHANGED_EVENT,
+} from '@/utils/datetime'
 import { ReviewerBanner } from '@/components/ReviewerBanner/ReviewerBanner'
 import { useSubscription, exitReviewerMode } from '@/billing/billing'
 import { UsersContext } from '@/multiuser/UsersContext'
@@ -23,6 +30,7 @@ import { useUsers } from '@/multiuser/useUsers'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useWidgetSnapshot } from '@/hooks/useWidgetSnapshot'
 import { useReminders } from '@/hooks/useReminders'
+import { usePeopleIntents } from '@/hooks/usePeopleIntents'
 import { usePendingCompletions } from '@/hooks/usePendingCompletions'
 import { usePendingDeepLink } from '@/hooks/usePendingDeepLink'
 import { useIntentsPoller } from '@/hooks/useIntentsPoller'
@@ -39,6 +47,13 @@ import { formatDate } from '@/utils/datetime'
 import { completionsLabel } from '@/utils/completionsLabel'
 import { createEngine, initSessionKey, setupEncryptionKey, runAutoBackups, ensureSyncFolder, CRYPTO_CONFIG, DB_CRYPTO_CONFIG, getSyncWebdavConfig } from '@/sync/engine'
 import { createDbEngine } from '@/sync/dbEngine'
+import { PeopleHome, PEOPLE_ADD_EVENT, PEOPLE_CIRCLES_EVENT } from '@/components/People/PeopleHome'
+import { hasOpenSurface } from '@/utils/dismissStack'
+import { peekPendingOpenChore } from '@/native/pendingOpenChore'
+import { OPEN_PERSON_PENDING_EVENT, peekPendingOpenPerson } from '@/native/pendingOpenPerson'
+import { createPeopleFileEngine } from '@/people/sync/fileEngine'
+import { createPeopleDbEngine } from '@/people/sync/dbEngine'
+import { registerPeopleDbEngine, registerPeopleFileSyncRunner } from '@/people/sync/dirtyTracker'
 import { registerDbEngine } from '@/sync/dirtyTracker'
 import { isVaultEnabled } from '@/sync/vaultConfig'
 import { applyStatusBarTheme, initFullScreenInLandscape } from '@/native/statusBar'
@@ -54,6 +69,12 @@ import { bootstrapManagedWebdav, MANAGED_WEBDAV } from '@/sync/managedWebdav'
 // ── Header heatmap ─────────────────────────────────────────────────────────────
 
 type HeatDay = { date: string; count: number; isFuture: boolean }
+
+type AppMode = 'chores' | 'people'
+const MODE_KEY = 'lg-mode'
+// Events that open something in the chores view (notification taps, widgets,
+// launcher shortcuts, shares). In People mode they switch back to chores.
+const CHORE_EVENTS = ['lg:open-chore', 'lg:open-chore-pending', 'lg:open-search', 'lg:new-chore', 'lg:widget-filter-soon']
 
 function buildHeaderHeatmap(counts: Map<string, number>): HeatDay[][] {
   const today = dayjs()
@@ -97,8 +118,12 @@ function getWaveColor(wi: number, di: number, day: HeatDay, wavePos: number): st
   return heatCellColor(day)
 }
 
-function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay: (date: string) => void }) {
-  const { t } = useTranslation()
+function HeaderHeatmap({ weeks, onSelectDay, label }: {
+  weeks: HeatDay[][]
+  onSelectDay: (date: string) => void
+  // Describes a cell's count: completions, or interactions in People mode.
+  label: (count: number) => string
+}) {
   const [wavePos, setWavePos] = useState(-WAVE_WIDTH)
 
   useEffect(() => {
@@ -127,8 +152,8 @@ function HeaderHeatmap({ weeks, onSelectDay }: { weeks: HeatDay[][]; onSelectDay
               disabled={day.isFuture}
               onClick={() => onSelectDay(day.date)}
               data-tooltip={day.isFuture ? undefined : formatDate(day.date)}
-              data-tooltip-detail={day.isFuture ? undefined : completionsLabel(t, day.count)}
-              aria-label={`${formatDate(day.date)}, ${completionsLabel(t, day.count)}`}
+              data-tooltip-detail={day.isFuture ? undefined : label(day.count)}
+              aria-label={`${formatDate(day.date)}, ${label(day.count)}`}
               className="w-[9px] h-[9px] rounded-[2px] transition-transform hover:scale-150 disabled:cursor-default disabled:hover:scale-100"
               style={{ backgroundColor: getWaveColor(wi, di, day, wavePos) }}
             />
@@ -147,6 +172,7 @@ function AppInner() {
   useNotifications()
   useWidgetSnapshot()
   useReminders()
+  usePeopleIntents()
   usePendingCompletions()
   usePendingDeepLink()
   const { refreshConfig } = useIntents()
@@ -157,6 +183,31 @@ function AppInner() {
   // gated stays false and the hard gate below never renders).
   const billing = useSubscription()
   const [editMode, setEditMode] = useState(false)
+  // Chores | People.
+  // A notification tap that launched the app opens the mode it is about,
+  // whatever mode was last used.
+  const [mode, setModeState] = useState<AppMode>(() =>
+    peekPendingOpenPerson() ? 'people'
+      : localStorage.getItem(MODE_KEY) === 'people' && !peekPendingOpenChore() ? 'people' : 'chores')
+  const setMode = (next: AppMode) => {
+    setModeState(next)
+    setEditMode(false)
+    try { localStorage.setItem(MODE_KEY, next) } catch { /* private mode: not remembered */ }
+  }
+  const modeRef = useRef(mode)
+  modeRef.current = mode
+  const choresMode = mode === 'chores'
+
+  useEffect(() => {
+    const toChores = () => { if (modeRef.current !== 'chores') setModeState('chores') }
+    const toPeople = () => { if (modeRef.current !== 'people') setModeState('people') }
+    for (const name of CHORE_EVENTS) window.addEventListener(name, toChores)
+    window.addEventListener(OPEN_PERSON_PENDING_EVENT, toPeople)
+    return () => {
+      for (const name of CHORE_EVENTS) window.removeEventListener(name, toChores)
+      window.removeEventListener(OPEN_PERSON_PENDING_EVENT, toPeople)
+    }
+  }, [])
   const [showWelcome, setShowWelcome] = useState(() => !MANAGED_WEBDAV && !localStorage.getItem('lg-welcome-dismissed'))
   const [welcomeClearing, setWelcomeClearing] = useState(false)
   const [showBackup, setShowBackup] = useState(false)
@@ -176,6 +227,7 @@ function AppInner() {
   // section it was opened from. Cleared when Settings itself closes.
   const [settingsReturn, setSettingsReturn] = useState<SettingsSection | null>(null)
   const [timeFormat, setTimeFormatState] = useState<TimeFormat>(getTimeFormat)
+  const [weekStartPref, setWeekStartPrefState] = useState<WeekStartPref>(getWeekStartPref)
   const [ribbonKey, setRibbonKey] = useState(0)
   const [heatmapWeeks, setHeatmapWeeks] = useState<HeatDay[][]>([])
   const [waveKey, setWaveKey] = useState(0)
@@ -203,8 +255,15 @@ function AppInner() {
   // GLANCEvault DB transport engine, null unless the vault config is enabled.
   // Runs alongside the file engine; does not affect the file sync path.
   const dbEngineRef = useRef<DbSyncEngine | null>(null)
+  // People mode's own sync roads (lastglance-people.json and the
+  // lastglance-people vault app). Null until sync starts.
+  const peopleFileEngineRef = useRef<SyncEngine | null>(null)
+  const peopleDbEngineRef = useRef<DbSyncEngine | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [syncError, setSyncError] = useState<string | null>(null)
+  const [peopleSyncStatus, setPeopleSyncStatus] = useState<SyncStatus>('idle')
+  const [peopleSyncError, setPeopleSyncError] = useState<string | null>(null)
+  const [peopleSyncHalted, setPeopleSyncHalted] = useState(false)
   const [syncHalted, setSyncHalted] = useState(false)
   // The typed code that accompanies each error message (null when the engine sent
   // none). Stored alongside the raw message so the Cloud Sync modal can localize
@@ -240,6 +299,15 @@ function AppInner() {
     }
   }, [])
 
+  // Runs both People sync roads, riding the same triggers as the chore
+  // engines. Errors are logged by the engines; People never block chore sync.
+  const runPeopleSync = useCallback(() => {
+    const file = peopleFileEngineRef.current
+    if (file) file.sync().catch(() => {/* logged by the engine */})
+    const vault = peopleDbEngineRef.current
+    if (vault) vault.dbSyncCycle().catch(() => {/* logged by the engine */})
+  }, [])
+
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
     applyStatusBarTheme(isDark)
@@ -254,6 +322,12 @@ function AppInner() {
   const changeTimeFormat = useCallback((pref: TimeFormat) => {
     applyTimeFormat(pref)
     setTimeFormatState(pref)
+  }, [])
+
+  // The grids rebuild from WEEK_START_CHANGED_EVENT, which this dispatches.
+  const changeWeekStart = useCallback((pref: WeekStartPref) => {
+    applyWeekStartPref(pref)
+    setWeekStartPrefState(pref)
   }, [])
 
   // Full-screen (hide the status bar) in landscape, restore it in portrait.
@@ -337,18 +411,37 @@ function AppInner() {
     registerDbEngine(dbEngine)
 
     const managedBootstrap = MANAGED_WEBDAV ? bootstrapManagedWebdav(engine) : Promise.resolve()
+    peopleFileEngineRef.current = createPeopleFileEngine(import.meta.env.VITE_WEBDAV_PROXY_URL, engine, {
+      onStatusChange: status => {
+        setPeopleSyncStatus(status)
+        if (status === 'success') setPeopleSyncError(null)
+      },
+      onError: (msg, _code, hardStop) => {
+        setPeopleSyncError(msg)
+        if (hardStop) setPeopleSyncHalted(true)
+      },
+    })
+    if (MANAGED_WEBDAV) registerPeopleFileSyncRunner(() => peopleFileEngineRef.current!.sync())
+    const peopleDb = createPeopleDbEngine({
+      onError: (msg, code) => { if (msg) console.warn('[lastglance] people vault sync error:', code ?? '(no code)', msg) },
+      onUnsupported: () => console.warn('[lastglance] vault does not know lastglance-people yet; People sync on the file road only'),
+    })
+    peopleDbEngineRef.current = peopleDb
+    registerPeopleDbEngine(peopleDb)
+
     managedBootstrap
       .then(() => deduplicateUsers().catch(() => {}))
       .then(() => ensureSyncFolder(engine))
       .then(() => engine.sync())
+      .then(() => runPeopleSync())
       .catch(() => {/* errors surfaced via onError */})
     runDbSync()
 
-    return () => { registerDbEngine(null) }
+    return () => { registerDbEngine(null); registerPeopleDbEngine(null); registerPeopleFileSyncRunner(null) }
     // Mount-once engine init; runSharedUserSync is a stable callback invoked
     // imperatively elsewhere and intentionally not a dependency here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [runDbSync])
+  }, [runDbSync, runPeopleSync])
 
   // Shared user roster sync — fire-and-forget, non-fatal
   const sharedUserSyncRunning = useRef(false)
@@ -402,6 +495,7 @@ function AppInner() {
         const eng = engineRef.current
         ensureSyncFolder(eng).then(() => eng.sync()).catch(() => {/* errors surfaced via onError */})
         runDbSync()
+        runPeopleSync()
       }
     }
     document.addEventListener('visibilitychange', handleVisibility)
@@ -412,6 +506,7 @@ function AppInner() {
         ensureSyncFolder(eng).then(() => eng.sync()).catch(() => {/* errors surfaced via onError */})
       }
       runDbSync()
+      runPeopleSync()
       runSharedUserSync().catch(() => {/* non-fatal */})
     }, 5 * 60 * 1000)
 
@@ -419,22 +514,34 @@ function AppInner() {
       document.removeEventListener('visibilitychange', handleVisibility)
       clearInterval(interval)
     }
-  }, [runDbSync, runSharedUserSync])
+  }, [runDbSync, runPeopleSync, runSharedUserSync])
+
+  // In People mode the heatmap counts logged interactions instead of chore
+  // completions. Read through refs so the loaders stay stable for the many
+  // hooks that hold them.
+  const visibilityRef = useRef({ multiUserEnabled, meId })
+  visibilityRef.current = { multiUserEnabled, meId }
+  const heatmapCounts = useCallback(async () => {
+    if (modeRef.current !== 'people') return getAllCompletionCounts()
+    const [people, interactions] = await Promise.all([getPeople({ includeArchived: true }), getAllInteractions()])
+    const { multiUserEnabled: multi, meId: me } = visibilityRef.current
+    return interactionCountsByDay(visibleInteractions(interactions, visibleToMe(people, multi, me)))
+  }, [])
 
   const loadHeatmap = useCallback(async () => {
-    const counts = await getAllCompletionCounts()
+    const counts = await heatmapCounts()
     setHeatmapWeeks(buildHeaderHeatmap(counts))
     setWaveKey(k => k + 1)
-  }, [])
+  }, [heatmapCounts])
 
   // Same reload, without bumping waveKey. The wave is a flourish for a *user*
   // action landing (a chore logged, a backup imported); the rollover refresh is
   // ambient bookkeeping, and replaying a 1.5s animation every time the tab
   // regains focus would read as the app churning for no reason.
   const refreshHeatmapQuietly = useCallback(async () => {
-    const counts = await getAllCompletionCounts()
+    const counts = await heatmapCounts()
     setHeatmapWeeks(buildHeaderHeatmap(counts))
-  }, [])
+  }, [heatmapCounts])
 
   // The heatmap bakes the current date into every cell (which column is today,
   // which days are still in the future), so it goes stale the same way the
@@ -454,7 +561,13 @@ function AppInner() {
   // poll. Purely additive — every poll cadence above stays untouched as the
   // correctness backstop, and a no-op when the vault is disabled or the
   // transport can't stream (native shell, pre-/events server).
-  useVaultEventStream({ drainSync: runDbSync, drainIntents: drainDbIntents })
+  // The vault's event stream is per account, so one nudge drains the chore and
+  // People vault engines alike.
+  const drainVaultSync = useCallback(() => {
+    runDbSync()
+    peopleDbEngineRef.current?.dbSyncCycle().catch(() => {/* logged by the engine */})
+  }, [runDbSync])
+  useVaultEventStream({ drainSync: drainVaultSync, drainIntents: drainDbIntents })
   // Direct Access (docs/direct-access.md): the snapshot file in a folder a
   // third-party tool keeps in step. Its own poll and guard; the apply is the
   // same applyPayload the WebDAV tier runs, so the UI refresh events come
@@ -477,7 +590,24 @@ function AppInner() {
   // delivered/retried and never lost across restarts.
   useOutboxFlush()
 
-  useEffect(() => { loadHeatmap() }, [loadHeatmap])
+  // Switching modes swaps what the heatmap counts, and replays the wave.
+  useEffect(() => { loadHeatmap() }, [loadHeatmap, mode])
+
+  // A new week start (the setting, or the OS answering after the first paint)
+  // reshapes every column, so rebuild the grid on it.
+  useEffect(() => {
+    const onWeekStart = () => { void refreshHeatmapQuietly() }
+    window.addEventListener(WEEK_START_CHANGED_EVENT, onWeekStart)
+    return () => window.removeEventListener(WEEK_START_CHANGED_EVENT, onWeekStart)
+  }, [refreshHeatmapQuietly])
+
+  // People edits (a log, a delete, a synced change) only move the heatmap in
+  // People mode; in chores mode they leave it alone.
+  useEffect(() => {
+    const onPeopleChanged = () => { if (modeRef.current === 'people') void refreshHeatmapQuietly() }
+    window.addEventListener(PEOPLE_CHANGED_EVENT, onPeopleChanged)
+    return () => window.removeEventListener(PEOPLE_CHANGED_EVENT, onPeopleChanged)
+  }, [refreshHeatmapQuietly])
 
   useEffect(() => {
     window.addEventListener('lg:chore-logged', loadHeatmap)
@@ -516,16 +646,18 @@ function AppInner() {
       const tag = (e.target as HTMLElement).tagName
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target as HTMLElement).isContentEditable) return
       if (anyModalOpenRef.current || e.metaKey || e.ctrlKey || e.altKey) return
+      // People sheets are not in anyModalOpenRef; don't open windows behind them.
+      if (modeRef.current === 'people' && hasOpenSurface()) return
       switch (e.key) {
         case 'd': case 'D': toggleTheme(); break
-        case 'e': case 'E': setEditMode(m => !m); break
+        case 'e': case 'E': if (modeRef.current === 'chores') setEditMode(m => !m); break
         case 'i': case 'I': setShowIntegration(true); break
         case 's': case 'S': setShowSyncSettings(true); break
         case 'a': case 'A': setShowBackup(true); break
         case 'l': case 'L': setShowActivityLog(true); break
         case 'j': case 'J': setJournalDate(null); setShowJournal(true); break
         case 'm': case 'M':
-          if (multiUserEnabled && meId && !editMode) setFilter(filterRef.current === 'mine' ? 'all' : 'mine')
+          if (modeRef.current === 'chores' && multiUserEnabled && meId && !editMode) setFilter(filterRef.current === 'mine' ? 'all' : 'mine')
           break
         case '?':           setShowShortcuts(true); break
       }
@@ -534,6 +666,10 @@ function AppInner() {
     return () => window.removeEventListener('keydown', onKey)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  const heatLabel = (count: number) => (choresMode
+    ? completionsLabel(t, count)
+    : count === 0 ? t('heatmap.noInteractions') : t('heatmap.interactions', { count }))
 
   const openJournal = useCallback((date: string | null) => {
     setJournalDate(date)
@@ -551,8 +687,8 @@ function AppInner() {
 
   const handleImported = () => { loadHeatmap(); setRibbonKey(k => k + 1) }
 
-  const syncWarn = !!(syncHalted || syncError)
-  const syncIcon = syncStatus === 'uploading' || syncStatus === 'downloading'
+  const syncWarn = !!(syncHalted || syncError || peopleSyncHalted || peopleSyncError)
+  const syncIcon = syncStatus === 'uploading' || syncStatus === 'downloading' || peopleSyncStatus === 'uploading' || peopleSyncStatus === 'downloading'
     ? <RefreshCw size={15} className="animate-spin" />
     : syncWarn ? <CloudOff size={15} /> : <Cloud size={15} />
 
@@ -576,17 +712,38 @@ function AppInner() {
               last<span className="italic text-green-400">GLANCE</span>
             </h1>
             <p className="text-xs text-slate-400 dark:text-slate-600 mt-1 tracking-wide">{t('app.tagline')}</p>
+            {/* Under the wordmark rather than in a row of its own, so the
+                switch costs no vertical space below the header. */}
+            <nav className="mt-2.5" aria-label={t('app.modeSwitch')}>
+              <div className="inline-flex p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-900" role="tablist">
+                {(['chores', 'people'] as const).map(m => (
+                  <button
+                    key={m}
+                    role="tab"
+                    aria-selected={mode === m}
+                    onClick={() => setMode(m)}
+                    className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                      mode === m
+                        ? 'bg-white dark:bg-slate-800 text-green-500 dark:text-green-400 shadow-sm'
+                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                    }`}
+                  >
+                    {m === 'chores' ? t('app.modeChores') : t('app.modePeople')}
+                  </button>
+                ))}
+              </div>
+            </nav>
           </div>
 
           {heatmapWeeks.length > 0 && (
             <>
               {/* 26 weeks on landscape mobile / small screens */}
               <div className="hidden min-[828px]:block min-[1140px]:hidden pb-0.5 opacity-80">
-                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks.slice(-26)} onSelectDay={openJournal} />
+                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks.slice(-26)} onSelectDay={openJournal} label={heatLabel} />
               </div>
               {/* 52 weeks on large screens */}
               <div className="hidden min-[1140px]:block pb-0.5 opacity-80">
-                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks} onSelectDay={openJournal} />
+                <HeaderHeatmap key={waveKey} weeks={heatmapWeeks} onSelectDay={openJournal} label={heatLabel} />
               </div>
             </>
           )}
@@ -598,7 +755,9 @@ function AppInner() {
           {/* ── Mobile: journal + settings + Edit. The heatmap is hidden at
               this width, so the journal gets its own button rather than
               hiding inside settings. ── */}
-          <div className="flex items-center gap-2 sm:hidden">
+          {/* In People mode the four buttons form a 2x2 block: Journal and
+              Settings above, Circles and Add person below. */}
+          <div className={`${choresMode ? 'flex items-center' : 'grid grid-cols-2'} gap-2 sm:hidden`}>
             <button
               onClick={() => openJournal(null)}
               className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
@@ -617,20 +776,36 @@ function AppInner() {
                 controls ran into the logo: below 375px in English, and on
                 every phone in languages with a long word for it ("Bearbeiten",
                 "Редагувати"). */}
-            <button
+            {choresMode && <button
               onClick={() => setEditMode(e => !e)}
               className={`p-2 rounded-lg transition-colors border ${editMode ? 'text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60' : 'text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
               aria-label={editMode ? t('app.doneEditing') : t('app.editCategoriesChores')}
             >
               {editMode ? <Check size={15} /> : <Pencil size={15} />}
-            </button>
+            </button>}
+            {!choresMode && <>
+              <button
+                onClick={() => window.dispatchEvent(new Event(PEOPLE_CIRCLES_EVENT))}
+                className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
+                aria-label={t('people.home.circles')}
+              >
+                <Settings2 size={15} />
+              </button>
+              <button
+                onClick={() => window.dispatchEvent(new Event(PEOPLE_ADD_EVENT))}
+                className="p-2 rounded-lg transition-colors border text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60"
+                aria-label={t('people.home.addPerson')}
+              >
+                <UserPlus size={15} />
+              </button>
+            </>}
           </div>
 
           {/* ── Desktop: two-row layout ── */}
           <div className="hidden sm:flex flex-col items-end gap-1.5">
             {/* Row 1: filter (if multi-user) + soon + edit */}
             <div className="flex items-center gap-2">
-              {multiUserEnabled && meId && !editMode && (
+              {choresMode && multiUserEnabled && meId && !editMode && (
                 <button
                   onClick={() => setFilter(filter === 'mine' ? 'all' : 'mine')}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
@@ -644,7 +819,7 @@ function AppInner() {
                   {filter === 'mine' ? t('app.mine') : t('app.all')}
                 </button>
               )}
-              {!editMode && (
+              {choresMode && !editMode && (
                   <button
                     onClick={() => setAttentionOnly(!attentionOnly)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${
@@ -660,13 +835,27 @@ function AppInner() {
                     {t('app.soon')}
                   </button>
               )}
-              <button
+              {choresMode && <button
                 onClick={() => setEditMode(e => !e)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border ${editMode ? 'text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60' : 'text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
                 aria-label={editMode ? t('app.doneEditing') : t('app.editCategoriesChores')}
               >
                 {editMode ? <><Check size={14} /> {t('app.done')}</> : <><Pencil size={14} /> {t('app.edit')}</>}
-              </button>
+              </button>}
+              {!choresMode && <>
+                <button
+                  onClick={() => window.dispatchEvent(new Event(PEOPLE_CIRCLES_EVENT))}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                >
+                  <Settings2 size={14} /> {t('people.home.circles')}
+                </button>
+                <button
+                  onClick={() => window.dispatchEvent(new Event(PEOPLE_ADD_EVENT))}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors border text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60"
+                >
+                  <UserPlus size={14} /> {t('people.home.addPerson')}
+                </button>
+              </>}
             </div>
             {/* Row 2: sync (doubles as the status light), journal, help,
                 settings. Every control here is icon-only, so each carries a
@@ -681,7 +870,7 @@ function AppInner() {
               >
                 {syncIcon}
               </button>
-              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t('app.journalTooltip')}><NotebookText size={15} /></button>
+              <button onClick={() => openJournal(null)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.journal')} data-tooltip={t(choresMode ? 'app.journalTooltip' : 'app.journalTooltipPeople')}><NotebookText size={15} /></button>
               <button onClick={() => setShowHelp(true)} className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors" aria-label={t('app.helpFeedback')} data-tooltip={t('app.helpFeedback')}><HelpCircle size={15} /></button>
               <button
                 onClick={() => setShowSettings(true)}
@@ -697,9 +886,17 @@ function AppInner() {
         </div>
       </header>
 
-      <main className="flex-1 flex flex-col overflow-hidden">
+      {/* The ribbon stays mounted in People mode so notification taps, widget
+          launches and shortcuts that target chores still find their listeners;
+          those same events bring the chores view back (see CHORE_EVENTS). */}
+      <main className={choresMode ? 'flex-1 flex flex-col overflow-hidden' : 'hidden'}>
         <Ribbon key={ribbonKey} editMode={editMode} onLogged={loadHeatmap} />
       </main>
+      {!choresMode && (
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <PeopleHome />
+        </main>
+      )}
 
       {showWelcome && (
         <WelcomeModal
@@ -743,14 +940,15 @@ function AppInner() {
         <SyncSettingsModal
           engine={engineRef.current}
           dbEngine={dbEngineRef.current}
-          syncError={syncError}
-          syncErrorCode={syncErrorCode}
-          syncStatus={syncStatus}
-          syncHalted={syncHalted}
+          syncError={syncError || (peopleSyncError ? `People: ${peopleSyncError}` : null)}
+          syncErrorCode={syncError ? syncErrorCode : null}
+          syncStatus={peopleSyncStatus === 'uploading' || peopleSyncStatus === 'downloading' ? peopleSyncStatus : syncStatus}
+          syncHalted={syncHalted || peopleSyncHalted}
+          peopleEngine={peopleFileEngineRef.current}
           vaultSyncError={vaultSyncError}
           vaultSyncErrorCode={vaultSyncErrorCode}
           vaultSkipped={vaultSkipped}
-          onClearSyncHalt={() => setSyncHalted(false)}
+          onClearSyncHalt={() => { setSyncHalted(false); setPeopleSyncHalted(false) }}
           directAccess={directAccessSync}
           onClose={() => { setShowSyncSettings(false); runSharedUserSync(); backToSettings() }}
         />
@@ -767,7 +965,15 @@ function AppInner() {
         <ActivityLogModal onClose={() => setShowActivityLog(false)} />
       )}
 
-      {showJournal && (
+      {showJournal && !choresMode && (
+        <PeopleJournalModal
+          key={journalDate ?? 'default'}
+          initialDate={journalDate ?? undefined}
+          onClose={() => setShowJournal(false)}
+        />
+      )}
+
+      {showJournal && choresMode && (
         <JournalModal
           // Remount when the requested day changes, so tapping a second heatmap
           // cell while the Journal is open re-seeds its range instead of being
@@ -816,6 +1022,8 @@ function AppInner() {
           onThemeChange={setThemePref}
           timeFormat={timeFormat}
           onTimeFormatChange={changeTimeFormat}
+          weekStart={weekStartPref}
+          onWeekStartChange={changeWeekStart}
           syncIcon={syncIcon}
           syncWarn={syncWarn}
           onOpenSync={fromSettings('sync', () => setShowSyncSettings(true))}

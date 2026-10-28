@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE Activité</string>
     <string name="widget_label_chore">lastGLANCE Tâche</string>
     <string name="widget_label_soon">lastGLANCE Bientôt</string>
+    <string name="widget_label_reach_out">lastGLANCE À recontacter</string>
+    <string name="widget_label_coming_up">lastGLANCE À venir</string>
+    <string name="reach_out_widget_description">Les proches à qui donner des nouvelles. Touchez un nom pour noter un contact.</string>
+    <string name="coming_up_widget_description">Les prochains anniversaires et dates.</string>
     <string name="widget_label_add">lastGLANCE Ajouter</string>
     <string name="add_chore_widget_description">Un geste pour ajouter une nouvelle tâche.</string>
     <string name="widget_add_chore">Ajouter une tâche</string>

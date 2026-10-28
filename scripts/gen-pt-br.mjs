@@ -231,6 +231,15 @@ const RULES = [
 // Whole-string replacements for the handful of sentences a word-level rule
 // cannot rebuild — passive reordering and the addressee pronoun.
 const OVERRIDES = {
+  "backup.peopleIncluded": "Pessoas neste backup: {{count}}. A restauração também substitui as pessoas e o histórico de interações.",
+  "backup.peoplePreserved": "Este backup não contém pessoas. As pessoas e o histórico de interações atuais serão mantidos.",
+  // pt-PT "num", "Definições" and "hora" for a clock time read European in Brazil.
+  'people.form.notifyHint': 'Entra em um único lembrete por dia. Escolha o horário nas Configurações.',
+  'settings.dateRemindersHint': 'Uma notificação em aniversários e outras datas, no horário que você escolher.',
+  'settings.digestTimeHint':
+    'Quando chega o lembrete diário das pessoas em atraso. Ative para alguém com Lembrar quando estiver em atraso.',
+  'settings.reminderTime': 'Horário',
+  // Brazilian quotes and gerund for the hidden People switch.
   // "É guardada primeiro uma cópia…" — the fronted feminine passive has no
   // masculine word-for-word counterpart once the noun is "backup".
   'backup.snapshotNote':
@@ -251,6 +260,58 @@ const OVERRIDES = {
   'settings.syncDesc': 'Mantenha suas tarefas e seu histórico sincronizados entre seus dispositivos.',
   'settings.integrationsDesc': 'Conecte o lastGLANCE ao dayGLANCE e a apps de automação.',
   'settings.about': 'Sobre',
+  // People mode. Brazilian phrasing beyond word swaps: "você", "conversar",
+  // "Apelido" (alcunha), "padrão", "desfazer", and the call channel is a
+  // "ligação" in Brazil (the general rule would make it a connection).
+  'people.channel.call': 'Ligação',
+  'people.home.reachOut': 'Entre em contato',
+  'people.contacts.disclosure1': 'O lastGLANCE lê nomes, fotos, aniversários e outras datas, números de telefone e endereços de e-mail dos seus contatos, para você adicionar pessoas sem digitar tudo de novo e ligar, mandar mensagem ou e-mail para elas daqui.',
+  'people.contacts.disclosure2': 'No lastGLANCE só são salvos os nomes e as datas que você escolher. Eles só saem do seu celular se você usar a sincronização, com criptografia como o resto dos seus dados. Os números e endereços são lidos quando você toca em Ligar, Mensagem ou E-mail, e a foto de um contato quando você abre essa pessoa. Nada disso é salvo.',
+  'people.contacts.denied': 'O acesso aos contatos está desativado. Para usar, permita Contatos para o lastGLANCE nas configurações do celular.',
+  'people.contacts.loading': 'Lendo os contatos…',
+  'people.contacts.search': 'Buscar contatos',
+  'people.contacts.birthdayChanged': 'Nos Contatos, o aniversário de {{name}} é em {{date}}.',
+  'people.contacts.keep': 'Manter o meu',
+  'settings.phoneContacts': 'Contatos do celular',
+  'settings.phoneContactsHint': 'Importe pessoas dos seus contatos e associe-as para ligar, mandar mensagem e e-mail. Somente leitura; números e endereços nunca são salvos nem sincronizados.',
+  'people.reason.unreturned': '{{name}} entrou em contato; você ainda não respondeu',
+  'people.reason.streak_one': 'Você entrou em contato {{count}} vez seguida',
+  'people.reason.streak_other': 'Você entrou em contato {{count}} vezes seguidas',
+  'people.snooze.ariaLabel': 'Ocultar {{name}} de Entre em contato por um tempo',
+  'people.detail.balance': 'Você {{you}}, a outra pessoa {{them}} · últimos {{days}} dias',
+  'people.detail.balanceTooFew': 'Ainda não há registros suficientes para saber quem entra mais em contato',
+  'settings.showReciprocityHint': 'Setas, motivos em Entre em contato e o balanço de cada pessoa. Quem entrou em contato continua sendo registrado mesmo oculto.',
+  'people.home.emptyCircle': 'Ninguém aqui ainda.',
+  'people.home.reachOutEmpty': 'No momento, ninguém está esperando notícias.',
+  'people.home.comingUpEmpty': 'Nenhuma data nos próximos 30 dias.',
+  'people.direction.outbound': 'Eu entrei em contato',
+  'people.direction.inbound': 'A outra pessoa entrou em contato',
+  'people.direction.mutual': 'Juntos',
+  'people.log.direction': 'Quem tomou a iniciativa',
+  'people.empty.body':
+    'Adicione as pessoas com quem você quer manter contato, registre quando conversaram pela última vez e o lastGLANCE mostra quem está esperando um oi e quais aniversários estão chegando.',
+  'people.detail.noInteractions': 'Nada registrado ainda.',
+  'people.detail.deleteDetail':
+    'As datas e os contatos registrados só com essa pessoa também serão excluídos. Não é possível desfazer.',
+  'people.form.nickname': 'Apelido',
+  'people.form.cadencePlaceholder': 'ex.: 2',
+  'people.form.dateLabelPlaceholder': 'O que é? (ex.: Dia do santo)',
+  'people.form.detailsPlaceholder': 'Nomes dos filhos, gostos, coisas para perguntar…',
+  'people.form.cadenceInvalid': 'Digite um número de semanas maior que 0',
+  'people.log.when': 'Quando (padrão: agora)',
+  'people.log.notePlaceholder': 'Sobre o que vocês conversaram?',
+  'people.circles.hint': 'Agrupe as pessoas como quiser. Excluir um círculo mantém as pessoas dele.',
+  'people.circles.deleteDetail': 'As pessoas dele continuam, sem círculo.',
+  // People intents: Brazil "liga para" and "manda mensagem para", and the
+  // European "contactei" and "cronologia".
+  'people.intents.task.call': 'Ligar para {{name}}',
+  'people.intents.task.callBack': 'Retornar a ligação de {{name}}',
+  'people.intents.task.text': 'Mandar mensagem para {{name}}',
+  'people.intents.task.email': 'Mandar e-mail para {{name}}',
+  'people.intents.task.videoBack': 'Retornar a videochamada de {{name}}',
+  'people.intents.timeline.outbound': 'Entrei em contato com {{names}}',
+  'people.form.autoSendDayglanceHint': 'Envia para o dayGLANCE uma tarefa como “Ligar para Sam” quando estiver em atraso.',
+  'people.form.sendToLifeglanceHint': 'Cada contato que você registrar com esta pessoa vai para a sua linha do tempo do lifeGLANCE.',
 }
 
 const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')

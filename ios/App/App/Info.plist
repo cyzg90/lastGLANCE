@@ -63,6 +63,10 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- People: read-only contacts access for Import and Link (ContactsPlugin.swift).
+	     The system prompt only follows the in-app explanation. -->
+	<key>NSContactsUsageDescription</key>
+	<string>lastGLANCE reads names, dates, numbers and email addresses so you can add people from your contacts and call, text or email them. It never changes your contacts.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { EUROPEAN_ONLY, BRAZILIAN_ONLY } from './ptMarkers'
 
@@ -26,7 +27,7 @@ interface Substitution {
   variations: { plural: Record<string, StringUnit> }
 }
 interface Localization extends StringUnit { substitutions?: Record<string, Substitution> }
-interface CatalogEntry { localizations?: Record<string, Localization> }
+interface CatalogEntry { localizations?: Record<string, Localization>; shouldTranslate?: boolean }
 interface Catalog { sourceLanguage: string; strings: Record<string, CatalogEntry>; version: string }
 
 const specifiers = (v: string) => (v.match(/%(lld|@|d)/g) ?? []).sort().join(',')
@@ -61,6 +62,14 @@ describe.each(CATALOGS)('%s', (rel) => {
       .filter(([, e]) => e.localizations && !e.localizations[lng]?.stringUnit?.value)
       .map(([k]) => k)
     expect(missing, `these keys would render English on ${lng} devices`).toEqual([])
+  })
+
+  // A key with no translations is a brand word or a bare number the compiler
+  // extracts from the Swift. It stays in the catalog (or Xcode adds it back on
+  // the next build) and is marked so Xcode does not list it as untranslated.
+  it('marks every untranslated key shouldTranslate false', () => {
+    const unmarked = entries.filter(([, e]) => !e.localizations && e.shouldTranslate !== false).map(([k]) => k)
+    expect(unmarked).toEqual([])
   })
 
   it('keeps every format specifier in every translation', () => {
@@ -119,6 +128,14 @@ describe.each(CATALOGS)('%s', (rel) => {
     }
     expect(violations).toEqual([])
   })
+})
+
+// Xcode rewrites a catalog in its own JSON shape whenever a build syncs it,
+// so a hand-formatted file shows up dirty after every build.
+it('keeps both catalogs in the shape Xcode saves them', () => {
+  expect(() =>
+    execFileSync('node', [join(__dirname, '../scripts/format-xcstrings.mjs'), '--check'], { stdio: 'pipe' }),
+  ).not.toThrow()
 })
 
 describe('pbxproj wiring', () => {

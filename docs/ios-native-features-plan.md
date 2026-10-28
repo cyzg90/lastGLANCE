@@ -33,7 +33,8 @@ and only reimplements the native rendering per platform.
 > - **Operational notes that outlived their PRs:** reboot the device before
 >   believing a widget bug (WidgetKit caches survive reinstalls); quick actions
 >   refresh on snapshot push, not install; `IOS_BUILD=<n> npm run cap:ios` sets
->   the build number across all six configs and fails the build on drift.
+>   the build number for all three targets through the gitignored
+>   `ios/version.generated.xcconfig`, never in `project.pbxproj`.
 > - **In flight / next:** Keychain-backed SecureStore (iOS credentials are
 >   still plaintext in WebView storage), Lock Screen + Control Center accessory
 >   widgets, and App Store billing (StoreKit half of `@glance-apps/billing` —
@@ -359,16 +360,19 @@ out of scope; reconcile on next foreground).
   iOS.
 - `scripts/gen-lucide-drawables.mjs` — add a Swift-path-data mode for iOS icons
   (or a sibling script).
-- `scripts/sync-ios-version.mjs` — handles both version numbers, for different
-  reasons. `MARKETING_VERSION` always tracks package.json across every target.
-  `CURRENT_PROJECT_VERSION` (the build number) has to increment per **upload**,
-  not per version, so it cannot be derived from package.json and is set
-  explicitly: `IOS_BUILD=<n> npm run build:ios`. With `IOS_BUILD` unset the build
-  number is left alone but every target is checked for agreement, and the script
-  **fails the build** if they disagree — an app and its extensions must ship the
-  same `CFBundleVersion` or App Store Connect rejects the upload, and Xcode's
-  General tab edits only the selected target, so bumping by hand moves App and
-  silently leaves GlanceWidgets behind.
+- `scripts/sync-ios-version.mjs` — writes both version numbers to the
+  gitignored `ios/version.generated.xcconfig`, which `ios/debug.xcconfig` and
+  `ios/release.xcconfig` include at the project level, so all three targets
+  inherit them and builds never dirty `project.pbxproj`. `MARKETING_VERSION`
+  tracks package.json. `CURRENT_PROJECT_VERSION` (the build number) has to
+  increment per **upload**, not per version, so it cannot be derived from
+  package.json and is set explicitly: `IOS_BUILD=<n> npm run build:ios`. With
+  `IOS_BUILD` unset the last build number written on that machine is kept. The
+  script **fails the build** if `project.pbxproj` sets either value, since a
+  target-level setting overrides the xcconfig for that target alone, and an app
+  and its extensions must ship the same `CFBundleVersion` or App Store Connect
+  rejects the upload. Xcode's General tab writes one when Version or Build is
+  edited there.
 
 **To stay iOS-friendly going forward:** keep decision logic in JS behind the
 plugin boundary; route every new entry point through the shared `lastglance://`

@@ -1,5 +1,8 @@
 import Dexie, { type Table } from 'dexie'
 import type { Category, Chore, CompletionEvent, Tombstone, User } from '@/types'
+import type {
+  ContactLink, Interaction, PeopleTombstone, Person, PersonCircle, PersonDate,
+} from '@/people/types'
 
 class LastGlanceDB extends Dexie {
   categories!: Table<Category, number>
@@ -7,6 +10,14 @@ class LastGlanceDB extends Dexie {
   completionEvents!: Table<CompletionEvent, number>
   tombstones!: Table<Tombstone, string>
   users!: Table<User, number>
+  // People mode (v14). Synced on their own roads (lastglance-people.json and
+  // the lastglance-people vault app), never in the chore payload.
+  people!: Table<Person, number>
+  interactions!: Table<Interaction, number>
+  personDates!: Table<PersonDate, number>
+  personCircles!: Table<PersonCircle, number>
+  peopleTombstones!: Table<PeopleTombstone, string>
+  contactLinks!: Table<ContactLink, string>
 
   constructor() {
     super('lastglance')
@@ -260,6 +271,20 @@ class LastGlanceDB extends Dexie {
           }
         })
       )
+
+    // Adds the People mode tables. Create-only: existing chore data is
+    // untouched. People keep their own tombstones so person deletions never
+    // ride in the chore sync payload; contactLinks is device-local.
+    this.version(14)
+      .stores({
+        people: '++id, &sync_id, circle_sync_id',
+        interactions: '++id, &sync_id, *person_sync_ids, occurred_at',
+        personDates: '++id, &sync_id, person_sync_id',
+        personCircles: '++id, &sync_id, sort_order',
+        peopleTombstones: 'id',
+        contactLinks: 'person_sync_id',
+      })
+
   }
 }
 

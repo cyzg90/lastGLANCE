@@ -49,6 +49,102 @@ struct SnapshotChore: Decodable {
     }
 }
 
+// The People block (src/native/peopleSnapshot.ts). Every People word arrives
+// already in the app's language, so the People widgets carry no copy of the
+// People strings. Absent in snapshots from before People widgets: decodes as
+// empty, with English fallbacks for the labels.
+struct PeopleReachOut: Decodable {
+    let syncId: String
+    let name: String
+    let color: String
+    let detail: String
+
+    private enum CodingKeys: String, CodingKey { case syncId, name, color, detail }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        syncId = (try? c.decode(String.self, forKey: .syncId)) ?? ""
+        name = (try? c.decode(String.self, forKey: .name)) ?? ""
+        color = (try? c.decode(String.self, forKey: .color)) ?? "#f472b6"
+        detail = (try? c.decode(String.self, forKey: .detail)) ?? ""
+    }
+}
+
+struct PeopleDate: Decodable {
+    let personSyncId: String
+    let name: String
+    let label: String
+    // Local day, "yyyy-MM-dd".
+    let on: String
+
+    private enum CodingKeys: String, CodingKey { case personSyncId, name, label, on }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        personSyncId = (try? c.decode(String.self, forKey: .personSyncId)) ?? ""
+        name = (try? c.decode(String.self, forKey: .name)) ?? ""
+        label = (try? c.decode(String.self, forKey: .label)) ?? ""
+        on = (try? c.decode(String.self, forKey: .on)) ?? ""
+    }
+}
+
+struct PeopleLabels: Decodable {
+    var reachOut = "Reach out"
+    var comingUp = "Coming up"
+    var reachOutEmpty = ""
+    var comingUpEmpty = ""
+    var today = "today"
+    var tomorrow = "tomorrow"
+    // Holds "{{count}}" for the day count.
+    var inDays = "{{count}}d"
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey {
+        case reachOut, comingUp, reachOutEmpty, comingUpEmpty, today, tomorrow, inDays
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        func str(_ key: CodingKeys, _ fallback: String) -> String {
+            let v = (try? c.decode(String.self, forKey: key)) ?? ""
+            return v.isEmpty ? fallback : v
+        }
+        reachOut = str(.reachOut, reachOut)
+        comingUp = str(.comingUp, comingUp)
+        reachOutEmpty = str(.reachOutEmpty, reachOutEmpty)
+        comingUpEmpty = str(.comingUpEmpty, comingUpEmpty)
+        today = str(.today, today)
+        tomorrow = str(.tomorrow, tomorrow)
+        inDays = str(.inDays, inDays)
+    }
+
+    func daysUntil(_ n: Int) -> String {
+        switch n {
+        case 0: return today
+        case 1: return tomorrow
+        default: return inDays.replacingOccurrences(of: "{{count}}", with: String(n))
+        }
+    }
+}
+
+struct PeopleSnapshot: Decodable {
+    var reachOut: [PeopleReachOut] = []
+    var comingUp: [PeopleDate] = []
+    var labels = PeopleLabels()
+
+    init() {}
+
+    private enum CodingKeys: String, CodingKey { case reachOut, comingUp, labels }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        reachOut = ((try? c.decode([PeopleReachOut].self, forKey: .reachOut)) ?? []).filter { !$0.syncId.isEmpty }
+        comingUp = (try? c.decode([PeopleDate].self, forKey: .comingUp)) ?? []
+        labels = (try? c.decode(PeopleLabels.self, forKey: .labels)) ?? PeopleLabels()
+    }
+}
+
 struct WidgetSnapshot: Decodable {
     struct Counts: Decodable {
         let overdue: Int
@@ -74,18 +170,33 @@ struct WidgetSnapshot: Decodable {
     // Keyed "yyyy-MM-dd" (local dates, as produced by dayjs in the WebView) to a
     // completion count for that day.
     let heatmap: [String: Int]
+    // The heatmap grid's first row, 0 = Sunday … 6 = Saturday: the app's own
+    // week start (issue #362). Nil from a snapshot written before it existed.
+    let weekStart: Int?
     let chores: [SnapshotChore]
+    let people: PeopleSnapshot
+
+    // The week start to draw with: the app's, else the system calendar's
+    // (Calendar.firstWeekday is 1 = Sunday … 7 = Saturday).
+    var effectiveWeekStart: Int {
+        if let w = weekStart, (0...6).contains(w) { return w }
+        return (Calendar.current.firstWeekday - 1 + 7) % 7
+    }
 
     init(version: Int = 1,
          generatedAt: String? = nil,
          counts: Counts = Counts(),
          heatmap: [String: Int] = [:],
-         chores: [SnapshotChore] = []) {
+         weekStart: Int? = nil,
+         chores: [SnapshotChore] = [],
+         people: PeopleSnapshot = PeopleSnapshot()) {
         self.version = version
         self.generatedAt = generatedAt
         self.counts = counts
         self.heatmap = heatmap
+        self.weekStart = weekStart
         self.chores = chores
+        self.people = people
     }
 
     init(from decoder: Decoder) throws {
@@ -94,11 +205,13 @@ struct WidgetSnapshot: Decodable {
         generatedAt = try? c.decode(String.self, forKey: .generatedAt)
         counts = (try? c.decode(Counts.self, forKey: .counts)) ?? Counts()
         heatmap = (try? c.decode([String: Int].self, forKey: .heatmap)) ?? [:]
+        weekStart = try? c.decode(Int.self, forKey: .weekStart)
         chores = (try? c.decode([SnapshotChore].self, forKey: .chores)) ?? []
+        people = (try? c.decode(PeopleSnapshot.self, forKey: .people)) ?? PeopleSnapshot()
     }
 
     private enum CodingKeys: String, CodingKey {
-        case version, generatedAt, counts, heatmap, chores
+        case version, generatedAt, counts, heatmap, weekStart, chores, people
     }
 }
 

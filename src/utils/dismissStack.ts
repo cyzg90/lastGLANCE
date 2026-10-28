@@ -25,3 +25,8 @@ export function dismissTop(): boolean {
   top()
   return true
 }
+
+/** True while any dismissable surface is open. */
+export function hasOpenSurface(): boolean {
+  return stack.length > 0
+}

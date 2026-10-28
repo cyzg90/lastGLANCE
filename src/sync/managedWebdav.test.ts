@@ -7,6 +7,7 @@ afterEach(() => {
 
 describe('managedWebdavEndpoint', () => {
   it.each([
+    ['https://internal.lastglance.invalid/GLANCE/lastglance/lastglance-people.json', '/api/internal-webdav/people'],
     ['https://internal.lastglance.invalid/GLANCE/', '/api/internal-webdav/glance-directory'],
     ['https://internal.lastglance.invalid/GLANCE/lastglance/', '/api/internal-webdav/sync-directory'],
     ['https://internal.lastglance.invalid/GLANCE/lastglance/lastglance-sync.json', '/api/internal-webdav/sync'],

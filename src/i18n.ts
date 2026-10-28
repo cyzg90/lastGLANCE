@@ -2,13 +2,16 @@ import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 import HttpBackend from 'i18next-http-backend'
-import { applyDateLocale, loadTimeFormat } from '@/utils/datetime'
+import { applyDateLocale, loadTimeFormat, loadWeekStart, setSystemWeekStart } from '@/utils/datetime'
 import { languages, resolveLanguage } from '@/locales'
 import { appPath } from '@/utils/appPath'
 import { followIOSLanguageChanges, syncAppLanguageFromNative } from '@/native/appLocale'
+import { getSystemWeekStart } from '@/native/widgetBridge'
 
 // The user's 12/24-hour choice, read before the first date is formatted.
 loadTimeFormat()
+// And the week-start choice, before the first grid is built.
+loadWeekStart()
 
 // Keep date handling on the same language as the UI strings. Registered before
 // .init() so this listener runs ahead of react-i18next's own — the locale is
@@ -56,5 +59,17 @@ void syncAppLanguageFromNative(i18n)
 // On iOS, a language change in Settings > lastGLANCE > Language (or the
 // phone's language) is adopted at the next launch. No-op everywhere else.
 followIOSLanguageChanges(i18n)
+
+// On Android and iOS, Automatic week start follows the operating system, which
+// knows the region and any first-day override even when the WebView's language
+// tag does not (issue #362). Re-read on return to the app, since it can change
+// in system settings meanwhile. No-op on web.
+const readSystemWeekStart = () => { void getSystemWeekStart().then(setSystemWeekStart) }
+readSystemWeekStart()
+if (typeof document !== 'undefined') {
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') readSystemWeekStart()
+  })
+}
 
 export default i18n

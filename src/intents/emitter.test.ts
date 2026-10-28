@@ -1,8 +1,8 @@
 import 'fake-indexeddb/auto'
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest'
 import { webcrypto } from 'node:crypto'
-import { deriveIntentsRootKey } from '@glance-apps/intents'
-import { emitCreateIntent, buildCreateIntent, enabledIntentTargets, type EmitDeps } from './emitter'
+import { CreateSchema, deriveIntentsRootKey } from '@glance-apps/intents'
+import { emitCreate, emitCreateIntent, buildCreateIntent, enabledIntentTargets, type EmitDeps } from './emitter'
 import { createOutbox, createIndexedDbOutboxStore } from './outbox'
 import type { OutboxIntent, TransportName, Deliverer } from './outbox'
 import { createVaultDeliverer } from './deliverers'
@@ -86,6 +86,18 @@ describe('emit -> outbox wiring', () => {
     expect(asRecord.encrypted).toBeUndefined()
     expect(asRecord.payload_ciphertext).toBeUndefined()
     expect(asRecord.salt).toBeUndefined()
+  })
+
+  it('emitCreate queues any CREATE payload as lastGLANCE, valid under the shared schema', async () => {
+    const enqueued: OutboxIntent[] = []
+    const ok = await emitCreate(
+      { title: 'Caught up with Sam', due: '2026-10-14', all_day: true, notes: 'Call', source_entity_id: 'i1', entity_type: 'milestone' },
+      'Queued for lifeGLANCE',
+      { targets: () => ['vault'], enqueue: async intent => { enqueued.push(intent) }, flush: async () => {} },
+    )
+    expect(ok).toBe(true)
+    expect(enqueued[0].payload).toMatchObject({ source_app: 'app.lastglance', entity_type: 'milestone' })
+    expect(CreateSchema.safeParse(enqueued[0].payload).success).toBe(true)
   })
 
   it('returns false and enqueues nothing when no transport is enabled', async () => {

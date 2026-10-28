@@ -12,5 +12,6 @@ class BridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(WidgetBridgePlugin())
         bridge?.registerPluginInstance(SecureStorePlugin())
         bridge?.registerPluginInstance(DirectAccessPlugin())
+        bridge?.registerPluginInstance(ContactsPlugin())
     }
 }

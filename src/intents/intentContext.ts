@@ -5,7 +5,9 @@
 import dayjs from 'dayjs'
 import { db } from '@/db/client'
 import { getCategories, createCategory, createChore as dbCreateChore, logCompletion as dbLogCompletion, ensureInboxCategory } from '@/db/queries'
-import { getMeUserSyncId } from '@/multiuser/settings'
+import { getMeUserSyncId, getMultiUserEnabled } from '@/multiuser/settings'
+import { getPeople, interactionExists, logInteraction } from '@/people/queries'
+import { visibleToMe } from '@/people/home'
 import { addActivityEntry } from './config'
 import { nativeSendNotifyBroadcast } from '@/native/intentsBridge'
 import type { IntentChore, IntentContext, OpenTarget } from './handleIntent'
@@ -142,6 +144,13 @@ export function buildIntentContext(onChanged?: () => void): IntentContext {
     onChoreCompleted: (chore) => {
       addActivityEntry({ type: 'received', message: `Completed "${chore.name}" via Tasker` })
       onChoreCompleted(chore)
+    },
+    listPeople: async () => visibleToMe(await getPeople(), getMultiUserEnabled(), getMeUserSyncId()),
+    interactionExists,
+    logInteraction: async (input) => {
+      const logged = await logInteraction(input)
+      addActivityEntry({ type: 'received', message: 'Logged a contact via Tasker' })
+      return logged
     },
   }
 }

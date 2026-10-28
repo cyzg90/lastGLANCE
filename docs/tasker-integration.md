@@ -24,6 +24,7 @@ object.
 | `app.lastglance.COMPLETE` | Log a completion for a chore (match by title) |
 | `app.lastglance.OPEN`     | Foreground the app, optionally routing the UI |
 | `app.lastglance.QUERY`    | Reply with current counts (via a RESULT broadcast) |
+| `app.lastglance.LOG_INTERACTION` | Log a contact with someone in People (match by name) |
 
 Two broadcasts go the other way:
 
@@ -107,6 +108,28 @@ Send as an **Activity** intent (Target: Activity) so it can foreground the app.
 No payload fields. lastGLANCE replies with a `RESULT` broadcast (see below).
 To read the reply, the app must be **running** (send `QUERY` as a broadcast to a
 foregrounded/backgrounded app, or `OPEN` it first).
+
+### LOG_INTERACTION — `app.lastglance.LOG_INTERACTION`
+
+```json
+{ "name": "Dad", "channel": "call", "direction": "inbound" }
+```
+
+Logs a contact in People, so a call log or messaging automation can keep the
+recency bars current.
+
+| Field | Required | Notes |
+|---|---|---|
+| `name` | ✅ (or `person_id`) | Matched against names and nicknames: an **exact** (case-insensitive) match wins; otherwise a **unique part of a name** is accepted with a `warning`. Archived people are not matched. |
+| `person_id` | — | A person's id, instead of `name`. |
+| `channel` | — | `in_person`, `call`, `video`, `text`, `email` or `other`. `phone`, `sms`, `facetime` and similar words are accepted. Defaults to the person's preferred channel, else `other`. |
+| `direction` | — | `outbound` (you reached out), `inbound` (they did) or `mutual`. `outgoing` and `incoming` are accepted. Omit it if unknown. |
+| `note` | — | Free text. |
+| `occurred_at` | — | ISO-8601 timestamp. Defaults to now. |
+| `event_id` | — | Any id unique to this contact. Sending the same `event_id` again logs nothing new, so a double-firing profile is safe. |
+
+The RESULT carries `person_id` and `interaction_id`. No match, or a name that
+matches more than one person, fails with an `error`.
 
 ---
 

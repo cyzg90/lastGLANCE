@@ -11,6 +11,7 @@ import { formatDateTime } from '@/utils/datetime'
 import { getManagedSyncDisplayState, type ManagedSyncDisplayState } from './managedSyncDisplayState'
 
 interface Props {
+  peopleEngine?: SyncEngine | null
   engine: SyncEngine | null
   syncStatus: SyncStatus
   syncError: string | null
@@ -28,8 +29,16 @@ const STATUS_ICON: Record<ManagedSyncDisplayState, typeof Cloud> = {
   idle: Cloud,
 }
 
+function lastSyncedTogether(engine: SyncEngine | null, peopleEngine?: SyncEngine | null): string | null {
+  const main = engine?.getLastSynced() ?? null
+  if (!peopleEngine) return main
+  const people = peopleEngine.getLastSynced()
+  return main && people ? (main < people ? main : people) : null
+}
+
 export function ManagedSyncStatus({
   engine,
+  peopleEngine,
   syncStatus,
   syncError,
   syncErrorCode,
@@ -40,7 +49,7 @@ export function ManagedSyncStatus({
   const { t } = useTranslation()
   const [manualSyncing, setManualSyncing] = useState(false)
   const [manualError, setManualError] = useState<string | null>(null)
-  const [lastSynced, setLastSynced] = useState(() => engine?.getLastSynced() ?? null)
+  const [lastSynced, setLastSynced] = useState(() => lastSyncedTogether(engine, peopleEngine))
   const halted = syncHalted || (engine?.isHardStopped() ?? false)
   const displayState = getManagedSyncDisplayState(syncStatus, Boolean(syncError || manualError), halted)
   const syncing = manualSyncing || syncStatus === 'uploading' || syncStatus === 'downloading'
@@ -49,20 +58,21 @@ export function ManagedSyncStatus({
   useEscapeKey(onClose)
 
   useEffect(() => {
-    setLastSynced(engine?.getLastSynced() ?? null)
-  }, [engine, syncStatus])
+    setLastSynced(lastSyncedTogether(engine, peopleEngine))
+  }, [engine, peopleEngine, syncStatus])
 
   async function handleSyncNow() {
-    if (!engine || syncing || engine.isSyncing()) return
+    if (!engine || syncing || engine.isSyncing() || peopleEngine?.isSyncing()) return
     setManualSyncing(true)
     setManualError(null)
     const before = engine.getLastSynced()
     try {
       await ensureSyncFolder(engine)
-      await engine.sync()
+      const peopleBefore = peopleEngine?.getLastSynced()
+      await Promise.all([engine.sync(), peopleEngine?.sync()])
       const after = engine.getLastSynced()
-      setLastSynced(after)
-      if (!after || after === before) setManualError(t('sync.syncFailed'))
+      setLastSynced(lastSyncedTogether(engine, peopleEngine))
+      if (!after || after === before || (peopleEngine && (!peopleEngine.getLastSynced() || peopleEngine.getLastSynced() === peopleBefore))) setManualError(t('sync.syncFailed'))
     } catch (error) {
       setManualError(error instanceof Error ? error.message : t('sync.syncFailed'))
     } finally {
@@ -71,8 +81,9 @@ export function ManagedSyncStatus({
   }
 
   async function handleRetrySync() {
-    if (!engine || syncing || engine.isSyncing()) return
+    if (!engine || syncing || engine.isSyncing() || peopleEngine?.isSyncing()) return
     engine.clearHardStop()
+    peopleEngine?.clearHardStop()
     setManualError(null)
     onClearSyncHalt()
     await handleSyncNow()

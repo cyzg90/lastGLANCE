@@ -92,6 +92,15 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return (id.isEmpty || id == "/") ? nil : "chore:\(id)"
         case "filter":
             return "filter:soon"
+        case "person":
+            // People widgets: open a person, or quick-log for them.
+            let id = url.lastPathComponent
+            return (id.isEmpty || id == "/") ? nil : "person:\(id)"
+        case "log":
+            let id = url.lastPathComponent
+            return (id.isEmpty || id == "/") ? nil : "log:\(id)"
+        case "people":
+            return "people"
         case "action":
             switch url.lastPathComponent {
             case "search": return "action:search"

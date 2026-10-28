@@ -21,6 +21,7 @@ import {
 import { buildAuthHeader, listFiles, getFile } from '@/intents/webdav'
 import { loadIntentsRootKey } from '@/intents/intentsKeyStore'
 import { processNotifyEnvelope } from '@/intents/processNotifyEnvelope'
+import { peopleNotifyDeps } from '@/people/notifyDeps'
 
 // How far back to look behind the stored cursor when filtering events.
 // Covers the window where a device may upload an event with an earlier
@@ -155,6 +156,7 @@ export function useIntentsPoller(onNewCompletion?: () => void): void {
         logCompletion,
         addActivityEntry,
         isAlreadyLogged: (syncId) => db.completionEvents.where('sync_id').equals(syncId).count().then(n => n > 0),
+        people: peopleNotifyDeps,
         dispatchChoreLogged: () => window.dispatchEvent(new CustomEvent('lg:chore-logged')),
         onNewCompletion: () => onNewCompletionRef.current?.(),
       })

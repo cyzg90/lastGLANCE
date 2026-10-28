@@ -20,7 +20,12 @@ export const LG_ANDROID_ACTIONS = {
   COMPLETE: 'app.lastglance.COMPLETE',
   OPEN: 'app.lastglance.OPEN',
   QUERY: 'app.lastglance.QUERY',
+  LOG_INTERACTION: 'app.lastglance.LOG_INTERACTION',
 } as const
+
+// People's own action (docs: the People spec, Intents). Not one of the shared
+// package's ACTIONS: it only means something to lastGLANCE.
+export const LOG_INTERACTION = 'log_interaction'
 
 // Outbound broadcasts lastGLANCE fires back to the sender.
 export const LG_ANDROID_OUTBOUND = {
@@ -41,6 +46,7 @@ export const BROADCAST_ACTION_MAP: Record<string, string> = {
   [LG_ANDROID_ACTIONS.COMPLETE]: ACTIONS.COMPLETE,
   [LG_ANDROID_ACTIONS.OPEN]: ACTIONS.OPEN,
   [LG_ANDROID_ACTIONS.QUERY]: ACTIONS.QUERY,
+  [LG_ANDROID_ACTIONS.LOG_INTERACTION]: LOG_INTERACTION,
 }
 
 // QUERY reply variables, Tasker-style `%`-prefixed so they read naturally after

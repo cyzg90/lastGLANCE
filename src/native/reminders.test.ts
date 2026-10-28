@@ -9,7 +9,10 @@ vi.mock('@capacitor/core', () => ({
 }))
 vi.mock('@capacitor/local-notifications', () => ({ LocalNotifications: {} }))
 
-import { reminderIdFor, soonest } from './reminders'
+import dayjs from 'dayjs'
+import { handleNotificationAction, peopleDescriptor, reminderIdFor, soonest, withinCap } from './reminders'
+import type { ReminderTier } from './reminders'
+import { clearPendingOpenPerson, OPEN_PERSON_PENDING_EVENT, peekPendingOpenPerson } from './pendingOpenPerson'
 
 describe('reminderIdFor', () => {
   it('is deterministic, so rescheduling replaces an alarm instead of stacking one', () => {
@@ -67,5 +70,79 @@ describe('soonest', () => {
 
   it('copes with an empty set', () => {
     expect(soonest([], 56)).toEqual([])
+  })
+})
+
+describe('withinCap', () => {
+  const r = (tier: ReminderTier, triggerAtMillis: number) => ({ tier, triggerAtMillis })
+
+  it('fills near dates first, then chores, then the digest, then far dates', () => {
+    const items = [
+      r('far-date', 1), r('digest', 2), r('chore', 30), r('near-date', 40), r('chore', 10), r('near-date', 50),
+    ]
+    const kept = withinCap(items, 4)
+    expect(kept).toHaveLength(4)
+    expect(kept).toEqual(expect.arrayContaining([r('near-date', 40), r('near-date', 50), r('chore', 10), r('chore', 30)]))
+    expect(withinCap(items, 5)[4]).toEqual(r('digest', 2))
+  })
+
+  it('keeps the soonest of a tier when that tier is cut', () => {
+    const items = [r('chore', 3), r('chore', 1), r('chore', 2)]
+    expect(withinCap(items, 2).map(i => i.triggerAtMillis)).toEqual([1, 2])
+  })
+
+  it('returns the input untouched when under the cap', () => {
+    const items = [r('digest', 1), r('chore', 2)]
+    expect(withinCap(items, 5)).toBe(items)
+  })
+})
+
+describe('peopleDescriptor', () => {
+  const now = dayjs('2026-10-12T15:00:00')
+
+  it('gives a date Log and Open, its own channel, and routing to the person', () => {
+    const d = peopleDescriptor({
+      kind: 'person-date', key: 'd1:day', personSyncId: 'p1', title: 'Sam', body: 'Birthday today',
+      at: now.add(3, 'day'),
+    }, now.valueOf())
+    expect(d).toMatchObject({
+      id: reminderIdFor('d1:day'), tier: 'near-date', channelId: 'people', actionTypeId: 'PERSON_DATE',
+      extra: { kind: 'person-date', personSyncId: 'p1' }, dgEnabled: false,
+    })
+  })
+
+  it('ranks a date past two weeks out below chores', () => {
+    const d = peopleDescriptor({
+      kind: 'person-date', key: 'd1:day', personSyncId: 'p1', title: 'Sam', body: '', at: now.add(20, 'day'),
+    }, now.valueOf())
+    expect(d.tier).toBe('far-date')
+  })
+
+  it('gives the digest no buttons', () => {
+    const d = peopleDescriptor({ kind: 'people-digest', key: 'digest:2026-10-12', title: 't', body: 'b', at: now }, now.valueOf())
+    expect(d.tier).toBe('digest')
+    expect(d.actionTypeId).toBeUndefined()
+    expect(d.extra).toEqual({ kind: 'people-digest' })
+  })
+})
+
+describe('handleNotificationAction for People', () => {
+  it('queues Log, Open and the digest for People to take', () => {
+    // Node has no window; an EventTarget stands in for it.
+    const target = new EventTarget()
+    vi.stubGlobal('window', target)
+    const seen: string[] = []
+    target.addEventListener(OPEN_PERSON_PENDING_EVENT, () => seen.push('event'))
+
+    handleNotificationAction('log', { kind: 'person-date', personSyncId: 'p1' })
+    expect(peekPendingOpenPerson()).toEqual({ action: 'log', personSyncId: 'p1' })
+    handleNotificationAction('tap', { kind: 'person-date', personSyncId: 'p1' })
+    expect(peekPendingOpenPerson()).toEqual({ action: 'open', personSyncId: 'p1' })
+    handleNotificationAction('tap', { kind: 'people-digest' })
+    expect(peekPendingOpenPerson()).toEqual({ action: 'home' })
+
+    expect(seen).toHaveLength(3)
+    vi.unstubAllGlobals()
+    clearPendingOpenPerson()
   })
 })

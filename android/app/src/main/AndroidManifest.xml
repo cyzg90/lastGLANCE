@@ -36,6 +36,7 @@
                 <action android:name="app.lastglance.COMPLETE" />
                 <action android:name="app.lastglance.OPEN" />
                 <action android:name="app.lastglance.QUERY" />
+                <action android:name="app.lastglance.LOG_INTERACTION" />
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </activity>
@@ -52,6 +53,7 @@
                 <action android:name="app.lastglance.COMPLETE" />
                 <action android:name="app.lastglance.OPEN" />
                 <action android:name="app.lastglance.QUERY" />
+                <action android:name="app.lastglance.LOG_INTERACTION" />
             </intent-filter>
         </receiver>
 
@@ -110,6 +112,30 @@
         </receiver>
 
         <receiver
+            android:name=".glance.ReachOutWidgetReceiver"
+            android:label="@string/widget_label_reach_out"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/reach_out_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.ComingUpWidgetReceiver"
+            android:label="@string/widget_label_coming_up"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/coming_up_widget_info" />
+        </receiver>
+
+        <receiver
             android:name=".glance.AddChoreWidgetReceiver"
             android:label="@string/widget_label_add"
             android:exported="false">
@@ -160,4 +186,9 @@
     <!-- Exact alarms for Doze-proof overdue reminders (Android 12+). The plugin
          already declares POST_NOTIFICATIONS and RECEIVE_BOOT_COMPLETED. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- People: read-only address book access for importing and linking people
+         (ContactsPlugin). Requested only when the user taps Import or Link,
+         after the in-app disclosure, and only when the People contacts setting
+         is on. Needs a matching Play Data safety entry. -->
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
 </manifest>

@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE 热力图</string>
     <string name="widget_label_chore">lastGLANCE 事项</string>
     <string name="widget_label_soon">lastGLANCE 近期</string>
+    <string name="widget_label_reach_out">lastGLANCE 该联系了</string>
+    <string name="widget_label_coming_up">lastGLANCE 即将到来</string>
+    <string name="reach_out_widget_description">该联系的人。轻点某人即可记录联系。</string>
+    <string name="coming_up_widget_description">接下来的生日和纪念日。</string>
     <string name="widget_label_add">lastGLANCE 添加事项</string>
     <string name="add_chore_widget_description">一键添加新事项。</string>
     <string name="widget_add_chore">添加事项</string>

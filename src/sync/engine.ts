@@ -1,3 +1,4 @@
+import { buildPeoplePayload } from '@/people/sync/fileEngine'
 import {
   createSyncEngine,
   mergeArrayById,
@@ -453,6 +454,10 @@ export function setRemoteBackupsEnabled(enabled: boolean): void {
 
 const _backupInProgress = new WeakSet<SyncEngine>()
 
+export async function buildFullBackupPayload() {
+  return { ...await buildPayload(), peopleData: await buildPeoplePayload() }
+}
+
 export async function runAutoBackups(engine: SyncEngine): Promise<void> {
   if (!getRemoteBackupsEnabled()) return
   if (_backupInProgress.has(engine)) return
@@ -554,7 +559,7 @@ export function createEngine(proxyUrl: string | undefined, callbacks: EngineCall
         ? managedWebdavFetch
         : webdavDirect ? browserDirectFetch : undefined,
     buildPayload,
-    buildBackupPayload: buildPayload,
+    buildBackupPayload: buildFullBackupPayload,
     applyPayload,
     mergePayloads,
     onFirstSyncReload: () => {

@@ -1,10 +1,10 @@
 import SwiftUI
 import WidgetKit
 
-// Entry point for the WidgetKit extension: the same three widget surfaces the
-// Android glance/ package ships — heatmap, soon/overdue list, and the
-// configurable single-chore tile — all rendering from the one App-Group
-// snapshot.
+// Entry point for the WidgetKit extension: the widget surfaces the Android
+// glance/ package ships (heatmap, soon/overdue list, the configurable
+// single-chore tile, and the People Reach out and Coming up lists) plus the
+// Lock Screen ones, all rendering from the one App-Group snapshot.
 @main
 struct GlanceWidgetsBundle: WidgetBundle {
     var body: some Widget {
@@ -13,6 +13,9 @@ struct GlanceWidgetsBundle: WidgetBundle {
         SingleChoreWidget()
         AddChoreWidget()
         AccessoryStatusWidget()
+        ReachOutWidget()
+        ComingUpWidget()
+        NextDateAccessoryWidget()
         // Control Center controls are iOS 18+; the builder's
         // limited-availability support keeps the rest of the bundle on the
         // extension's 17.0 floor. If this if-availability form fails to

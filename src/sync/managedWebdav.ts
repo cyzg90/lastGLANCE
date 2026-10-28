@@ -46,6 +46,7 @@ export function managedWebdavEndpoint(targetUrl: string): string {
     case '/GLANCE': resource = 'glance-directory'; break
     case '/GLANCE/lastglance': resource = 'sync-directory'; break
     case '/GLANCE/lastglance/lastglance-sync.json': resource = 'sync'; break
+    case '/GLANCE/lastglance/lastglance-people.json': resource = 'people'; break
     case '/GLANCE/lastglance/backups': resource = 'backups-directory'; break
     case '/GLANCE/users': resource = 'users-directory'; break
     case '/GLANCE/users/glance-users.json': resource = 'users'; break

@@ -11,7 +11,7 @@ import WidgetKit
 // The JS interface is fixed by src/native/widgetBridge.ts and must stay
 // byte-identical to the Android plugin's, so widgetBridge.ts needs no per-platform
 // branching: updateSnapshot / drainPendingCompletions / consumeDeepLink /
-// consumeSharedChore.
+// consumeSharedChore / systemWeekStart.
 //
 // Registration: app-local plugins are NOT auto-discovered on iOS (Capacitor 5+
 // removed runtime scanning); this plugin is registered explicitly in
@@ -27,7 +27,16 @@ public class WidgetBridgePlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "drainPendingCompletions", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "consumeDeepLink", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "consumeSharedChore", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "systemWeekStart", returnType: CAPPluginReturnPromise),
     ]
+
+    // The system's first day of the week, 0 = Sunday … 6 = Saturday, for
+    // Automatic week start in the web UI (issue #362). Calendar.current carries
+    // the device region and any first-day override from Settings, which the
+    // WebView's language tag may not.
+    @objc func systemWeekStart(_ call: CAPPluginCall) {
+        call.resolve(["weekStart": (Calendar.current.firstWeekday - 1 + 7) % 7])
+    }
 
     @objc func updateSnapshot(_ call: CAPPluginCall) {
         guard let json = call.getString("json") else {

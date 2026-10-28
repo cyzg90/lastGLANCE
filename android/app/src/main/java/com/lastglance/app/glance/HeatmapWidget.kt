@@ -37,6 +37,7 @@ import androidx.glance.text.TextStyle
 import androidx.glance.unit.ColorProvider
 import com.lastglance.app.R
 import com.lastglance.app.SharedDataStore
+import com.lastglance.app.SystemWeekStart
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -145,6 +146,19 @@ private fun isNight(context: Context): Boolean {
     return mode == Configuration.UI_MODE_NIGHT_YES
 }
 
+// The grid's first row (0 = Sunday … 6 = Saturday): the app's own week start
+// from the snapshot, so the widget lines up with the in-app heatmap; the
+// system's when an older snapshot lacks it (issue #362).
+private fun readWeekStart(context: Context): Int {
+    val raw = SharedDataStore.readSnapshot(context)
+    val fromSnapshot = try {
+        raw?.let { JSONObject(it).optInt("weekStart", -1) } ?: -1
+    } catch (e: Exception) {
+        -1
+    }
+    return if (fromSnapshot in 0..6) fromSnapshot else SystemWeekStart.get()
+}
+
 private fun readHeatmap(context: Context): JSONObject? {
     val raw = SharedDataStore.readSnapshot(context) ?: return null
     return try {
@@ -182,8 +196,10 @@ private fun renderHeatmap(context: Context): Bitmap {
     cal.set(Calendar.MINUTE, 0)
     cal.set(Calendar.SECOND, 0)
     cal.set(Calendar.MILLISECOND, 0)
-    // Back to this week's Sunday, then to the oldest visible week.
-    cal.add(Calendar.DAY_OF_YEAR, -(cal.get(Calendar.DAY_OF_WEEK) - 1))
+    // Back to the start of this week, then to the oldest visible week.
+    // Calendar.DAY_OF_WEEK is 1 = Sunday … 7 = Saturday.
+    val weekStart = readWeekStart(context)
+    cal.add(Calendar.DAY_OF_YEAR, -((cal.get(Calendar.DAY_OF_WEEK) - 1 - weekStart + 7) % 7))
     cal.add(Calendar.DAY_OF_YEAR, -(WEEKS - 1) * 7)
 
     val radius = cell * 0.22f

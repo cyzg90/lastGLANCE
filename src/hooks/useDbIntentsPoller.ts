@@ -17,6 +17,7 @@ import { loadVaultIntentsRootKey } from '@/intents/vaultIntentsKeyStore'
 import { routeIncomingVaultRow, KeyNotAvailableError } from '@/intents/routeIncoming'
 import { ensureVaultIntentsKey, setupVaultIntentsEncryption } from '@/intents/setupVaultIntentsEncryption'
 import { processNotifyEnvelope } from '@/intents/processNotifyEnvelope'
+import { peopleNotifyDeps } from '@/people/notifyDeps'
 
 // Drives the GLANCEvault DB intents receive poll on the SAME cadence the WebDAV
 // intents poller uses: once on startup, again whenever the tab becomes visible
@@ -68,6 +69,7 @@ export function useDbIntentsPoller(onNewCompletion?: () => void): void {
         logCompletion,
         addActivityEntry,
         isAlreadyLogged: (syncId) => db.completionEvents.where('sync_id').equals(syncId).count().then(n => n > 0),
+        people: peopleNotifyDeps,
         dispatchChoreLogged: () => window.dispatchEvent(new CustomEvent('lg:chore-logged')),
         onNewCompletion: () => onNewCompletionRef.current?.(),
       })

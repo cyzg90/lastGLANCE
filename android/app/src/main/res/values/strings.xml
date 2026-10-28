@@ -16,6 +16,10 @@
     <string name="widget_label_activity">lastGLANCE Heatmap</string>
     <string name="widget_label_chore">lastGLANCE Chore</string>
     <string name="widget_label_soon">lastGLANCE Soon</string>
+    <string name="widget_label_reach_out">lastGLANCE Reach out</string>
+    <string name="widget_label_coming_up">lastGLANCE Coming up</string>
+    <string name="reach_out_widget_description">Who you\'re due to get in touch with. Tap someone to log a contact.</string>
+    <string name="coming_up_widget_description">The next birthdays and dates.</string>
     <string name="widget_label_add">lastGLANCE Add</string>
     <string name="add_chore_widget_description">One tap to add a new chore.</string>
     <string name="widget_add_chore">Add chore</string>

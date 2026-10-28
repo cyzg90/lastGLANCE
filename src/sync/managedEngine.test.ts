@@ -1,3 +1,4 @@
+import { createPeopleFileEngine } from '@/people/sync/fileEngine'
 import 'fake-indexeddb/auto'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createEngine } from './engine'
@@ -34,6 +35,12 @@ describe('managed engine after a sync library upgrade', () => {
     expect(fetchMock).toHaveBeenCalledWith('/lastglance/api/internal-webdav/sync', {
       method: 'GET', headers: {},
     })
-    expect(fetchMock).toHaveBeenCalledTimes(1)
+    const people = createPeopleFileEngine(undefined, engine)
+    people.setConfig(engine.getConfig())
+    await expect(people.providers.webdav.download(people.getConfig()!)).resolves.toBeNull()
+    expect(fetchMock).toHaveBeenLastCalledWith('/lastglance/api/internal-webdav/people', {
+      method: 'GET', headers: {},
+    })
+    expect(fetchMock).toHaveBeenCalledTimes(2)
   })
 })

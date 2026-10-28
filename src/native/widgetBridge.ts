@@ -19,6 +19,10 @@ export interface WidgetBridgePlugin {
   consumeDeepLink(): Promise<{ deepLink: string | null }>
   // Return and clear text shared into the app to seed a new chore, or null.
   consumeSharedChore(): Promise<{ text: string | null }>
+  // The operating system's first day of the week, 0 = Sunday … 6 = Saturday.
+  // It reflects the device region and any first-day override the user set,
+  // which the WebView's language tag may not carry (issue #362).
+  systemWeekStart(): Promise<{ weekStart: number }>
 }
 
 const WidgetBridge = registerPlugin<WidgetBridgePlugin>('WidgetBridge')
@@ -65,6 +69,17 @@ export async function consumeSharedChore(): Promise<string | null> {
   try {
     const res = await WidgetBridge.consumeSharedChore()
     return res?.text ?? null
+  } catch {
+    return null
+  }
+}
+
+// Null on web, or from a native shell that predates the method.
+export async function getSystemWeekStart(): Promise<number | null> {
+  if (!isNativeShell()) return null
+  try {
+    const res = await WidgetBridge.systemWeekStart()
+    return typeof res?.weekStart === 'number' ? res.weekStart : null
   } catch {
     return null
   }

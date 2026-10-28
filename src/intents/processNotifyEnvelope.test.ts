@@ -111,3 +111,42 @@ describe('processNotifyEnvelope – syncId wiring', () => {
     expect(logCompletion).not.toHaveBeenCalled()
   })
 })
+
+describe('processNotifyEnvelope – a People task done in dayGLANCE', () => {
+  const PERSON = 'dddddddd-dddd-dddd-dddd-dddddddddddd'
+
+  function people(over: Record<string, unknown> = {}) {
+    return {
+      getPerson: vi.fn(async (id: string) => (id === PERSON ? { name: 'Sam', channel: 'call' as const } : undefined)),
+      interactionExists: vi.fn(async () => false),
+      logContact: vi.fn(async () => {}),
+      ...over,
+    }
+  }
+
+  it('logs an outbound contact keyed to the notify', async () => {
+    const p = people()
+    await processNotifyEnvelope(makeEnvelope({ source_entity_id: PERSON }), {
+      getChore: vi.fn(async () => undefined), logCompletion: vi.fn(), addActivityEntry: vi.fn(), people: p,
+    })
+    expect(p.logContact).toHaveBeenCalledWith({
+      personSyncId: PERSON, channel: 'call', occurredAt: COMPLETED_AT, syncId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+    })
+  })
+
+  it('logs once when the notify comes again', async () => {
+    const p = people({ interactionExists: vi.fn(async () => true) })
+    await processNotifyEnvelope(makeEnvelope({ source_entity_id: PERSON }), {
+      getChore: vi.fn(async () => undefined), logCompletion: vi.fn(), addActivityEntry: vi.fn(), people: p,
+    })
+    expect(p.logContact).not.toHaveBeenCalled()
+  })
+
+  it('ignores an id that is neither a chore nor a person (a date item)', async () => {
+    const p = people()
+    await processNotifyEnvelope(makeEnvelope({ source_entity_id: 'date-1:2026' }), {
+      getChore: vi.fn(async () => undefined), logCompletion: vi.fn(), addActivityEntry: vi.fn(), people: p,
+    })
+    expect(p.logContact).not.toHaveBeenCalled()
+  })
+})

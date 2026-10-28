@@ -1,4 +1,4 @@
-import { ACTIONS, SOURCE_APPS, eventId } from '@glance-apps/intents'
+import { ACTIONS, SOURCE_APPS, eventId, type CreatePayload } from '@glance-apps/intents'
 import dayjs from 'dayjs'
 import type { ChoreWithLastCompletion } from '@/types'
 import { getIntentsConfig, isIntentsConfigured, addActivityEntry } from './config'
@@ -16,20 +16,27 @@ import { flushIntents } from './flushIntents'
 // encryption happens at flush in the deliverer.
 export function buildCreateIntent(chore: ChoreWithLastCompletion): OutboxIntent {
   const assignedUserIds = chore.assigned_user_sync_ids ?? []
+  return buildCreateIntentFor({
+    title: chore.name,
+    due: dayjs().format('YYYY-MM-DD'),
+    all_day: true,
+    source_entity_id: chore.sync_id,
+    ...(assignedUserIds.length > 0 && { assigned_user_ids: assignedUserIds }),
+  })
+}
+
+// The fields of a CREATE payload a caller chooses; source_app is always
+// lastGLANCE. People sends its tasks, dates and timeline entries through this.
+export type CreateFields = Omit<CreatePayload, 'source_app'>
+
+export function buildCreateIntentFor(fields: CreateFields): OutboxIntent {
   const emittedAt = new Date()
   return {
     event_id: eventId(emittedAt),
     action: ACTIONS.CREATE,
     emitted_by: SOURCE_APPS.LASTGLANCE,
     emitted_at: emittedAt.toISOString(),
-    payload: {
-      title: chore.name,
-      due: dayjs().format('YYYY-MM-DD'),
-      all_day: true,
-      source_app: SOURCE_APPS.LASTGLANCE,
-      source_entity_id: chore.sync_id,
-      ...(assignedUserIds.length > 0 && { assigned_user_ids: assignedUserIds }),
-    },
+    payload: { ...fields, source_app: SOURCE_APPS.LASTGLANCE },
   }
 }
 
@@ -78,10 +85,23 @@ export async function emitCreateIntent(
   chore: ChoreWithLastCompletion,
   deps: EmitDeps = defaultEmitDeps,
 ): Promise<boolean> {
+  return emitIntent(buildCreateIntent(chore), `Queued "${chore.name}" for dayGLANCE`, deps)
+}
+
+// The same for any CREATE payload (People). `activity` is the Activity-Log
+// line, naming the app the item is for.
+export async function emitCreate(
+  fields: CreateFields,
+  activity: string,
+  deps: EmitDeps = defaultEmitDeps,
+): Promise<boolean> {
+  return emitIntent(buildCreateIntentFor(fields), activity, deps)
+}
+
+async function emitIntent(intent: OutboxIntent, activity: string, deps: EmitDeps): Promise<boolean> {
   const targets = deps.targets()
   if (targets.length === 0) return false
 
-  const intent = buildCreateIntent(chore)
   // Durable before returning: a resolved enqueue means "queued, will be delivered".
   await deps.enqueue(intent, targets)
   // Carry the event_id + direction + delivery state so a later flush can match
@@ -92,7 +112,7 @@ export async function emitCreateIntent(
     direction: 'out',
     eventId: intent.event_id,
     delivery: 'queued',
-    message: `Queued "${chore.name}" for dayGLANCE`,
+    message: activity,
   })
 
   // Trigger delivery now; the outbox's in-flight lock guards overlapping flushes.

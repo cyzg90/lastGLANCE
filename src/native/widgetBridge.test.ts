@@ -10,6 +10,7 @@ const { state, plugin } = vi.hoisted(() => ({
     drainPendingCompletions: vi.fn(async () => ({ completions: '[]' })),
     consumeDeepLink: vi.fn(async () => ({ deepLink: null as string | null })),
     consumeSharedChore: vi.fn(async () => ({ text: null as string | null })),
+    systemWeekStart: vi.fn(async () => ({ weekStart: 1 })),
   },
 }))
 
@@ -23,6 +24,7 @@ import {
   drainPendingCompletions,
   consumeDeepLink,
   consumeSharedChore,
+  getSystemWeekStart,
 } from './widgetBridge'
 
 beforeEach(() => {
@@ -91,5 +93,23 @@ describe('widgetBridge result handling', () => {
   it('swallows a rejecting plugin call', async () => {
     plugin.updateSnapshot.mockRejectedValueOnce(new Error('app group unavailable') as never)
     await expect(pushWidgetSnapshot('{}')).resolves.toBeUndefined()
+  })
+})
+
+describe('getSystemWeekStart', () => {
+  it('reads the system week start from either native shell', async () => {
+    for (const p of ['android', 'ios']) {
+      state.platform = p
+      expect(await getSystemWeekStart()).toBe(1)
+    }
+  })
+
+  it('is null on web, and from a shell that predates the method', async () => {
+    expect(await getSystemWeekStart()).toBeNull()
+    expect(plugin.systemWeekStart).not.toHaveBeenCalled()
+
+    state.platform = 'android'
+    plugin.systemWeekStart.mockRejectedValueOnce(new Error('not implemented'))
+    expect(await getSystemWeekStart()).toBeNull()
   })
 })

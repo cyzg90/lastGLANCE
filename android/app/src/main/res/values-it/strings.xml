@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE Heatmap</string>
     <string name="widget_label_chore">lastGLANCE Attività</string>
     <string name="widget_label_soon">lastGLANCE Presto</string>
+    <string name="widget_label_reach_out">lastGLANCE Fatti sentire</string>
+    <string name="widget_label_coming_up">lastGLANCE In arrivo</string>
+    <string name="reach_out_widget_description">Chi è ora di sentire. Tocca qualcuno per registrare un contatto.</string>
+    <string name="coming_up_widget_description">I prossimi compleanni e date.</string>
     <string name="widget_label_add">lastGLANCE Aggiungi</string>
     <string name="add_chore_widget_description">Un tocco per aggiungere una nuova attività.</string>
     <string name="widget_add_chore">Aggiungi attività</string>

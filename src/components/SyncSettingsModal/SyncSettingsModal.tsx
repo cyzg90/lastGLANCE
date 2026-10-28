@@ -20,6 +20,7 @@ import { ManagedSyncStatus } from './ManagedSyncStatus'
 import { DirectAccessSection } from './DirectAccessSection'
 
 interface Props {
+  peopleEngine?: SyncEngine | null
   engine: SyncEngine | null
   dbEngine: DbSyncEngine | null
   // Latest error from each transport's onError callback. Both engines swallow
@@ -59,6 +60,7 @@ export function SyncSettingsModal(props: Props) {
     return (
       <ManagedSyncStatus
         engine={props.engine}
+        peopleEngine={props.peopleEngine}
         syncStatus={props.syncStatus}
         syncError={props.syncError}
         syncErrorCode={props.syncErrorCode}

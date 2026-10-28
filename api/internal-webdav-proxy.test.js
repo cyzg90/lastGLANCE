@@ -7,6 +7,7 @@ describe('resolveManagedTarget', () => {
   it.each([
     ['/glance-directory', 'http://webdav:6065/GLANCE/'],
     ['/sync-directory', 'http://webdav:6065/GLANCE/lastglance/'],
+    ['/people', 'http://webdav:6065/GLANCE/lastglance/lastglance-people.json'],
     ['/sync', 'http://webdav:6065/GLANCE/lastglance/lastglance-sync.json'],
     ['/backups-directory', 'http://webdav:6065/GLANCE/lastglance/backups/'],
     ['/users-directory', 'http://webdav:6065/GLANCE/users/'],

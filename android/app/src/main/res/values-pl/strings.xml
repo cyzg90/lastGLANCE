@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE Aktywność</string>
     <string name="widget_label_chore">lastGLANCE Obowiązek</string>
     <string name="widget_label_soon">lastGLANCE Wkrótce</string>
+    <string name="widget_label_reach_out">lastGLANCE Odezwij się</string>
+    <string name="widget_label_coming_up">lastGLANCE Wkrótce</string>
+    <string name="reach_out_widget_description">Do kogo warto się odezwać. Dotknij osoby, by zapisać kontakt.</string>
+    <string name="coming_up_widget_description">Najbliższe urodziny i daty.</string>
     <string name="widget_label_add">lastGLANCE Dodaj</string>
     <string name="add_chore_widget_description">Jedno dotknięcie, aby dodać nowy obowiązek.</string>
     <string name="widget_add_chore">Dodaj obowiązek</string>

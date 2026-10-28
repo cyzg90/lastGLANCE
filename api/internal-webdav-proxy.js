@@ -11,6 +11,7 @@ const BACKUP_FILE_METHODS = new Set([...FILE_METHODS, 'DELETE'])
 const FIXED_RESOURCES = new Map([
   ['/glance-directory', { upstreamPath: '/GLANCE/', directory: true, methods: DIRECTORY_METHODS }],
   ['/sync-directory', { upstreamPath: '/GLANCE/lastglance/', directory: true, methods: DIRECTORY_METHODS }],
+  ['/people', { upstreamPath: '/GLANCE/lastglance/lastglance-people.json', directory: false, methods: FILE_METHODS }],
   ['/sync', { upstreamPath: '/GLANCE/lastglance/lastglance-sync.json', directory: false, methods: FILE_METHODS }],
   ['/backups-directory', { upstreamPath: '/GLANCE/lastglance/backups/', directory: true, methods: DIRECTORY_METHODS }],
   ['/users-directory', { upstreamPath: '/GLANCE/users/', directory: true, methods: DIRECTORY_METHODS }],

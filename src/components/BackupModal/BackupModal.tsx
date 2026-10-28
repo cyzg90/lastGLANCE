@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react'
 import { Download, Upload, Cloud, X, Loader, Trash2, Archive } from 'lucide-react'
 import { exportBackup, restoreFromBackup, hasSeedData, seedChoresUsed, clearSeedData, type BackupPayload } from '@/db/queries'
-import { buildPayload } from '@/sync/engine'
+import { buildFullBackupPayload } from '@/sync/engine'
 import { saveJsonFile, stashJsonFile } from '@/utils/exportFile'
 import { formatDateTime } from '@/utils/datetime'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
@@ -139,7 +139,7 @@ export function BackupPanel({ engine, onImported, onDone }: PanelProps) {
     if (engine && syncConfig) {
       try {
         const provider = engine.autoBackupProviders[syncConfig.provider as string] ?? engine.autoBackupProviders.webdav
-        await provider.uploadBackup(syncConfig as Record<string, unknown>, await buildPayload())
+        await provider.uploadBackup(syncConfig as Record<string, unknown>, await buildFullBackupPayload())
       } catch { /* best-effort remote parachute */ }
     }
   }
@@ -223,6 +223,11 @@ export function BackupPanel({ engine, onImported, onDone }: PanelProps) {
         <div className="space-y-4">
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">{t('backup.areYouSure')}</p>
           <p className="text-sm text-slate-600 dark:text-slate-300">{t('backup.areYouSureBody')}</p>
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {(pendingRaw as BackupPayload | null)?.peopleData
+              ? t('backup.peopleIncluded', { count: (pendingRaw as BackupPayload).peopleData!.people.length })
+              : t('backup.peoplePreserved')}
+          </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1.5">
             <Download size={13} className="text-green-400 shrink-0 mt-0.5" />
             {t('backup.snapshotNote')}

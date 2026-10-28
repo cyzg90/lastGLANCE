@@ -108,6 +108,81 @@ function hourCycleFor(pref: TimeFormat): Intl.DateTimeFormatOptions['hourCycle']
   return pref === '24' ? 'h23' : pref === '12' ? 'h12' : undefined
 }
 
+/**
+ * Where the week starts. 'auto' follows the device (see autoWeekStart); the
+ * others pin it (issue #362: weeks fell back to Sunday for an English UI in a
+ * Monday-first country whenever the platform did not report a region).
+ * Device-local, like the clock: a display preference, not data.
+ */
+export type WeekStartPref = 'auto' | 'mon' | 'sun' | 'sat'
+
+const WEEK_START_KEY = 'lg-week-start'
+const PINNED_WEEK_START: Record<Exclude<WeekStartPref, 'auto'>, number> = { sun: 0, mon: 1, sat: 6 }
+let weekStartPref: WeekStartPref = 'auto'
+
+// The first day of the week as the operating system reports it (0 = Sunday),
+// set by the native shell at startup. It knows the device region and, on
+// recent Android and iOS, the user's own first-day override, neither of which
+// the WebView's language tag is guaranteed to carry. Null on web.
+let systemWeekStart: number | null = null
+
+/** Dispatched on window whenever the effective week start may have moved. */
+export const WEEK_START_CHANGED_EVENT = 'lg:week-start-changed'
+
+function isWeekStartPref(v: unknown): v is WeekStartPref {
+  return v === 'auto' || v === 'mon' || v === 'sun' || v === 'sat'
+}
+
+/** Seed the week-start preference from storage. Called once at startup. */
+export function loadWeekStart(): void {
+  try {
+    const saved = localStorage.getItem(WEEK_START_KEY)
+    if (isWeekStartPref(saved)) weekStartPref = saved
+  } catch {
+    // Storage blocked: stay on Automatic.
+  }
+}
+
+export function getWeekStartPref(): WeekStartPref {
+  return weekStartPref
+}
+
+/** Switch the week start. Synchronous, like setTimeFormat. */
+export function setWeekStartPref(value: WeekStartPref): void {
+  weekStartPref = value
+  try {
+    localStorage.setItem(WEEK_START_KEY, value)
+  } catch {
+    // Not persisted, but still applied for this session.
+  }
+  reapplyWeekStart()
+}
+
+/**
+ * Record the operating system's first day of the week (0 = Sunday … 6 =
+ * Saturday), or null when the shell cannot say. Anything else is ignored.
+ */
+export function setSystemWeekStart(value: number | null): void {
+  const next = typeof value === 'number' && Number.isInteger(value) && value >= 0 && value <= 6 ? value : null
+  if (next === systemWeekStart) return
+  systemWeekStart = next
+  reapplyWeekStart()
+}
+
+function reapplyWeekStart(): void {
+  dayjs.updateLocale(activeLocale, { weekStart: resolveWeekStart(activeLocale) })
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') {
+    window.dispatchEvent(new Event(WEEK_START_CHANGED_EVENT))
+  }
+}
+
+// The pinned choice, else the OS, else the WebView's region, else the
+// language's own default.
+function resolveWeekStart(locale: string): number {
+  if (weekStartPref !== 'auto') return PINNED_WEEK_START[weekStartPref]
+  return systemWeekStart ?? regionWeekStart() ?? localeDefaultWeekStart(locale)
+}
+
 export function getActiveLocale(): string {
   return activeLocale
 }
@@ -130,11 +205,11 @@ export function applyDateLocale(lng: string | undefined): void {
   dayjs.locale(activeLocale)
   // Read the language's own week start before overwriting it, so the first
   // switch into a locale always sees the pristine value.
-  const languageDefault = localeDefaultWeekStart(activeLocale)
+  localeDefaultWeekStart(activeLocale)
   // Written every time, and always to an explicit value: updateLocale mutates
   // the shared locale object permanently, so a later switch that fell through
   // to "leave it alone" would inherit whatever the previous one wrote.
-  dayjs.updateLocale(activeLocale, { weekStart: regionWeekStart() ?? languageDefault })
+  dayjs.updateLocale(activeLocale, { weekStart: resolveWeekStart(activeLocale) })
   formatterCache.clear()
 }
 
@@ -301,6 +376,12 @@ export function weekdayMinLabels(): string[] {
   const sundayFirst = dayjs.weekdaysMin()
   const start = firstDayOfWeek()
   return Array.from({ length: 7 }, (_, i) => sundayFirst[(start + i) % 7])
+}
+
+/** Short weekday name in the active locale, by day number (0 = Sunday): "Mon" · "lun." */
+export function formatWeekdayShort(weekday: number): string {
+  // A known Sunday, advanced to the weekday we want.
+  return formatter({ weekday: 'short' }).format(dayjs('2024-01-07').add(weekday, 'day').toDate())
 }
 
 /**

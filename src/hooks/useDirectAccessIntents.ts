@@ -11,6 +11,7 @@ import { getSyncPassphrase } from '@glance-apps/sync'
 import { directAccessEncryptsWrites } from '@/sync/directAccess'
 import { directAccessTransport, type DirectAccessTransport } from '@/sync/directAccess'
 import { getDeviceId } from '@/sync/deviceId'
+import { peopleNotifyDeps } from '@/people/notifyDeps'
 
 // Polls the Direct Access event set (intents/eventSet.ts) for intents other
 // apps left in the folder, on the transport's own cadence (it is a local
@@ -43,6 +44,7 @@ export function useDirectAccessIntents(onNewCompletion?: () => void, { transport
       logCompletion,
       addActivityEntry,
       isAlreadyLogged: (syncId) => db.completionEvents.where('sync_id').equals(syncId).count().then((n) => n > 0),
+      people: peopleNotifyDeps,
       dispatchChoreLogged: () => window.dispatchEvent(new CustomEvent('lg:chore-logged')),
       onNewCompletion: () => onNewCompletionRef.current?.(),
     })

@@ -1,3 +1,7 @@
+import { buildPeoplePayload } from '@/people/sync/fileEngine'
+import { PEOPLE_TABLES } from '@/people/sync/apply'
+import type { PeoplePayload } from '@/people/sync/types'
+import { validatePeopleBackup, restorePeopleBackup, notifyPeopleRestored } from '@/people/backup'
 import { db, SEED_CAT_SYNC_IDS, SEED_CHORE_SYNC_IDS } from './client'
 import type { Category, Chore, ChoreWithLastCompletion, CompletionEvent, User } from '@/types'
 import { markDirty, markDeleted } from '@/sync/dirtyTracker'
@@ -508,6 +512,7 @@ const BACKUP_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f
 export interface BackupPayload {
   version: number
   exportedAt: string
+  peopleData?: PeoplePayload
   categories: Category[]
   chores: Chore[]
   completionEvents: CompletionEvent[]
@@ -522,10 +527,10 @@ export async function exportBackup(): Promise<BackupPayload> {
     db.completionEvents.toArray(),
     db.users.toArray(),
   ])
-  // version 2 adds users + settings so a file export is a complete snapshot and a
-  // restore from it won't drop the roster.
+  // Version 3 includes People; older backups leave People untouched on restore.
   return {
-    version: 2,
+    version: 3,
+    peopleData: await buildPeoplePayload(),
     exportedAt: new Date().toISOString(),
     categories,
     chores,
@@ -704,15 +709,18 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
   const now = new Date().toISOString()
   const b = normalizeBackup(raw, now)
   validateNormalizedBackup(b)
+  const peopleData = (raw as { peopleData?: unknown } | null)?.peopleData
+  if (peopleData !== undefined) validatePeopleBackup(peopleData)
 
-  if (b.categories.length === 0 && b.chores.length === 0 && b.completionEvents.length === 0 && b.users.length === 0) {
+  if (b.categories.length === 0 && b.chores.length === 0 && b.completionEvents.length === 0 && b.users.length === 0 && !peopleData?.people.length && !peopleData?.interactions.length && !peopleData?.personDates.length && !peopleData?.personCircles.length) {
     throw new Error('empty backup')
   }
 
+  let peopleSyncIds: string[] = []
   let restoredSyncIds: string[] = []
   let tombstonedSyncIds: string[] = []
 
-  await db.transaction('rw', [db.categories, db.chores, db.completionEvents, db.tombstones, db.users], async () => {
+  await db.transaction('rw', [db.categories, db.chores, db.completionEvents, db.tombstones, db.users, ...PEOPLE_TABLES(), db.contactLinks], async () => {
     // Snapshot what exists so we can tombstone whatever the backup omits.
     const [curCats, curChores, curEvts, curUsers] = await Promise.all([
       db.categories.toArray(), db.chores.toArray(), db.completionEvents.toArray(), db.users.toArray(),
@@ -797,7 +805,10 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
 
     restoredSyncIds = [...restored].filter(sid => BACKUP_UUID_RE.test(sid))
     tombstonedSyncIds = removed
+    if (peopleData !== undefined) peopleSyncIds = await restorePeopleBackup(peopleData, now)
   })
+
+  if (peopleData !== undefined) notifyPeopleRestored(peopleSyncIds)
 
   if (b.multiUserEnabled !== undefined) setMultiUserEnabled(b.multiUserEnabled)
 

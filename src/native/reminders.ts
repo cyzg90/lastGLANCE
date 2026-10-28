@@ -13,7 +13,13 @@ import { emitCreateIntent } from '@/intents/emitter'
 import { anyIntentsTransportOn, intentsTransportsOn } from '@/intents/intentsAvailable'
 import { ownedByMe } from '@/utils/choreFilter'
 import { isInSeasonalWindow } from '@/utils/seasonal'
-import { getMeUserSyncId } from '@/multiuser/settings'
+import { getMeUserSyncId, getMultiUserEnabled } from '@/multiuser/settings'
+import { getAllPersonDates, getPeople } from '@/people/queries'
+import { visibleToMe } from '@/people/home'
+import { buildPeopleReminders, NEAR_DATE_DAYS, type PeopleReminder } from '@/people/reminders'
+import { getDateReminderMinutes, getDigestMinutes, isDateRemindersOn } from '@/people/settings'
+import { getActiveLocale } from '@/utils/datetime'
+import { OPEN_PERSON_PENDING_EVENT, setPendingOpenPerson } from './pendingOpenPerson'
 import type { ChoreWithLastCompletion } from '@/types'
 import dayjs from 'dayjs'
 
@@ -35,6 +41,9 @@ import dayjs from 'dayjs'
 // top of it.
 
 const CHANNEL_ID = 'overdue'
+// People reminders (dates and the daily digest) get their own channel, so
+// either kind can be silenced in system settings without the other.
+const PEOPLE_CHANNEL_ID = 'people'
 const EXACT_PROMPTED_KEY = 'lg_exact_alarm_prompted'
 // Per-build token reminders were last scheduled under. See the force-reschedule
 // note in syncReminders for why every new build must re-bake each pending alarm.
@@ -48,11 +57,14 @@ const BUILD_TOKEN_KEY = 'lg_reminders_build_token'
 // time via actionTypeId, and refreshes whenever syncReminders re-runs.
 const ACTION_TYPE = 'OVERDUE'
 const ACTION_TYPE_DG = 'OVERDUE_DG'
+// A date notification offers Log and Open. The digest has no buttons; its tap
+// opens People.
+const ACTION_TYPE_PERSON_DATE = 'PERSON_DATE'
 
 // iOS keeps at most 64 pending local notifications per app and silently discards
 // the rest — no error, the reminder simply never arrives. Our model is one
-// single-shot notification per eligible chore, so a heavy user with a lot of
-// cadenced chores can plausibly reach that, unlike on Android where there is no
+// single-shot notification per eligible chore, plus People dates and digests,
+// so a heavy user can plausibly reach that, unlike on Android where there is no
 // such limit. Cap below 64 rather than at it: the ceiling is per-app, not
 // per-feature, so leaving headroom keeps a future notification of any other kind
 // from being the one that gets dropped.
@@ -67,12 +79,36 @@ export function soonest<T extends { triggerAtMillis: number }>(items: T[], n: nu
   return [...items].sort((a, b) => a.triggerAtMillis - b.triggerAtMillis).slice(0, n)
 }
 
+// How chores and People share the iOS cap (docs: the People spec): dates in
+// the next two weeks first, then chores, then the digest, then dates further
+// out. Each tier keeps its soonest, and each later sync pulls the next ones in
+// as the near ones fire.
+export type ReminderTier = 'near-date' | 'chore' | 'digest' | 'far-date'
+const TIER_ORDER: ReminderTier[] = ['near-date', 'chore', 'digest', 'far-date']
+
+export function withinCap<T extends { triggerAtMillis: number; tier: ReminderTier }>(items: T[], n: number): T[] {
+  if (items.length <= n) return items
+  const out: T[] = []
+  for (const tier of TIER_ORDER) {
+    const room = n - out.length
+    if (room <= 0) break
+    out.push(...soonest(items.filter(i => i.tier === tier), room))
+  }
+  return out
+}
+
 interface ReminderDescriptor {
-  id: number // stable numeric id derived from choreSyncId
-  choreSyncId: string
+  id: number // stable numeric id derived from the chore's or date's sync_id
   title: string
   body: string
   triggerAtMillis: number
+  tier: ReminderTier
+  channelId: string
+  actionTypeId?: string
+  // Routing for handleNotificationAction. Chore reminders carry choreSyncId
+  // and no kind, as they always have, so ones scheduled by older builds
+  // still route.
+  extra: Record<string, unknown>
   dgEnabled: boolean // include the "Send to dayGLANCE" action button
 }
 
@@ -94,10 +130,10 @@ export function reminderIdFor(syncId: string): number {
 // notification BODIES re-bake through the body diff in syncReminders, which
 // useReminders triggers on the same event.
 let actionTypesReady = false
-let channelReady = false
+let channelsReady = false
 i18n.on('languageChanged', () => {
   actionTypesReady = false
-  channelReady = false
+  channelsReady = false
 })
 
 async function ensureActionTypes(): Promise<void> {
@@ -113,6 +149,15 @@ async function ensureActionTypes(): Promise<void> {
             { id: 'send_dg', title: i18n.t('notifications.sendToDayglance') },
           ],
         },
+        {
+          id: ACTION_TYPE_PERSON_DATE,
+          // Both open the app (iOS would otherwise run them in the
+          // background): logging needs the sheet, and Open shows the person.
+          actions: [
+            { id: 'log', title: i18n.t('people.row.log'), foreground: true },
+            { id: 'open', title: i18n.t('people.reminders.open'), foreground: true },
+          ],
+        },
       ],
     })
     actionTypesReady = true
@@ -124,8 +169,8 @@ async function ensureActionTypes(): Promise<void> {
 // Android-only: notification channels have no iOS equivalent, and the plugin's
 // createChannel is a no-op there. Guarded explicitly rather than left to fail
 // quietly, so the Android-only-ness is visible at the call site.
-async function ensureChannel(): Promise<void> {
-  if (channelReady || !isAndroid()) return
+async function ensureChannels(): Promise<void> {
+  if (channelsReady || !isAndroid()) return
   try {
     await LocalNotifications.createChannel({
       id: CHANNEL_ID,
@@ -134,7 +179,15 @@ async function ensureChannel(): Promise<void> {
       importance: 4, // HIGH — heads-up
       visibility: 1, // public
     })
-    channelReady = true
+    await LocalNotifications.createChannel({
+      id: PEOPLE_CHANNEL_ID,
+      name: i18n.t('people.reminders.channelName'),
+      description: i18n.t('people.reminders.channelDescription'),
+      importance: 4,
+      // Private: names show on the lock screen only once unlocked.
+      visibility: 0,
+    })
+    channelsReady = true
   } catch {
     // Channel creation is best-effort; scheduling still works on the default.
   }
@@ -189,17 +242,55 @@ async function buildReminders(dgEnabled: boolean): Promise<ReminderDescriptor[]>
 
       out.push({
         id: reminderIdFor(ch.sync_id),
-        choreSyncId: ch.sync_id,
         title: ch.name,
         // Baked in the language active at schedule time; a language switch
         // re-bakes it via the body diff in syncReminders (see useReminders).
         body: i18n.t('notifications.itsBeenDays', { count: ch.target_cadence_days }),
         triggerAtMillis,
+        tier: 'chore',
+        channelId: CHANNEL_ID,
+        actionTypeId: dgEnabled ? ACTION_TYPE_DG : ACTION_TYPE,
+        extra: { choreSyncId: ch.sync_id, deepLink: `lastglance://chore/${ch.sync_id}` },
         dgEnabled,
       })
     }
   }
   return out
+}
+
+export function peopleDescriptor(r: PeopleReminder, now: number = Date.now()): ReminderDescriptor {
+  const triggerAtMillis = r.at.valueOf()
+  const base = {
+    id: reminderIdFor(r.key),
+    title: r.title,
+    body: r.body,
+    triggerAtMillis,
+    channelId: PEOPLE_CHANNEL_ID,
+    dgEnabled: false,
+  }
+  if (r.kind === 'people-digest') {
+    return { ...base, tier: 'digest', extra: { kind: r.kind } }
+  }
+  const near = triggerAtMillis - now <= NEAR_DATE_DAYS * 24 * 60 * 60 * 1000
+  return {
+    ...base,
+    tier: near ? 'near-date' : 'far-date',
+    actionTypeId: ACTION_TYPE_PERSON_DATE,
+    extra: { kind: r.kind, personSyncId: r.personSyncId },
+  }
+}
+
+async function buildPeopleDescriptors(): Promise<ReminderDescriptor[]> {
+  const [people, dates] = await Promise.all([getPeople(), getAllPersonDates()])
+  const mine = visibleToMe(people, getMultiUserEnabled(), getMeUserSyncId())
+  const now = dayjs()
+  return buildPeopleReminders(i18n.t.bind(i18n), mine, dates, {
+    now,
+    datesOn: isDateRemindersOn(),
+    locale: getActiveLocale(),
+    dateMinutes: getDateReminderMinutes(),
+    digestMinutes: getDigestMinutes(),
+  }).map(r => peopleDescriptor(r, now.valueOf()))
 }
 
 // Diff-replace the scheduled alarm set: cancel only what's removed or changed,
@@ -213,16 +304,17 @@ export async function syncReminders(): Promise<void> {
       perm = await LocalNotifications.requestPermissions()
       if (perm.display !== 'granted') return
     }
-    await ensureChannel()
+    await ensureChannels()
     await ensureActionTypes()
 
     // "Configured" means ANY transport is enabled (WebDAV intents, the
     // GLANCEvault DB transport, the Direct Access event set), the same question
     // IntentsContext.isConfigured answers. Checking fewer hid the action.
     const dgEnabled = anyIntentsTransportOn(intentsTransportsOn())
-    const all = await buildReminders(dgEnabled)
+    const [chores, people] = await Promise.all([buildReminders(dgEnabled), buildPeopleDescriptors()])
+    const all = [...chores, ...people]
     // iOS-only cap. On Android the full set is scheduled; there is no limit.
-    const desired = isAndroid() ? all : soonest(all, IOS_PENDING_LIMIT)
+    const desired = isAndroid() ? all : withinCap(all, IOS_PENDING_LIMIT)
     if (desired.length > 0) await maybePromptExactAlarm()
 
     // Android bakes each scheduled notification — including its small-icon
@@ -255,6 +347,7 @@ export async function syncReminders(): Promise<void> {
       const extra = (p.extra ?? {}) as { triggerAtMillis?: number; dg?: boolean }
       return (
         extra.triggerAtMillis !== d.triggerAtMillis ||
+        p.title !== d.title ||
         p.body !== d.body ||
         (extra.dg ?? false) !== d.dgEnabled
       )
@@ -281,12 +374,11 @@ export async function syncReminders(): Promise<void> {
           id: d.id,
           title: d.title,
           body: d.body,
-          channelId: CHANNEL_ID,
-          actionTypeId: d.dgEnabled ? ACTION_TYPE_DG : ACTION_TYPE,
+          channelId: d.channelId,
+          actionTypeId: d.actionTypeId,
           schedule: { at: new Date(d.triggerAtMillis), allowWhileIdle: true },
           extra: {
-            choreSyncId: d.choreSyncId,
-            deepLink: `lastglance://chore/${d.choreSyncId}`,
+            ...d.extra,
             triggerAtMillis: d.triggerAtMillis,
             dg: d.dgEnabled,
           },
@@ -330,6 +422,11 @@ async function sendChoreToDayGlance(choreSyncId: string): Promise<void> {
 // platforms. 'tap' is the body press; 'mark_done' / 'send_dg' are the action
 // buttons.
 export function handleNotificationAction(actionId: string, extra: unknown): void {
+  const kind = (extra as { kind?: string } | null)?.kind
+  if (kind === 'person-date' || kind === 'people-digest') {
+    handlePeopleAction(actionId, extra as { kind: string; personSyncId?: string })
+    return
+  }
   const choreSyncId = (extra as { choreSyncId?: string } | null)?.choreSyncId
   if (!choreSyncId) return
   if (actionId === 'mark_done') {
@@ -345,4 +442,18 @@ export function handleNotificationAction(actionId: string, extra: unknown): void
   // cold-start ordering between the tap and the first data load doesn't matter.
   setPendingOpenChore(choreSyncId)
   window.dispatchEvent(new Event('lg:open-chore-pending'))
+}
+
+// People notifications: Log opens the quick-log sheet for the person, a date's
+// body tap or Open shows the person, and the digest opens People. Recorded as
+// a pending request for PeopleHome, which switches mode first (App) and takes
+// it once People has loaded.
+function handlePeopleAction(actionId: string, extra: { kind: string; personSyncId?: string }): void {
+  const personSyncId = extra.personSyncId
+  if (extra.kind === 'person-date' && personSyncId) {
+    setPendingOpenPerson({ action: actionId === 'log' ? 'log' : 'open', personSyncId })
+  } else {
+    setPendingOpenPerson({ action: 'home' })
+  }
+  window.dispatchEvent(new Event(OPEN_PERSON_PENDING_EVENT))
 }

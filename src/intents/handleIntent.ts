@@ -1,8 +1,8 @@
 // The pure, transport-agnostic intent handler.
 //
 // A single async function `handleIntent(action, payload, ctx)` that maps a SHORT
-// action constant (`create`/`complete`/`open`/`query`) + payload onto a chore
-// state change and returns a plain result object. It has NO Android knowledge:
+// action constant (`create`/`complete`/`open`/`query`, and People's
+// `log_interaction`) + payload onto a chore or People state change and returns a plain result object. It has NO Android knowledge:
 // the Android/Tasker bridge (useAndroidIntentBridge) is one caller, but the
 // handler could be driven by any transport. This mirrors dayGLANCE's
 // handleIntent (see docs/tasker-intents-architecture.md §3.1), adapted to
@@ -18,7 +18,10 @@
 
 import { ACTIONS, CreateSchema, CompleteSchema, OpenSchema } from '@glance-apps/intents'
 import { needsAttention, getFillRatio } from '@/utils/cadence'
-import { LG_QUERY_VARS } from './androidIntents'
+import { LG_QUERY_VARS, LOG_INTERACTION } from './androidIntents'
+import { matchPerson, parseLogInteraction } from '@/people/logInteractionIntent'
+import type { InteractionInput } from '@/people/queries'
+import type { Person } from '@/people/types'
 
 // The result object, serialized to JSON as the RESULT `result` extra. Plain keys
 // (success/chore_id/error/warning) parse naturally in a Tasker JSON structure;
@@ -65,6 +68,12 @@ export interface IntentContext {
   // Fired after a COMPLETE succeeds, so the caller can emit an outbound NOTIFY
   // broadcast and refresh derived UI.
   onChoreCompleted?: (chore: { sync_id: string; name: string; completedAt: string }) => void
+  // People (log_interaction): the people this user sees, whether an
+  // interaction id is already logged, and the logging itself. Skeleton mode
+  // without them.
+  listPeople?: () => Promise<Person[]>
+  interactionExists?: (syncId: string) => Promise<boolean>
+  logInteraction?: (input: InteractionInput) => Promise<{ sync_id: string }>
 }
 
 // Maps the OPEN payload's free-form `tab` onto a concrete UI target. Unknown /
@@ -206,6 +215,39 @@ async function handleQuery(ctx: IntentContext): Promise<IntentResult> {
   }
 }
 
+async function handleLogInteraction(payload: unknown, ctx: IntentContext): Promise<IntentResult> {
+  const parsed = parseLogInteraction(payload)
+  if (!parsed.ok) return { success: false, error: parsed.error }
+  const req = parsed.request
+
+  if (!ctx.listPeople || !ctx.logInteraction) return { success: true }
+
+  const match = matchPerson(await ctx.listPeople(), req)
+  const who = req.name ?? req.personId
+  if (match.kind === 'none') return { success: false, error: `No person matches "${who}"` }
+  if (match.kind === 'ambiguous') {
+    return { success: false, error: `"${who}" matches ${match.count} people; be more specific` }
+  }
+  const { person } = match
+
+  if (req.eventId && await ctx.interactionExists?.(req.eventId)) {
+    return { success: true, person_id: person.sync_id, interaction_id: req.eventId, warning: 'Already logged; not duplicated' }
+  }
+
+  const logged = await ctx.logInteraction({
+    person_sync_ids: [person.sync_id],
+    channel: req.channel ?? person.preferred_channel ?? 'other',
+    direction: req.direction,
+    note: req.note,
+    ...(req.occurredAt && { occurred_at: req.occurredAt }),
+    ...(req.eventId && { sync_id: req.eventId }),
+    source: 'intent',
+  })
+  const result: IntentResult = { success: true, person_id: person.sync_id, interaction_id: logged.sync_id }
+  if (match.fuzzy) result.warning = `Fuzzy-matched "${req.name}" to "${person.name}"`
+  return result
+}
+
 export async function handleIntent(
   action: string,
   payload: unknown,
@@ -220,6 +262,8 @@ export async function handleIntent(
       return handleOpen(payload, ctx)
     case ACTIONS.QUERY:
       return handleQuery(ctx)
+    case LOG_INTERACTION:
+      return handleLogInteraction(payload, ctx)
     default:
       return { success: false, error: `Unknown action: ${action}` }
   }

@@ -7,28 +7,25 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		EC0000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000021 /* PrivacyInfo.xcprivacy */; };
-		EC0000000000000000000012 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000011 /* PrivacyInfo.xcprivacy */; };
-		EC0000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000001 /* PrivacyInfo.xcprivacy */; };
 		2FAD9763203C412B000D30F8 /* config.xml in Resources */ = {isa = PBXBuildFile; fileRef = 2FAD9762203C412B000D30F8 /* config.xml */; };
 		4D22ABE92AF431CB00220026 /* CapApp-SPM in Frameworks */ = {isa = PBXBuildFile; productRef = 4D22ABE82AF431CB00220026 /* CapApp-SPM */; };
 		50379B232058CBB4000EE86E /* capacitor.config.json in Resources */ = {isa = PBXBuildFile; fileRef = 50379B222058CBB4000EE86E /* capacitor.config.json */; };
 		504EC3081FED79650016851F /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 504EC3071FED79650016851F /* AppDelegate.swift */; };
-		7A4E51022E3A9A0100C4F2D1 /* VaultSseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51012E3A9A0100C4F2D1 /* VaultSseClient.swift */; };
-		7A4E51042E3A9A0100C4F2D1 /* VaultSsePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51032E3A9A0100C4F2D1 /* VaultSsePlugin.swift */; };
-		7A4E51062E3A9A0100C4F2D1 /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51052E3A9A0100C4F2D1 /* BridgeViewController.swift */; };
-		7A4E51082E3A9A0100C4F2D1 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51072E3A9A0100C4F2D1 /* SceneDelegate.swift */; };
 		504EC30D1FED79650016851F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30B1FED79650016851F /* Main.storyboard */; };
 		504EC30F1FED79650016851F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 504EC30E1FED79650016851F /* Assets.xcassets */; };
 		504EC3121FED79650016851F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 504EC3101FED79650016851F /* LaunchScreen.storyboard */; };
 		50B271D11FEDC1A000F3C39B /* public in Resources */ = {isa = PBXBuildFile; fileRef = 50B271D01FEDC1A000F3C39B /* public */; };
+		7A4E51022E3A9A0100C4F2D1 /* VaultSseClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51012E3A9A0100C4F2D1 /* VaultSseClient.swift */; };
+		7A4E51042E3A9A0100C4F2D1 /* VaultSsePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51032E3A9A0100C4F2D1 /* VaultSsePlugin.swift */; };
+		7A4E51062E3A9A0100C4F2D1 /* BridgeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51052E3A9A0100C4F2D1 /* BridgeViewController.swift */; };
+		7A4E51082E3A9A0100C4F2D1 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7A4E51072E3A9A0100C4F2D1 /* SceneDelegate.swift */; };
 		EA00000000000000000000B1 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
 		EA00000000000000000000B2 /* WidgetBridgePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F3 /* WidgetBridgePlugin.swift */; };
 		EA00000000000000000000B3 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
 		EA00000000000000000000B4 /* GlanceWidgetsBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */; };
-		EA00000000000000000000FD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FC /* Localizable.xcstrings */; };
 		EA00000000000000000000B5 /* HeatmapWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F5 /* HeatmapWidget.swift */; };
 		EA00000000000000000000B6 /* Snapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F6 /* Snapshot.swift */; };
+		EA00000000000000000000B7 /* GlanceWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		EA00000000000000000000B8 /* LucidePath.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FA /* LucidePath.swift */; };
 		EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FB /* LucideIcons.generated.swift */; };
 		EA00000000000000000000C1 /* SnapshotProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E1 /* SnapshotProvider.swift */; };
@@ -39,15 +36,20 @@
 		EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E6 /* SingleChoreWidget.swift */; };
 		EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E7 /* AddChoreWidget.swift */; };
 		EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E8 /* AccessoryWidgets.swift */; };
+		EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E9 /* SecureStorePlugin.swift */; };
 		EA00000000000000000000CA /* AddChoreControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000EA /* AddChoreControl.swift */; };
 		EA00000000000000000000CB /* AddChoreControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000EA /* AddChoreControl.swift */; };
-		EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000E9 /* SecureStorePlugin.swift */; };
+		EA00000000000000000000FD /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000FC /* Localizable.xcstrings */; };
 		EA0000000000000000000101 /* DirectAccessPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000000000000000000100 /* DirectAccessPlugin.swift */; };
-		EB00000000000000000000C1 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000E1 /* ShareViewController.swift */; };
-		EB00000000000000000000FB /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000FA /* Localizable.xcstrings */; };
-		EB00000000000000000000C2 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
+		EA0000000000000000000103 /* ContactsPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000000000000000000102 /* ContactsPlugin.swift */; };
+		EA0000000000000000000105 /* PeopleWidgets.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA0000000000000000000104 /* PeopleWidgets.swift */; };
 		EB00000000000000000000B7 /* ShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000F9 /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		EA00000000000000000000B7 /* GlanceWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		EB00000000000000000000C1 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000E1 /* ShareViewController.swift */; };
+		EB00000000000000000000C2 /* SharedDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = EA00000000000000000000F2 /* SharedDataStore.swift */; };
+		EB00000000000000000000FB /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = EB00000000000000000000FA /* Localizable.xcstrings */; };
+		EC0000000000000000000002 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000001 /* PrivacyInfo.xcprivacy */; };
+		EC0000000000000000000012 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000011 /* PrivacyInfo.xcprivacy */; };
+		EC0000000000000000000022 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = EC0000000000000000000021 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -83,35 +85,20 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		EC0000000000000000000021 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		EC0000000000000000000011 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		EC0000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		2FAD9762203C412B000D30F8 /* config.xml */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = config.xml; sourceTree = "<group>"; };
 		50379B222058CBB4000EE86E /* capacitor.config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = capacitor.config.json; sourceTree = "<group>"; };
 		504EC3041FED79650016851F /* App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = App.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		504EC3071FED79650016851F /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
-		7A4E51012E3A9A0100C4F2D1 /* VaultSseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSseClient.swift; sourceTree = "<group>"; };
-		7A4E51032E3A9A0100C4F2D1 /* VaultSsePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSsePlugin.swift; sourceTree = "<group>"; };
-		7A4E51052E3A9A0100C4F2D1 /* BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
-		7A4E51072E3A9A0100C4F2D1 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		504EC30C1FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		504EC30E1FED79650016851F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		504EC3111FED79650016851F /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		504EC3131FED79650016851F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		50B271D01FEDC1A000F3C39B /* public */ = {isa = PBXFileReference; lastKnownFileType = folder; path = public; sourceTree = "<group>"; };
+		7A4E51012E3A9A0100C4F2D1 /* VaultSseClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSseClient.swift; sourceTree = "<group>"; };
+		7A4E51032E3A9A0100C4F2D1 /* VaultSsePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VaultSsePlugin.swift; sourceTree = "<group>"; };
+		7A4E51052E3A9A0100C4F2D1 /* BridgeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BridgeViewController.swift; sourceTree = "<group>"; };
+		7A4E51072E3A9A0100C4F2D1 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		958DCC722DB07C7200EA8C5F /* debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = debug.xcconfig; path = ../debug.xcconfig; sourceTree = SOURCE_ROOT; };
-		EA00000000000000000000F1 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
-		EA00000000000000000000F2 /* SharedDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataStore.swift; sourceTree = "<group>"; };
-		EA00000000000000000000EA /* AddChoreControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddChoreControl.swift; sourceTree = "<group>"; };
-		EA00000000000000000000F3 /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
-		EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceWidgetsBundle.swift; sourceTree = "<group>"; };
-		EA00000000000000000000F5 /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidget.swift; sourceTree = "<group>"; };
-		EA00000000000000000000F6 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
-		EA00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		EA00000000000000000000F8 /* GlanceWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GlanceWidgets.entitlements; sourceTree = "<group>"; };
-		EA00000000000000000000FC /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
-		EA00000000000000000000FA /* LucidePath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucidePath.swift; sourceTree = "<group>"; };
-		EA00000000000000000000FB /* LucideIcons.generated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucideIcons.generated.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E1 /* SnapshotProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotProvider.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E2 /* ChoreSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChoreSnapshot.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E3 /* CompletionStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompletionStore.swift; sourceTree = "<group>"; };
@@ -121,13 +108,31 @@
 		EA00000000000000000000E7 /* AddChoreWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddChoreWidget.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E8 /* AccessoryWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessoryWidgets.swift; sourceTree = "<group>"; };
 		EA00000000000000000000E9 /* SecureStorePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureStorePlugin.swift; sourceTree = "<group>"; };
+		EA00000000000000000000EA /* AddChoreControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddChoreControl.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F1 /* App.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = App.entitlements; sourceTree = "<group>"; };
+		EA00000000000000000000F2 /* SharedDataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedDataStore.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F3 /* WidgetBridgePlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetBridgePlugin.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F4 /* GlanceWidgetsBundle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlanceWidgetsBundle.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F5 /* HeatmapWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeatmapWidget.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F6 /* Snapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Snapshot.swift; sourceTree = "<group>"; };
+		EA00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		EA00000000000000000000F8 /* GlanceWidgets.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = GlanceWidgets.entitlements; sourceTree = "<group>"; };
+		EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlanceWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EA00000000000000000000FA /* LucidePath.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucidePath.swift; sourceTree = "<group>"; };
+		EA00000000000000000000FB /* LucideIcons.generated.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LucideIcons.generated.swift; sourceTree = "<group>"; };
+		EA00000000000000000000FC /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EA0000000000000000000100 /* DirectAccessPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DirectAccessPlugin.swift; sourceTree = "<group>"; };
+		EA0000000000000000000102 /* ContactsPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContactsPlugin.swift; sourceTree = "<group>"; };
+		EA0000000000000000000104 /* PeopleWidgets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeopleWidgets.swift; sourceTree = "<group>"; };
 		EB00000000000000000000E1 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		EB00000000000000000000F7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		EB00000000000000000000F8 /* ShareExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShareExtension.entitlements; sourceTree = "<group>"; };
-		EB00000000000000000000FA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		EB00000000000000000000F9 /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		EA00000000000000000000F9 /* GlanceWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GlanceWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		EB00000000000000000000FA /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		EC0000000000000000000001 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EC0000000000000000000011 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EC0000000000000000000021 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		EC0000000000000000000031 /* release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = release.xcconfig; path = ../release.xcconfig; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -160,6 +165,7 @@
 			isa = PBXGroup;
 			children = (
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
+				EC0000000000000000000031 /* release.xcconfig */,
 				504EC3061FED79650016851F /* App */,
 				EA00000000000000000000A3 /* GlanceWidgets */,
 				EB00000000000000000000A1 /* ShareExtension */,
@@ -215,6 +221,7 @@
 				EA00000000000000000000F3 /* WidgetBridgePlugin.swift */,
 				EA00000000000000000000E9 /* SecureStorePlugin.swift */,
 				EA0000000000000000000100 /* DirectAccessPlugin.swift */,
+				EA0000000000000000000102 /* ContactsPlugin.swift */,
 			);
 			path = plugins;
 			sourceTree = "<group>";
@@ -234,6 +241,7 @@
 				EA00000000000000000000E6 /* SingleChoreWidget.swift */,
 				EA00000000000000000000E7 /* AddChoreWidget.swift */,
 				EA00000000000000000000E8 /* AccessoryWidgets.swift */,
+				EA0000000000000000000104 /* PeopleWidgets.swift */,
 				EA00000000000000000000FA /* LucidePath.swift */,
 				EA00000000000000000000FB /* LucideIcons.generated.swift */,
 				EA00000000000000000000F7 /* Info.plist */,
@@ -421,6 +429,7 @@
 				EA00000000000000000000B2 /* WidgetBridgePlugin.swift in Sources */,
 				EA00000000000000000000C9 /* SecureStorePlugin.swift in Sources */,
 				EA0000000000000000000101 /* DirectAccessPlugin.swift in Sources */,
+				EA0000000000000000000103 /* ContactsPlugin.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -440,6 +449,7 @@
 				EA00000000000000000000C6 /* SingleChoreWidget.swift in Sources */,
 				EA00000000000000000000C7 /* AddChoreWidget.swift in Sources */,
 				EA00000000000000000000C8 /* AccessoryWidgets.swift in Sources */,
+				EA0000000000000000000105 /* PeopleWidgets.swift in Sources */,
 				EA00000000000000000000CB /* AddChoreControl.swift in Sources */,
 				EA00000000000000000000B8 /* LucidePath.swift in Sources */,
 				EA00000000000000000000B9 /* LucideIcons.generated.swift in Sources */,
@@ -550,6 +560,7 @@
 		};
 		504EC3151FED79650016851F /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = EC0000000000000000000031 /* release.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
@@ -607,14 +618,12 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
-				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" \"-DDEBUG\"";
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -631,14 +640,12 @@
 				CODE_SIGN_ENTITLEMENTS = App/App.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
-				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = App/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
@@ -652,7 +659,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = GlanceWidgets/GlanceWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GlanceWidgets/Info.plist;
@@ -664,7 +670,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance.GlanceWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -681,7 +686,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = GlanceWidgets/GlanceWidgets.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 4;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = GlanceWidgets/Info.plist;
@@ -693,7 +697,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance.GlanceWidgets;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -708,7 +711,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -720,7 +722,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -737,7 +738,6 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CTZ7352A3G;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = ShareExtension/Info.plist;
@@ -749,7 +749,6 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 2.4.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.lastglance.ShareExtension;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

@@ -12,7 +12,9 @@ import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
 
 import com.lastglance.app.glance.AddChoreWidgetReceiver;
+import com.lastglance.app.glance.ComingUpWidgetReceiver;
 import com.lastglance.app.glance.HeatmapWidgetReceiver;
+import com.lastglance.app.glance.ReachOutWidgetReceiver;
 import com.lastglance.app.glance.SingleChoreWidgetReceiver;
 import com.lastglance.app.glance.SoonListWidgetReceiver;
 
@@ -34,6 +36,8 @@ public class WidgetBridgePlugin extends Plugin {
         refreshGlanceWidget(context, HeatmapWidgetReceiver.class);
         refreshGlanceWidget(context, SingleChoreWidgetReceiver.class);
         refreshGlanceWidget(context, SoonListWidgetReceiver.class);
+        refreshGlanceWidget(context, ReachOutWidgetReceiver.class);
+        refreshGlanceWidget(context, ComingUpWidgetReceiver.class);
         // The Add-chore widget is a static action surface — no snapshot refresh
         // needed. Dynamic "top overdue" launcher shortcuts do track the snapshot.
         WidgetShortcuts.refresh(context, json);
@@ -59,6 +63,15 @@ public class WidgetBridgePlugin extends Plugin {
         call.resolve(ret);
     }
 
+    // The system's first day of the week (SystemWeekStart), for Automatic
+    // week start in the web UI.
+    @PluginMethod
+    public void systemWeekStart(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("weekStart", SystemWeekStart.get());
+        call.resolve(ret);
+    }
+
     // Hand the pending shared text (for a new chore's name) to the web app, and
     // clear it.
     @PluginMethod
@@ -78,6 +91,8 @@ public class WidgetBridgePlugin extends Plugin {
         refreshGlanceWidget(context, HeatmapWidgetReceiver.class);
         refreshGlanceWidget(context, SingleChoreWidgetReceiver.class);
         refreshGlanceWidget(context, SoonListWidgetReceiver.class);
+        refreshGlanceWidget(context, ReachOutWidgetReceiver.class);
+        refreshGlanceWidget(context, ComingUpWidgetReceiver.class);
         refreshGlanceWidget(context, AddChoreWidgetReceiver.class);
         String json = SharedDataStore.readSnapshot(context);
         if (json != null) WidgetShortcuts.refresh(context, json);

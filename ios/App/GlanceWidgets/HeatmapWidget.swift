@@ -70,17 +70,18 @@ private let heatmapKeyFormatter: DateFormatter = {
     return f
 }()
 
-// Oldest visible day: back to this week's Sunday, then back to the first visible
-// week. Matches the Android walk exactly so both grids show the same window and
-// the same week alignment. File scope because the stats read the same window the
-// grid draws — a total that disagreed with the cells on screen would be worse
+// Oldest visible day: back to the start of this week (weekStart, 0 = Sunday),
+// then back to the first visible week. Matches the Android walk exactly so both
+// grids show the same window and the same week alignment. File scope because
+// the stats read the same window the grid draws — a total that disagreed with the cells on screen would be worse
 // than no total at all.
-private func gridStartDate(weeks: Int) -> Date {
+private func gridStartDate(weeks: Int, weekStart: Int) -> Date {
     let calendar = Calendar.current
     let today = calendar.startOfDay(for: Date())
     let weekday = calendar.component(.weekday, from: today) // 1 = Sunday
-    let thisSunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: today) ?? today
-    return calendar.date(byAdding: .day, value: -(weeks - 1) * 7, to: thisSunday) ?? thisSunday
+    let back = (weekday - 1 - weekStart + 7) % 7
+    let thisWeek = calendar.date(byAdding: .day, value: -back, to: today) ?? today
+    return calendar.date(byAdding: .day, value: -(weeks - 1) * 7, to: thisWeek) ?? thisWeek
 }
 
 // Summary of the drawn window, for the extra-large stats row. Cheap: the heatmap
@@ -90,10 +91,10 @@ private struct HeatmapStats {
     let activeDays: Int
     let streak: Int
 
-    init(heatmap: [String: Int], weeks: Int) {
+    init(heatmap: [String: Int], weeks: Int, weekStart: Int) {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let start = gridStartDate(weeks: weeks)
+        let start = gridStartDate(weeks: weeks, weekStart: weekStart)
 
         var total = 0
         var active = 0
@@ -134,11 +135,12 @@ private struct HeatmapGrid: View {
     let weeks: Int
     let heatmap: [String: Int]
     let showsLabels: Bool
+    let weekStart: Int
 
     // Month abbreviations follow the user's locale — unlike the data keys, these
     // are read by a human. The same formatter is the source of the weekday
-    // symbols: DateFormatter.shortWeekdaySymbols is always Sunday-first, which is
-    // the row order this grid walks in.
+    // symbols: DateFormatter.shortWeekdaySymbols is always Sunday-first, so the
+    // canvas rotates it by weekStart to the row order this grid walks in.
     private static let monthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.setLocalizedDateFormatFromTemplate("MMM")
@@ -158,7 +160,8 @@ private struct HeatmapGrid: View {
             weeks: weeks,
             heatmap: heatmap,
             showsLabels: showsLabels,
-            startDate: gridStartDate(weeks: weeks),
+            weekStart: weekStart,
+            startDate: gridStartDate(weeks: weeks, weekStart: weekStart),
             keyFormatter: heatmapKeyFormatter,
             monthFormatter: Self.monthFormatter
         )
@@ -170,6 +173,7 @@ private struct HeatmapCanvas: View {
     let weeks: Int
     let heatmap: [String: Int]
     let showsLabels: Bool
+    let weekStart: Int
     let startDate: Date
     let keyFormatter: DateFormatter
     let monthFormatter: DateFormatter
@@ -243,13 +247,15 @@ private struct HeatmapCanvas: View {
                 )
             }
 
-            // Weekday labels on the alternating rows GitHub labels, right-aligned
-            // into the gutter so they sit just off the first column. Row 0 is
-            // Sunday (the grid starts on one) and shortWeekdaySymbols is
-            // Sunday-first, so the row index indexes the array directly.
+            // Weekday labels on Monday, Wednesday and Friday, wherever those
+            // rows land, right-aligned into the gutter so they sit just off the
+            // first column. Row 0 is weekStart and shortWeekdaySymbols is
+            // Sunday-first, so each row maps to (weekStart + row) % 7.
             let weekdayNames = monthFormatter.shortWeekdaySymbols ?? []
-            for row in [1, 3, 5] where row < weekdayNames.count {
-                let name = weekdayNames[row]
+            for row in 0..<daysPerWeek {
+                let weekday = (weekStart + row) % 7
+                guard [1, 3, 5].contains(weekday), weekday < weekdayNames.count else { continue }
+                let name = weekdayNames[weekday]
                 context.draw(
                     Text(name)
                         .font(labelFont)
@@ -354,7 +360,8 @@ struct HeatmapWidgetView: View {
     // no labels and no legend — the furniture would cost more than it explains.
     private var medium: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HeatmapGrid(weeks: mediumWeeks, heatmap: entry.snapshot.heatmap, showsLabels: false)
+            HeatmapGrid(weeks: mediumWeeks, heatmap: entry.snapshot.heatmap, showsLabels: false,
+                        weekStart: entry.snapshot.effectiveWeekStart)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             HStack(spacing: 0) {
@@ -376,12 +383,14 @@ struct HeatmapWidgetView: View {
     // legend) plus a summary of the window on screen. That mirrors lifeGLANCE's
     // TimelineStripView, which likewise shows a caption row above medium.
     private var extraLarge: some View {
-        let stats = HeatmapStats(heatmap: entry.snapshot.heatmap, weeks: extraLargeWeeks)
+        let stats = HeatmapStats(heatmap: entry.snapshot.heatmap, weeks: extraLargeWeeks,
+                                 weekStart: entry.snapshot.effectiveWeekStart)
 
         return VStack(alignment: .leading, spacing: 12) {
             Spacer(minLength: 0)
 
-            HeatmapGrid(weeks: extraLargeWeeks, heatmap: entry.snapshot.heatmap, showsLabels: true)
+            HeatmapGrid(weeks: extraLargeWeeks, heatmap: entry.snapshot.heatmap, showsLabels: true,
+                        weekStart: entry.snapshot.effectiveWeekStart)
                 .frame(maxWidth: .infinity)
 
             HStack(spacing: 0) {

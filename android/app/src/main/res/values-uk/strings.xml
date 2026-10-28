@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE Активність</string>
     <string name="widget_label_chore">lastGLANCE Справа</string>
     <string name="widget_label_soon">lastGLANCE Незабаром</string>
+    <string name="widget_label_reach_out">lastGLANCE Варто озватися</string>
+    <string name="widget_label_coming_up">lastGLANCE Незабаром</string>
+    <string name="reach_out_widget_description">Кому час озватися. Торкніться людини, щоб записати контакт.</string>
+    <string name="coming_up_widget_description">Найближчі дні народження та дати.</string>
     <string name="widget_label_add">lastGLANCE Додати</string>
     <string name="add_chore_widget_description">Один дотик, щоб додати нову справу.</string>
     <string name="widget_add_chore">Додати справу</string>

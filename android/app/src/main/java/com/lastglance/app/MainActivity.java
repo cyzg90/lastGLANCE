@@ -30,6 +30,7 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(SecureStorePlugin.class);
         registerPlugin(com.lastglance.app.sse.VaultSsePlugin.class);
         registerPlugin(AppLocalePlugin.class);
+        registerPlugin(ContactsPlugin.class);
         registerPlugin(com.lastglance.app.directaccess.DirectAccessPlugin.class);
         super.onCreate(savedInstanceState);
         lastLocaleTag = getResources().getConfiguration().getLocales().get(0).toLanguageTag();
@@ -98,7 +99,8 @@ public class MainActivity extends BridgeActivity {
         if (!action.equals("app.lastglance.CREATE")
             && !action.equals("app.lastglance.COMPLETE")
             && !action.equals("app.lastglance.OPEN")
-            && !action.equals("app.lastglance.QUERY")) {
+            && !action.equals("app.lastglance.QUERY")
+            && !action.equals("app.lastglance.LOG_INTERACTION")) {
             return;
         }
 
@@ -170,6 +172,12 @@ public class MainActivity extends BridgeActivity {
             return syncId != null ? "chore:" + syncId : null;
         } else if ("filter".equals(host)) {
             return "filter:soon";
+        } else if ("person".equals(host) || "log".equals(host)) {
+            // People widgets: open a person, or quick-log for them.
+            String syncId = data.getLastPathSegment();
+            return syncId != null ? host + ":" + syncId : null;
+        } else if ("people".equals(host)) {
+            return "people";
         } else if ("action".equals(host)) {
             String action = data.getLastPathSegment();
             if ("search".equals(action)) return "action:search";

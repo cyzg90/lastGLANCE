@@ -3,21 +3,30 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   X, Settings, ChevronDown, ChevronRight, Palette, Users, Plug, Archive, Info,
-  Sun, Moon, Monitor,
+  Sun, Moon, Monitor, Contact,
 } from 'lucide-react'
 import type { SyncEngine } from '@glance-apps/sync'
 import type { UseBillingResult } from '@glance-apps/billing/react'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
+import {
+  setContactsEnabled, setDateReminderMinutes, setDateRemindersOn, setDatesToDayglanceOn, setDigestMinutes,
+  setReciprocityShown, useContactsEnabled, useDateReminderMinutes, useDateRemindersOn, useDatesToDayglanceOn,
+  useDigestMinutes, useShowReciprocity,
+} from '@/people/settings'
+import { useIntents } from '@/intents/IntentsContext'
+import { contactsSupported } from '@/native/contacts'
+import { isNativeShell } from '@/native/platform'
+import { ContactsModal } from '@/components/People/ContactsModal'
 import { LanguagePicker } from '@/components/LanguagePicker/LanguagePicker'
 import { UsersPanel } from '@/components/UsersPanel/UsersPanel'
 import { BackupPanel } from '@/components/BackupModal/BackupModal'
 import { HelpContent } from '@/components/HelpModal/HelpModal'
 import { SubscriptionStatus } from '@/components/PaywallModal/SubscriptionStatus'
-import { formatTimeSample, type TimeFormat } from '@/utils/datetime'
+import { formatTimeSample, formatWeekdayShort, type TimeFormat, type WeekStartPref } from '@/utils/datetime'
 
 export type ThemePref = 'light' | 'dark' | 'system'
 
-export type SettingsSection = 'appearance' | 'sync' | 'integrations' | 'household' | 'data' | 'about'
+export type SettingsSection = 'appearance' | 'people' | 'sync' | 'integrations' | 'household' | 'data' | 'about'
 type SectionId = SettingsSection
 
 interface Props {
@@ -28,6 +37,8 @@ interface Props {
   onThemeChange: (pref: ThemePref) => void
   timeFormat: TimeFormat
   onTimeFormatChange: (pref: TimeFormat) => void
+  weekStart: WeekStartPref
+  onWeekStartChange: (pref: WeekStartPref) => void
   /** Cloud Sync's live status icon, and whether it is in a failed state. */
   syncIcon: ReactNode
   syncWarn: boolean
@@ -61,6 +72,17 @@ export function SettingsPanel(props: Props) {
 
   // Escape and Android's Back both close the sheet.
   useEscapeKey(onClose)
+
+  const showReciprocity = useShowReciprocity()
+  const dateReminders = useDateRemindersOn()
+  const dateReminderMinutes = useDateReminderMinutes()
+  const digestMinutes = useDigestMinutes()
+  const datesToDayglance = useDatesToDayglanceOn()
+  const { isConfigured: intentsOn } = useIntents()
+  const contactsEnabled = useContactsEnabled()
+  // Turning Phone contacts on asks for permission right away, after the
+  // in-app disclosure; the switch only turns on once it is granted.
+  const [askingContacts, setAskingContacts] = useState(false)
 
   const toggle = (id: SectionId) => setOpen(o => (o === id ? null : id))
 
@@ -131,6 +153,94 @@ export function SettingsPanel(props: Props) {
                 {t('settings.timeAutoHint', { example: formatTimeSample(sample, 'auto') })}
               </p>
             </Field>
+            <Field label={t('settings.weekStart')}>
+              <Segmented<WeekStartPref>
+                label={t('settings.weekStart')}
+                value={props.weekStart}
+                onChange={props.onWeekStartChange}
+                options={[
+                  { value: 'auto', label: t('settings.timeAuto') },
+                  { value: 'mon', label: formatWeekdayShort(1) },
+                  { value: 'sun', label: formatWeekdayShort(0) },
+                  { value: 'sat', label: formatWeekdayShort(6) },
+                ]}
+              />
+              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.weekStartHint')}</p>
+            </Field>
+          </Section>
+
+          <Section
+            id="people" open={open} onToggle={toggle}
+            icon={<Contact size={16} />} title={t('settings.people')}
+          >
+            <Field label={t('settings.showReciprocity')}>
+              <Segmented<'on' | 'off'>
+                label={t('settings.showReciprocity')}
+                value={showReciprocity ? 'on' : 'off'}
+                onChange={v => setReciprocityShown(v === 'on')}
+                options={[
+                  { value: 'on', label: t('settings.show') },
+                  { value: 'off', label: t('settings.hide') },
+                ]}
+              />
+              <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.showReciprocityHint')}</p>
+            </Field>
+            {contactsSupported() && (
+              <Field label={t('settings.phoneContacts')}>
+                <Segmented<'on' | 'off'>
+                  label={t('settings.phoneContacts')}
+                  value={contactsEnabled ? 'on' : 'off'}
+                  onChange={v => { if (v === 'off') setContactsEnabled(false); else setAskingContacts(true) }}
+                  options={[
+                    { value: 'on', label: t('settings.on') },
+                    { value: 'off', label: t('settings.off') },
+                  ]}
+                />
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.phoneContactsHint')}</p>
+              </Field>
+            )}
+            {isNativeShell() && (
+              <Field label={t('settings.dateReminders')}>
+                <Segmented<'on' | 'off'>
+                  label={t('settings.dateReminders')}
+                  value={dateReminders ? 'on' : 'off'}
+                  onChange={v => setDateRemindersOn(v === 'on')}
+                  options={[
+                    { value: 'on', label: t('settings.on') },
+                    { value: 'off', label: t('settings.off') },
+                  ]}
+                />
+                {dateReminders && (
+                  <TimeInput
+                    id="settings-date-time"
+                    label={t('settings.reminderTime')}
+                    minutes={dateReminderMinutes}
+                    onChange={setDateReminderMinutes}
+                  />
+                )}
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.dateRemindersHint')}</p>
+              </Field>
+            )}
+            {isNativeShell() && (
+              <Field label={t('settings.digestTime')} htmlFor="settings-digest-time">
+                <TimeInput id="settings-digest-time" minutes={digestMinutes} onChange={setDigestMinutes} />
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.digestTimeHint')}</p>
+              </Field>
+            )}
+            {intentsOn && (
+              <Field label={t('settings.datesToDayglance')}>
+                <Segmented<'on' | 'off'>
+                  label={t('settings.datesToDayglance')}
+                  value={datesToDayglance ? 'on' : 'off'}
+                  onChange={v => setDatesToDayglanceOn(v === 'on')}
+                  options={[
+                    { value: 'on', label: t('settings.on') },
+                    { value: 'off', label: t('settings.off') },
+                  ]}
+                />
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.datesToDayglanceHint')}</p>
+              </Field>
+            )}
           </Section>
 
           <Section
@@ -177,6 +287,15 @@ export function SettingsPanel(props: Props) {
           </Section>
         </div>
       </div>
+      {askingContacts && (
+        <ContactsModal
+          mode="permission"
+          links={[]}
+          circles={[]}
+          onGranted={() => setContactsEnabled(true)}
+          onClose={() => setAskingContacts(false)}
+        />
+      )}
     </div>,
     document.body,
   )
@@ -229,6 +348,32 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; 
         ? <label htmlFor={htmlFor} className={cls}>{label}</label>
         : <div className={cls}>{label}</div>}
       {children}
+    </div>
+  )
+}
+
+// A time of day as minutes after midnight. A cleared field changes nothing.
+function TimeInput({ id, label, minutes, onChange }: {
+  id: string; label?: string; minutes: number; onChange: (minutes: number) => void
+}) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const input = (
+    <input
+      id={id}
+      type="time"
+      value={`${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`}
+      onChange={e => {
+        const [h, m] = e.target.value.split(':').map(Number)
+        if (Number.isInteger(h) && Number.isInteger(m)) onChange(h * 60 + m)
+      }}
+      className="bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
+    />
+  )
+  if (!label) return input
+  return (
+    <div className="mt-2 flex items-center gap-3">
+      <label htmlFor={id} className="text-sm text-slate-600 dark:text-slate-300">{label}</label>
+      {input}
     </div>
   )
 }

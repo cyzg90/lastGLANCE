@@ -12,6 +12,10 @@
     <string name="widget_label_activity">lastGLANCE Heatmap</string>
     <string name="widget_label_chore">lastGLANCE Aufgabe</string>
     <string name="widget_label_soon">lastGLANCE Bald</string>
+    <string name="widget_label_reach_out">lastGLANCE Melde dich mal</string>
+    <string name="widget_label_coming_up">lastGLANCE Demnächst</string>
+    <string name="reach_out_widget_description">Bei wem du dich melden solltest. Tippe auf jemanden, um einen Kontakt zu erfassen.</string>
+    <string name="coming_up_widget_description">Die nächsten Geburtstage und Termine.</string>
     <string name="widget_label_add">lastGLANCE Hinzufügen</string>
     <string name="add_chore_widget_description">Ein Tipp, um eine neue Aufgabe hinzuzufügen.</string>
     <string name="widget_add_chore">Aufgabe hinzufügen</string>

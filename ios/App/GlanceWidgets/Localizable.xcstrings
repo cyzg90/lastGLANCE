@@ -1,389 +1,93 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@ · %lld overdue": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld überfällig"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@" : {
+      "shouldTranslate" : false
+    },
+    "%@ · %lld overdue" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld überfällig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld vencidas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld vencidas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld en retard"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld en retard"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld in ritardo"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld in ritardo"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld atrasadas"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · zaległe: %lld"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld atrasadas"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld atrasadas"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · %lld 个逾期"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld atrasadas"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · zaległe: %lld"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · протерміновано: %lld"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@ · протерміновано: %lld"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ · %lld 个逾期"
           }
         }
       }
     },
-    "%lld active days": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "active day"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "active days"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktiver Tag"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktive Tage"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "día activo"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "días activos"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "jour actif"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "jours actifs"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "giorno attivo"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "giorni attivi"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dia ativo"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dias ativos"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dia ativo"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dias ativos"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "活跃天数"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktywny dzień"
-                    }
-                  },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktywne dni"
-                    }
-                  },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktywnych dni"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "aktywnego dnia"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
-          },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "активний день"
-                    }
-                  },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "активні дні"
-                    }
-                  },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "активних днів"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "активного дня"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+    "%lld" : {
+      "shouldTranslate" : false
     },
-    "%lld completions": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+    "%lld active days" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completion"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktiver Tag"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completions"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktive Tage"
                     }
                   }
                 }
@@ -391,27 +95,27 @@
             }
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "Erledigung"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "active day"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "Erledigungen"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "active days"
                     }
                   }
                 }
@@ -419,27 +123,27 @@
             }
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completada"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "día activo"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completadas"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "días activos"
                     }
                   }
                 }
@@ -447,27 +151,27 @@
             }
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "réalisation"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "jour actif"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "réalisations"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "jours actifs"
                     }
                   }
                 }
@@ -475,27 +179,27 @@
             }
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completamento"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "giorno attivo"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "completamenti"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "giorni attivi"
                     }
                   }
                 }
@@ -503,27 +207,39 @@
             }
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "conclusão"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktywne dni"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "conclusões"
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktywnych dni"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktywny dzień"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "aktywnego dnia"
                     }
                   }
                 }
@@ -531,27 +247,27 @@
             }
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "conclusão"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dia ativo"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "conclusões"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dias ativos"
                     }
                   }
                 }
@@ -559,21 +275,27 @@
             }
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "完成记录"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dia ativo"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dias ativos"
                     }
                   }
                 }
@@ -581,39 +303,39 @@
             }
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "wykonanie"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "активні дні"
                     }
                   },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "wykonania"
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "активних днів"
                     }
                   },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "wykonań"
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "активний день"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "wykonania"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "активного дня"
                     }
                   }
                 }
@@ -621,39 +343,21 @@
             }
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "виконання"
-                    }
-                  },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "виконання"
-                    }
-                  },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "виконань"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "виконання"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "活跃天数"
                     }
                   }
                 }
@@ -663,29 +367,29 @@
         }
       }
     },
-    "%lld day streak": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+    "%lld completions" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "day streak"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Erledigung"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "day streak"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Erledigungen"
                     }
                   }
                 }
@@ -693,27 +397,27 @@
             }
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "Tag in Folge"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completion"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "Tage in Folge"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completions"
                     }
                   }
                 }
@@ -721,27 +425,27 @@
             }
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "día seguido"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completada"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "días seguidos"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completadas"
                     }
                   }
                 }
@@ -749,27 +453,27 @@
             }
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "jour d'affilée"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "réalisation"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "jours d'affilée"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "réalisations"
                     }
                   }
                 }
@@ -777,27 +481,27 @@
             }
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "giorno di fila"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completamento"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "giorni di fila"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "completamenti"
                     }
                   }
                 }
@@ -805,27 +509,39 @@
             }
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dia seguido"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "wykonania"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dias seguidos"
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "wykonań"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "wykonanie"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "wykonania"
                     }
                   }
                 }
@@ -833,27 +549,27 @@
             }
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dia seguido"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "conclusão"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dias seguidos"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "conclusões"
                     }
                   }
                 }
@@ -861,21 +577,27 @@
             }
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "连续天数"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "conclusão"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "conclusões"
                     }
                   }
                 }
@@ -883,39 +605,39 @@
             }
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dzień z rzędu"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "виконання"
                     }
                   },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dni z rzędu"
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "виконань"
                     }
                   },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dni z rzędu"
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "виконання"
                     }
                   },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "dnia z rzędu"
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "виконання"
                     }
                   }
                 }
@@ -923,39 +645,21 @@
             }
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%#@noun@"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
           },
-          "substitutions": {
-            "noun": {
-              "argNum": 1,
-              "formatSpecifier": "lld",
-              "variations": {
-                "plural": {
-                  "one": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "день поспіль"
-                    }
-                  },
-                  "few": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "дні поспіль"
-                    }
-                  },
-                  "many": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "днів поспіль"
-                    }
-                  },
-                  "other": {
-                    "stringUnit": {
-                      "state": "translated",
-                      "value": "дня поспіль"
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "完成记录"
                     }
                   }
                 }
@@ -965,1804 +669,2463 @@
         }
       }
     },
-    "%lld overdue": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld überfällig"
+    "%lld day streak" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Tag in Folge"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Tage in Folge"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld vencidas"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "day streak"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "day streak"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld en retard"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "día seguido"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "días seguidos"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld in ritardo"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "jour d'affilée"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "jours d'affilée"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld atrasadas"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "giorno di fila"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "giorni di fila"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld atrasadas"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dni z rzędu"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dni z rzędu"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dzień z rzędu"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dnia z rzędu"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个逾期"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dia seguido"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dias seguidos"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaległe: %lld"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dia seguido"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "dias seguidos"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Протерміновано: %lld"
-          }
-        }
-      }
-    },
-    "%lld overdue · %lld soon": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld überfällig · %lld bald fällig"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld vencidas · %lld por vencer"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld en retard · %lld bientôt"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld in ritardo · %lld in scadenza"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld atrasadas · %lld a vencer"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld atrasadas · %lld a vencer"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "дні поспіль"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "днів поспіль"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "день поспіль"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "дня поспіль"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个逾期 · %lld 个即将到期"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaległe: %lld · wkrótce: %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Протерміновано: %lld · незабаром: %lld"
-          }
-        }
-      }
-    },
-    "%lld soon": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld bald fällig"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld por vencer"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld bientôt"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld in scadenza"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld a vencer"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld a vencer"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 个即将到期"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wkrótce: %lld"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Незабаром: %lld"
-          }
-        }
-      }
-    },
-    "%lldd ago": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "vor %lld T."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hace %lld d"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "il y a %lld j"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld g fa"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "há %lld d"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "há %lld d"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld 天前"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld dn. temu"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%lld дн. тому"
-          }
-        }
-      }
-    },
-    "+%lld more": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld weitere"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld más"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld de plus"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld altre"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld mais"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld mais"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "另有 %lld 个"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld więcej"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "+%lld ще"
-          }
-        }
-      }
-    },
-    "A one-tap shortcut to add a new chore.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine neue Aufgabe mit einem Tipp hinzufügen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un acceso de un toque para añadir una nueva tarea."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un raccourci pour ajouter une nouvelle tâche en un geste."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una scorciatoia per aggiungere una nuova attività con un tocco."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um atalho de um toque para adicionar uma nova tarefa."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Um atalho de um toque para adicionar uma nova tarefa."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一键添加新事项。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Skrót, który jednym dotknięciem dodaje nowy obowiązek."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Швидкий доступ, щоб додати нову справу одним дотиком."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@noun@"
+          },
+          "substitutions" : {
+            "noun" : {
+              "argNum" : 1,
+              "formatSpecifier" : "lld",
+              "variations" : {
+                "plural" : {
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "连续天数"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
-    "Activity": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktivität"
+    "%lld overdue" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld überfällig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actividad"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vencidas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Activité"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld en retard"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld in ritardo"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atividade"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaległe: %lld"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atividade"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld atrasadas"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "活动"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld atrasadas"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aktywność"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Протерміновано: %lld"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Активність"
-          }
-        }
-      }
-    },
-    "Add chore": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe hinzufügen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Añadir tarea"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ajouter une tâche"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aggiungi attività"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adicionar tarefa"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Adicionar tarefa"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "添加事项"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dodaj obowiązek"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Додати справу"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个逾期"
           }
         }
       }
     },
-    "All caught up": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Alles erledigt"
+    "%lld overdue · %lld soon" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld überfällig · %lld bald fällig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Todo al día"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld vencidas · %lld por vencer"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tout est à jour"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld en retard · %lld bientôt"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tutto fatto"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld in ritardo · %lld in scadenza"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tudo em dia"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaległe: %lld · wkrótce: %lld"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tudo em dia"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld atrasadas · %lld a vencer"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "都处理好了"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld atrasadas · %lld a vencer"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wszystko zrobione"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Протерміновано: %lld · незабаром: %lld"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Усе виконано"
-          }
-        }
-      }
-    },
-    "Choose chore": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe wählen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elegir tarea"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisir la tâche"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scegli attività"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolher tarefa"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolher tarefa"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择事项"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wybierz obowiązek"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виберіть справу"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个逾期 · %lld 个即将到期"
           }
         }
       }
     },
-    "Chore": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe"
+    "%lld soon" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bald fällig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarea"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld por vencer"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tâche"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld bientôt"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld in scadenza"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefa"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wkrótce: %lld"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefa"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld a vencer"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "事项"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld a vencer"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obowiązek"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Незабаром: %lld"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Справа"
-          }
-        }
-      }
-    },
-    "Chores that are due soon or overdue, with one-tap Done.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgaben, die bald fällig oder überfällig sind, mit Erledigt per Tipp."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tareas próximas a vencer o vencidas, con Hecho en un toque."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Les tâches bientôt dues ou en retard, avec Fait en un geste."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Attività in scadenza o in ritardo, con Fatto in un tocco."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefas a vencer em breve ou atrasadas, com Feito num toque."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tarefas a vencer em breve ou atrasadas, com Feito num toque."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示近期或逾期的事项，并可一键标记完成。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Obowiązki z bliskim terminem lub zaległe, z oznaczaniem jednym dotknięciem."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Справи з близьким терміном або протерміновані, з позначкою «виконано» одним дотиком."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 个即将到期"
           }
         }
       }
     },
-    "Done": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erledigt"
+    "%lldd ago" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vor %lld T."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Hecho"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hace %lld d"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fait"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "il y a %lld j"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fatto"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld g fa"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Feito"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld dn. temu"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Feito"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "há %lld d"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "há %lld d"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zrobione"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld дн. тому"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виконано"
-          }
-        }
-      }
-    },
-    "How many chores need attention, on your Lock Screen.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wie viele Aufgaben Aufmerksamkeit brauchen – auf deinem Sperrbildschirm."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cuántas tareas necesitan atención, en tu pantalla de bloqueo."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Combien de tâches demandent de l'attention, sur votre écran verrouillé."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quante attività hanno bisogno di attenzione, sulla schermata di blocco."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quantas tarefas precisam de atenção, no ecrã bloqueado."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quantas tarefas precisam de atenção, na tela de bloqueio."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "在锁定屏幕上查看有多少事项需要关注。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ile obowiązków wymaga uwagi, na ekranie blokady."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Скільки справ потребує уваги, на екрані блокування."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld 天前"
           }
         }
       }
     },
-    "Less": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weniger"
+    "+%lld more" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld weitere"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld más"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Moins"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld de plus"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Meno"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld altre"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menos"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld więcej"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menos"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld mais"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "少"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld mais"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mniej"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "+%lld ще"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Менше"
-          }
-        }
-      }
-    },
-    "Mark chore done": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Aufgabe als erledigt markieren"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar tarea como hecha"
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marquer la tâche comme faite"
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Segna attività come fatta"
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar tarefa como concluída"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Marcar tarefa como concluída"
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "将事项标记为完成"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Oznacz obowiązek jako zrobiony"
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Позначити справу виконаною"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "另有 %lld 个"
           }
         }
       }
     },
-    "More": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mehr"
+    "A one-tap shortcut to add a new chore." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine neue Aufgabe mit einem Tipp hinzufügen."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Más"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un acceso de un toque para añadir una nueva tarea."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Plus"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un raccourci pour ajouter une nouvelle tâche en un geste."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Più"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una scorciatoia per aggiungere una nuova attività con un tocco."
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mais"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrót, który jednym dotknięciem dodaje nowy obowiązek."
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mais"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um atalho de um toque para adicionar uma nova tarefa."
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "多"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Um atalho de um toque para adicionar uma nova tarefa."
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Więcej"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Швидкий доступ, щоб додати нову справу одним дотиком."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Більше"
-          }
-        }
-      }
-    },
-    "One chore and how long it has been, with one-tap Done. Edit the widget to pick which.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Aufgabe und wie lange es her ist, mit Erledigt per Tipp. Widget bearbeiten, um sie zu wählen."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Una tarea y cuánto hace de la última vez, con Hecho en un toque. Edita el widget para elegirla."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Une tâche et depuis combien de temps, avec Fait en un geste. Modifiez le widget pour la choisir."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Un'attività e da quanto tempo, con Fatto in un tocco. Modifica il widget per sceglierla."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uma tarefa e há quanto tempo foi, com Feito num toque. Edite o widget para a escolher."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Uma tarefa e há quanto tempo foi, com Feito num toque. Edite o widget para escolhê-la."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "显示一个事项及距上次完成的时间，并可一键标记完成。编辑小组件可选择要显示的事项。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Jeden obowiązek i ile czasu minęło, z oznaczaniem jednym dotknięciem. Edytuj widżet, aby wybrać który."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Одна справа і скільки часу минуло, з позначкою «виконано» одним дотиком. Відредагуйте віджет, щоб вибрати, яка саме."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一键添加新事项。"
           }
         }
       }
     },
-    "Open lastGLANCE once to sync.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffne lastGLANCE einmal zum Synchronisieren."
+    "Activity" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktivität"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre lastGLANCE una vez para sincronizar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actividad"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvrez lastGLANCE une fois pour synchroniser."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activité"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apri lastGLANCE una volta per sincronizzare."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attività"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abra o lastGLANCE uma vez para sincronizar."
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aktywność"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abra o lastGLANCE uma vez para sincronizar."
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开一次 lastGLANCE 以完成同步。"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atividade"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwórz lastGLANCE raz, aby zsynchronizować."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Активність"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відкрийте lastGLANCE один раз, щоб синхронізувати."
-          }
-        }
-      }
-    },
-    "Open lastGLANCE ready to add a new chore.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffnet lastGLANCE direkt beim Hinzufügen einer neuen Aufgabe."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre lastGLANCE listo para añadir una nueva tarea."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ouvre lastGLANCE prêt à ajouter une nouvelle tâche."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Apre lastGLANCE pronto per aggiungere una nuova attività."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre o lastGLANCE pronto para adicionar uma nova tarefa."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre o lastGLANCE pronto para adicionar uma nova tarefa."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "打开 lastGLANCE 并直接进入添加新事项界面。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Otwiera lastGLANCE od razu w dodawaniu nowego obowiązku."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Відкриває lastGLANCE одразу для додавання нової справи."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "活动"
           }
         }
       }
     },
-    "Overdue at a glance": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Überfälliges auf einen Blick"
+    "Add chore" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe hinzufügen"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atrasadas de un vistazo"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir tarea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "En retard en un coup d'œil"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter une tâche"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In ritardo a colpo d'occhio"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi attività"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atrasadas num relance"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj obowiązek"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Atrasadas num relance"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tarefa"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "逾期概览"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar tarefa"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zaległe w skrócie"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Додати справу"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Протерміноване одним поглядом"
-          }
-        }
-      }
-    },
-    "Pick the chore this widget tracks.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wähle die Aufgabe, die dieses Widget zeigt."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige la tarea que sigue este widget."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choisissez la tâche suivie par ce widget."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Scegli l'attività seguita da questo widget."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolha a tarefa que este widget acompanha."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escolha a tarefa que este widget acompanha."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "选择此小组件要跟踪的事项。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wybierz obowiązek, który śledzi ten widżet."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Виберіть справу, яку відстежує цей віджет."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "添加事项"
           }
         }
       }
     },
-    "SOON": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BALD"
+    "All caught up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alles erledigt"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PRONTO"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo al día"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BIENTÔT"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout est à jour"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "PRESTO"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tutto fatto"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "EM BREVE"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wszystko zrobione"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "EM BREVE"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tudo em dia"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "近期"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tudo em dia"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WKRÓTCE"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усе виконано"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "НЕЗАБАРОМ"
-          }
-        }
-      }
-    },
-    "Snapshot unreadable.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Snapshot nicht lesbar."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instantánea ilegible."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instantané illisible."
-          }
-        },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Snapshot illeggibile."
-          }
-        },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instantâneo ilegível."
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Instantâneo ilegível."
-          }
-        },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "无法读取快照。"
-          }
-        },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie można odczytać migawki."
-          }
-        },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Не вдалося прочитати знімок."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "都处理好了"
           }
         }
       }
     },
-    "Soon": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bald"
+    "Choose chore" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe wählen"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pronto"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir tarea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bientôt"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisir la tâche"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Presto"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli attività"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Em breve"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz obowiązek"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Em breve"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher tarefa"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "近期"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolher tarefa"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wkrótce"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть справу"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Незабаром"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择事项"
           }
         }
       }
     },
-    "Your completion history at a glance.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dein Erledigungsverlauf auf einen Blick."
+    "Chore" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu historial de tareas completadas de un vistazo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarea"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Votre historique de réalisations en un coup d'œil."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tâche"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La tua cronologia di completamenti a colpo d'occhio."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attività"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O seu histórico de conclusões num relance."
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obowiązek"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O seu histórico de conclusões num relance."
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefa"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "一览你的完成历史。"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefa"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Twoja historia wykonań w skrócie."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Справа"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ваша історія виконань одним поглядом."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "事项"
           }
         }
       }
     },
-    "due": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "fällig"
+    "Chores that are due soon or overdue, with one-tap Done." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgaben, die bald fällig oder überfällig sind, mit Erledigt per Tipp."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "vencidas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tareas próximas a vencer o vencidas, con Hecho en un toque."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "en retard"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les tâches bientôt dues ou en retard, avec Fait en un geste."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "in ritardo"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Attività in scadenza o in ritardo, con Fatto in un tocco."
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "atrasadas"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obowiązki z bliskim terminem lub zaległe, z oznaczaniem jednym dotknięciem."
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "atrasadas"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefas a vencer em breve ou atrasadas, com Feito num toque."
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "逾期"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tarefas a vencer em breve ou atrasadas, com Feito num toque."
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "zaległe"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Справи з близьким терміном або протерміновані, з позначкою «виконано» одним дотиком."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "протерм."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示近期或逾期的事项，并可一键标记完成。"
           }
         }
       }
     },
-    "lastGLANCE · %lld overdue, %lld soon": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld überfällig, %lld bald fällig"
+    "Coming up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demnächst"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld vencidas, %lld por vencer"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximamente"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld en retard, %lld bientôt"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À venir"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld in ritardo, %lld in scadenza"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In arrivo"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld atrasadas, %lld a vencer"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wkrótce"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld atrasadas, %lld a vencer"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · %lld 个逾期，%lld 个即将到期"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · zaległe: %lld, wkrótce: %lld"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Незабаром"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "lastGLANCE · протерміновано: %lld, незабаром: %lld"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "即将到来"
           }
         }
       }
     },
-    "never": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nie"
+    "Done" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erledigt"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nunca"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "jamais"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fait"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "mai"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fatto"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nunca"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zrobione"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nunca"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feito"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "从未"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Feito"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "nigdy"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виконано"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ніколи"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
           }
         }
       }
     },
-    "today": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "heute"
+    "due" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "fällig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hoy"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vencidas"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "aujourd'hui"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "en retard"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "oggi"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "in ritardo"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hoje"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zaległe"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hoje"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "atrasadas"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "今天"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "atrasadas"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "dziś"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "протерм."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "сьогодні"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "逾期"
           }
         }
       }
     },
-    "yesterday": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "gestern"
+    "GLANCE" : {
+      "shouldTranslate" : false
+    },
+    "How many chores need attention, on your Lock Screen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wie viele Aufgaben Aufmerksamkeit brauchen – auf deinem Sperrbildschirm."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ayer"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuántas tareas necesitan atención, en tu pantalla de bloqueo."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "hier"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Combien de tâches demandent de l'attention, sur votre écran verrouillé."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ieri"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quante attività hanno bisogno di attenzione, sulla schermata di blocco."
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ontem"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ile obowiązków wymaga uwagi, na ekranie blokady."
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ontem"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantas tarefas precisam de atenção, na tela de bloqueio."
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "昨天"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quantas tarefas precisam de atenção, no ecrã bloqueado."
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "wczoraj"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скільки справ потребує уваги, на екрані блокування."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "учора"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在锁定屏幕上查看有多少事项需要关注。"
+          }
+        }
+      }
+    },
+    "last" : {
+      "shouldTranslate" : false
+    },
+    "lastGLANCE" : {
+      "shouldTranslate" : false
+    },
+    "lastGLANCE · %lld overdue, %lld soon" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld überfällig, %lld bald fällig"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld vencidas, %lld por vencer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld en retard, %lld bientôt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld in ritardo, %lld in scadenza"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · zaległe: %lld, wkrótce: %lld"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld atrasadas, %lld a vencer"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld atrasadas, %lld a vencer"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · протерміновано: %lld, незабаром: %lld"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "lastGLANCE · %lld 个逾期，%lld 个即将到期"
+          }
+        }
+      }
+    },
+    "Less" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weniger"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meno"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mniej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menos"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менше"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "少"
+          }
+        }
+      }
+    },
+    "Mark chore done" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aufgabe als erledigt markieren"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar tarea como hecha"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marquer la tâche comme faite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Segna attività come fatta"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Oznacz obowiązek jako zrobiony"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar tarefa como concluída"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Marcar tarefa como concluída"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Позначити справу виконаною"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "将事项标记为完成"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Більше"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "多"
+          }
+        }
+      }
+    },
+    "never" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nie"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nunca"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "jamais"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "mai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nigdy"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nunca"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "nunca"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ніколи"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "从未"
+          }
+        }
+      }
+    },
+    "Next birthday" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächster Geburtstag"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo cumpleaños"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prochain anniversaire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prossimo compleanno"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najbliższe urodziny"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo aniversário"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Próximo aniversário"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найближчий день народження"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一个生日"
+          }
+        }
+      }
+    },
+    "One chore and how long it has been, with one-tap Done. Edit the widget to pick which." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Aufgabe und wie lange es her ist, mit Erledigt per Tipp. Widget bearbeiten, um sie zu wählen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Una tarea y cuánto hace de la última vez, con Hecho en un toque. Edita el widget para elegirla."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Une tâche et depuis combien de temps, avec Fait en un geste. Modifiez le widget pour la choisir."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Un'attività e da quanto tempo, con Fatto in un tocco. Modifica il widget per sceglierla."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jeden obowiązek i ile czasu minęło, z oznaczaniem jednym dotknięciem. Edytuj widżet, aby wybrać który."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma tarefa e há quanto tempo foi, com Feito num toque. Edite o widget para escolhê-la."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uma tarefa e há quanto tempo foi, com Feito num toque. Edite o widget para a escolher."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Одна справа і скільки часу минуло, з позначкою «виконано» одним дотиком. Відредагуйте віджет, щоб вибрати, яка саме."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "显示一个事项及距上次完成的时间，并可一键标记完成。编辑小组件可选择要显示的事项。"
+          }
+        }
+      }
+    },
+    "Open lastGLANCE once to sync." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne lastGLANCE einmal zum Synchronisieren."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre lastGLANCE una vez para sincronizar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez lastGLANCE une fois pour synchroniser."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri lastGLANCE una volta per sincronizzare."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz lastGLANCE raz, aby zsynchronizować."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra o lastGLANCE uma vez para sincronizar."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abra o lastGLANCE uma vez para sincronizar."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відкрийте lastGLANCE один раз, щоб синхронізувати."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开一次 lastGLANCE 以完成同步。"
+          }
+        }
+      }
+    },
+    "Open lastGLANCE ready to add a new chore." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnet lastGLANCE direkt beim Hinzufügen einer neuen Aufgabe."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre lastGLANCE listo para añadir una nueva tarea."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre lastGLANCE prêt à ajouter une nouvelle tâche."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apre lastGLANCE pronto per aggiungere una nuova attività."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwiera lastGLANCE od razu w dodawaniu nowego obowiązku."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o lastGLANCE pronto para adicionar uma nova tarefa."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre o lastGLANCE pronto para adicionar uma nova tarefa."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Відкриває lastGLANCE одразу для додавання нової справи."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "打开 lastGLANCE 并直接进入添加新事项界面。"
+          }
+        }
+      }
+    },
+    "Overdue at a glance" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Überfälliges auf einen Blick"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrasadas de un vistazo"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En retard en un coup d'œil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In ritardo a colpo d'occhio"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zaległe w skrócie"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrasadas num relance"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrasadas num relance"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Протерміноване одним поглядом"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "逾期概览"
+          }
+        }
+      }
+    },
+    "Pick the chore this widget tracks." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle die Aufgabe, die dieses Widget zeigt."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige la tarea que sigue este widget."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choisissez la tâche suivie par ce widget."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scegli l'attività seguita da questo widget."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wybierz obowiązek, który śledzi ten widżet."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha a tarefa que este widget acompanha."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escolha a tarefa que este widget acompanha."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Виберіть справу, яку відстежує цей віджет."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "选择此小组件要跟踪的事项。"
+          }
+        }
+      }
+    },
+    "Reach out" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Melde dich mal"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ponte en contacto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "À recontacter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fatti sentire"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Odezwij się"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dê notícias"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dê notícias"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Варто озватися"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该联系了"
+          }
+        }
+      }
+    },
+    "Snapshot unreadable." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snapshot nicht lesbar."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instantánea ilegible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instantané illisible."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snapshot illeggibile."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie można odczytać migawki."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instantâneo ilegível."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Instantâneo ilegível."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не вдалося прочитати знімок."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "无法读取快照。"
+          }
+        }
+      }
+    },
+    "SOON" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BALD"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRONTO"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BIENTÔT"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "PRESTO"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WKRÓTCE"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EM BREVE"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "EM BREVE"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "НЕЗАБАРОМ"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近期"
+          }
+        }
+      }
+    },
+    "Soon" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bald"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pronto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bientôt"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Presto"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wkrótce"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Em breve"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Незабаром"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "近期"
+          }
+        }
+      }
+    },
+    "The next birthday or date, on your Lock Screen." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der nächste Geburtstag oder Termin auf deinem Sperrbildschirm."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El próximo cumpleaños o fecha, en tu pantalla de bloqueo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le prochain anniversaire ou la prochaine date, sur l'écran verrouillé."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il prossimo compleanno o data, sulla schermata di blocco."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najbliższe urodziny lub data na ekranie blokady."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O próximo aniversário ou data, na tela bloqueada."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O próximo aniversário ou data, no ecrã bloqueado."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найближчий день народження чи дата на екрані блокування."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "在锁定屏幕上显示下一个生日或日期。"
+          }
+        }
+      }
+    },
+    "The next birthdays and dates." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die nächsten Geburtstage und Termine."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los próximos cumpleaños y fechas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les prochains anniversaires et dates."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I prossimi compleanni e date."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Najbliższe urodziny i daty."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os próximos aniversários e datas."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os próximos aniversários e datas."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Найближчі дні народження та дати."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "接下来的生日和纪念日。"
+          }
+        }
+      }
+    },
+    "today" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "heute"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hoy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "aujourd'hui"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "oggi"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "dziś"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hoje"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hoje"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "сьогодні"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今天"
+          }
+        }
+      }
+    },
+    "Who you're due to get in touch with. Tap someone to log a contact." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bei wem du dich melden solltest. Tippe auf jemanden, um einen Kontakt zu erfassen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con quién te toca ponerte en contacto. Toca a alguien para registrar un contacto."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les proches à qui donner des nouvelles. Touchez un nom pour noter un contact."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chi è ora di sentire. Tocca qualcuno per registrare un contatto."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Do kogo warto się odezwać. Dotknij osoby, by zapisać kontakt."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com quem você deve falar. Toque em uma pessoa para registrar um contato."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Com quem deve falar. Toque numa pessoa para registar um contacto."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кому час озватися. Торкніться людини, щоб записати контакт."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "该联系的人。轻点某人即可记录联系。"
+          }
+        }
+      }
+    },
+    "yesterday" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "gestern"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ayer"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "hier"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ieri"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "wczoraj"
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ontem"
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ontem"
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "учора"
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "昨天"
+          }
+        }
+      }
+    },
+    "Your completion history at a glance." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Erledigungsverlauf auf einen Blick."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu historial de tareas completadas de un vistazo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre historique de réalisations en un coup d'œil."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La tua cronologia di completamenti a colpo d'occhio."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja historia wykonań w skrócie."
+          }
+        },
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O seu histórico de conclusões num relance."
+          }
+        },
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O seu histórico de conclusões num relance."
+          }
+        },
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваша історія виконань одним поглядом."
+          }
+        },
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "一览你的完成历史。"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

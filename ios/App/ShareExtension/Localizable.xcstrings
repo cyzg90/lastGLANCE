@@ -1,296 +1,296 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@\n\nIt'll be waiting as a new chore next time you open the app.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nSie wartet als neue Aufgabe, wenn du die App das nächste Mal öffnest."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@\n\nIt'll be waiting as a new chore next time you open the app." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nSie wartet als neue Aufgabe, wenn du die App das nächste Mal öffnest."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nTe estará esperando como nueva tarea la próxima vez que abras la app."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nTe estará esperando como nueva tarea la próxima vez que abras la app."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nElle vous attendra comme nouvelle tâche à la prochaine ouverture de l'app."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nElle vous attendra comme nouvelle tâche à la prochaine ouverture de l'app."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nTi aspetterà come nuova attività alla prossima apertura dell'app."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nTi aspetterà come nuova attività alla prossima apertura dell'app."
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nFicará à espera como nova tarefa da próxima vez que abrir a app."
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nPojawi się jako nowy obowiązek, gdy następnym razem otworzysz aplikację."
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nEla estará esperando como nova tarefa na próxima vez que você abrir o app."
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nEla estará esperando como nova tarefa na próxima vez que você abrir o app."
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\n下次打开应用时，它会作为一个新事项等待你处理。"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nFicará à espera como nova tarefa da próxima vez que abrir a app."
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nPojawi się jako nowy obowiązek, gdy następnym razem otworzysz aplikację."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\nНаступного разу, коли ви відкриєте застосунок, на вас чекатиме нова справа."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%@\n\nНаступного разу, коли ви відкриєте застосунок, на вас чекатиме нова справа."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@\n\n下次打开应用时，它会作为一个新事项等待你处理。"
           }
         }
       }
     },
-    "Done": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fertig"
+    "Done" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Listo"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Terminer"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Terminer"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fine"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fine"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Concluído"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gotowe"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Concluído"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concluído"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "完成"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concluído"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gotowe"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Готово"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Готово"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "完成"
           }
         }
       }
     },
-    "Nothing to save": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nichts zu speichern"
+    "Nothing to save" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nichts zu speichern"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada que guardar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada que guardar"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Rien à enregistrer"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rien à enregistrer"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Niente da salvare"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niente da salvare"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada para guardar"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie ma nic do zapisania"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nada para salvar"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada para salvar"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "没有可保存的内容"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nada para guardar"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Nie ma nic do zapisania"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нічого зберігати"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Нічого зберігати"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "没有可保存的内容"
           }
         }
       }
     },
-    "Saved to lastGLANCE": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "In lastGLANCE gespeichert"
+    "Saved to lastGLANCE" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In lastGLANCE gespeichert"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardado en lastGLANCE"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardado en lastGLANCE"
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enregistré dans lastGLANCE"
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enregistré dans lastGLANCE"
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvato in lastGLANCE"
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvato in lastGLANCE"
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Guardado no lastGLANCE"
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapisano w lastGLANCE"
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Salvo no lastGLANCE"
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Salvo no lastGLANCE"
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "已保存到 lastGLANCE"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardado no lastGLANCE"
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zapisano w lastGLANCE"
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Збережено в lastGLANCE"
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Збережено в lastGLANCE"
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "已保存到 lastGLANCE"
           }
         }
       }
     },
-    "This item didn't contain any text or link lastGLANCE could use.": {
-      "localizations": {
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dieses Element enthielt keinen Text und keinen Link, den lastGLANCE verwenden kann."
+    "This item didn't contain any text or link lastGLANCE could use." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Element enthielt keinen Text und keinen Link, den lastGLANCE verwenden kann."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este elemento no contenía texto ni enlaces que lastGLANCE pueda usar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este elemento no contenía texto ni enlaces que lastGLANCE pueda usar."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cet élément ne contenait ni texte ni lien utilisable par lastGLANCE."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet élément ne contenait ni texte ni lien utilisable par lastGLANCE."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Questo elemento non conteneva testo o link utilizzabili da lastGLANCE."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo elemento non conteneva testo o link utilizzabili da lastGLANCE."
           }
         },
-        "pt-PT": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este item não continha texto nem ligações que o lastGLANCE possa usar."
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten element nie zawierał tekstu ani linku, którego lastGLANCE mógłby użyć."
           }
         },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Este item não continha texto nem links que o lastGLANCE possa usar."
+        "pt-BR" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este item não continha texto nem links que o lastGLANCE possa usar."
           }
         },
-        "zh-CN": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "此内容不包含 lastGLANCE 可使用的文本或链接。"
+        "pt-PT" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este item não continha texto nem ligações que o lastGLANCE possa usar."
           }
         },
-        "pl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ten element nie zawierał tekstu ani linku, którego lastGLANCE mógłby użyć."
+        "uk" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Цей елемент не містив тексту чи посилання, які lastGLANCE міг би використати."
           }
         },
-        "uk": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Цей елемент не містив тексту чи посилання, які lastGLANCE міг би використати."
+        "zh-CN" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "此内容不包含 lastGLANCE 可使用的文本或链接。"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
