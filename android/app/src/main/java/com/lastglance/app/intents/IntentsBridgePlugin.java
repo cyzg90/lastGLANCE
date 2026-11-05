@@ -37,6 +37,9 @@ public class IntentsBridgePlugin extends Plugin {
     private final BroadcastReceiver intentReceivedReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
+            // A launcher REFRESH waiting on this wake records that it arrived, so an
+            // unanswered one says whether the app or the page was where it stopped.
+            com.lastglance.app.launcher.LauncherRefreshTrace.markWoken(context);
             notifyListeners("pendingIntent", new JSObject());
         }
     };

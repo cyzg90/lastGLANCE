@@ -7,24 +7,25 @@ import { isAndroid, isIOS } from './platform'
 // Both shells implement the same plugin (DirectAccessPlugin.kt, .swift) with
 // one difference that the bridge carries rather than hides: Android holds a
 // FOLDER (a SAF tree) and offers files by path below it; iOS holds FILES (a
-// bookmark each for the snapshot, the household roster and the intents event
-// set), because the Files providers cannot hand an app a folder. The bridge
+// bookmark each for the snapshot, the People snapshot, the household roster
+// and the intents event set), because the Files providers cannot hand an app a folder. The bridge
 // an app-level transport receives is therefore the same shape dayGLANCE's
 // shells produce (its src/sync/directAccessNativeBridge.js), so the transport
 // and the cycle are shared code:
 //
 //   restore / status            → { configured, name, path, reachable }
 //   pick()                      → the status, null when cancelled, { error } when refused
-//   pickFile(slot) / createFile(slot)   iOS only (the snapshot, 'users' or 'events')
+//   pickFile(slot) / createFile(slot)   iOS only (the snapshot, 'people', 'users' or 'events')
 //   disconnect / read / write / deleteFile
 //   paths.{list, read, write, remove, makeDir}   Android only, paths confined to the folder
+//   people.{status, read, write, forget}         iOS only
 //   users.{status, read, write, forget}          iOS only
 //   events.{status, read, write, forget}         iOS only
 //
 // Web/PWA has no folder access a page could hold across sessions: the plugin
 // is absent there and isDirectAccessAvailable() is false.
 
-export type DirectAccessSlot = 'snapshot' | 'users' | 'events'
+export type DirectAccessSlot = 'snapshot' | 'people' | 'users' | 'events'
 
 export interface DirectAccessStatus {
   configured: boolean
@@ -55,7 +56,11 @@ export interface DirectAccessPluginType {
   writeFile(options: { rel: string; text: string }): Promise<{ ok: boolean }>
   deleteFileAt(options: { rel: string }): Promise<{ ok: boolean }>
   makeDir(options: { rel: string }): Promise<{ ok: boolean }>
-  // iOS: the roster and the event set as bookmarked files.
+  // iOS: the People snapshot, the roster and the event set as bookmarked files.
+  peopleStatus(): Promise<DirectAccessStatus>
+  readPeople(): Promise<DirectAccessRead>
+  writePeople(options: { text: string }): Promise<{ ok: boolean }>
+  forgetPeople(): Promise<void>
   usersStatus(): Promise<DirectAccessStatus>
   readUsers(): Promise<DirectAccessRead>
   writeUsers(options: { text: string }): Promise<{ ok: boolean }>
@@ -97,6 +102,7 @@ export interface DirectAccessBridge {
     remove: (rel: string) => Promise<boolean>
     makeDir: (rel: string) => Promise<boolean>
   }
+  people?: FileSlot
   users?: FileSlot
   events?: FileSlot
 }
@@ -165,6 +171,7 @@ export function createDirectAccessBridge(
           },
         }
       : {
+          people: slot(() => plugin.peopleStatus(), () => plugin.readPeople(), (o) => plugin.writePeople(o), () => plugin.forgetPeople()),
           users: slot(() => plugin.usersStatus(), () => plugin.readUsers(), (o) => plugin.writeUsers(o), () => plugin.forgetUsers()),
           events: slot(() => plugin.eventsStatus(), () => plugin.readEvents(), (o) => plugin.writeEvents(o), () => plugin.forgetEvents()),
         }),

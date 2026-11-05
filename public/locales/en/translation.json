@@ -146,7 +146,9 @@
     "cancel": "Cancel",
     "saving": "Saving…",
     "save": "Save",
-    "add": "Add"
+    "add": "Add",
+    "pinLabel": "Pinned",
+    "pinHint": "Also shown in Pinned, most overdue first."
   },
   "choreRow": {
     "everyNDays": "every {{n}}d",
@@ -161,7 +163,8 @@
     "quickLogAriaLabel": "Quick-log {{name}}",
     "sendAriaLabel": "Send {{name}} to dayGLANCE",
     "choreLabel": "{{name}} — {{elapsed}}",
-    "seasonalRange": "Seasonal: {{start}} – {{end}}"
+    "seasonalRange": "Seasonal: {{start}} – {{end}}",
+    "pinned": "Pinned"
   },
   "dateTimePicker": {
     "setDate": "Set date…",
@@ -304,6 +307,11 @@
       "notConnected": "Connect a folder under Cloud Sync first. Until then this transport stays inactive.",
       "reload": "Saved on close; the app reloads to start polling the folder.",
       "passphraseRequired": "Direct Access intents are encrypted with your sync passphrase. Enter it to enable them."
+    },
+    "icloudIntents": {
+      "title": "iCloud intents",
+      "label": "Intents through iCloud",
+      "hint": "Exchange intents with dayGLANCE on this iPhone or iPad through iCloud, with nothing else to set up. dayGLANCE needs its iCloud intents turned on too."
     }
   },
   "journal": {
@@ -378,7 +386,9 @@
     "daysLater_one": "{{count}} day later",
     "daysLater_other": "{{count}} days later",
     "delete": "Delete",
-    "viaDayglance": "via dayGLANCE"
+    "viaDayglance": "via dayGLANCE",
+    "pin": "Pin",
+    "unpin": "Unpin"
   },
   "notifications": {
     "itsBeenDays_one": "It's been {{count}} day",
@@ -418,7 +428,8 @@
     "showFabsAriaLabel": "Show action buttons",
     "nothingNeedsAttention": "Nothing needs attention right now.",
     "nothingAssignedToYou": "Nothing here is assigned to you.",
-    "showAllChores": "Show all chores"
+    "showAllChores": "Show all chores",
+    "pinned": "Pinned"
   },
   "search": {
     "placeholder": "Search chores…",
@@ -464,6 +475,7 @@
       "AUTH_FAILURE": "Sign-in failed. Check your username and password.",
       "LOCKED": "Another device is syncing right now. Try again in a moment.",
       "NETWORK_ERROR": "Couldn't reach the sync server. Check your connection and try again.",
+      "PAYLOAD_TOO_LARGE": "The sync server refused the upload because it is too large. Your changes are saved on this device. Ask whoever runs your sync server to raise its upload size limit.",
       "KEY_MISMATCH": "Wrong sync passphrase — it must exactly match the passphrase used on your other devices.",
       "ROW_DECRYPT_FAILED": "Some synced data couldn't be decrypted. Check your sync passphrase.",
       "VERIFIER_UNSUPPORTED": "Your sync server needs to be updated to support key verification.",
@@ -496,6 +508,7 @@
     "password": "Password",
     "passwordPlaceholder": "••••••••",
     "passwordHint": "Stored in browser localStorage — keep your device secure.",
+    "cleartextWarning": "This connection isn't encrypted. Your password and data travel in plain text, so only use http on a network you trust.",
     "testConnection": "Test connection",
     "connected": "Connected",
     "testFailed": "Failed",
@@ -562,6 +575,9 @@
       "encryptPassphraseHint": "Choose a sync passphrase. Every device that uses this folder enters the same one.",
       "encryptTurnOn": "Turn on",
       "cancel": "Cancel",
+      "peopleHint": "People syncs in a second file next to the sync file: lastglance-people.json. Choose the one another device created, or create it in the same folder.",
+      "peopleChosen": "People file: {{name}}",
+      "peopleNotChosen": "No People file chosen. People won't sync through the folder until you choose one.",
       "rosterHint": "The household roster is a second file in the folder: glance-users.json.",
       "rosterChosen": "Roster file: {{name}}",
       "rosterNotChosen": "No roster file chosen.",
@@ -600,7 +616,7 @@
     "syncNow": "Sync now",
     "syncOk": "Synced!",
     "syncFailed": "Sync failed",
-    "syncNotConfigured": "Cloud sync is not configured. Set up WebDAV or Direct Access under Settings → Cloud Sync first."
+    "syncNotConfigured": "Cloud sync is not configured. Set up GLANCEvault, WebDAV or Direct Access under Settings → Cloud Sync first."
   },
   "welcome": {
     "title": "Welcome to lastGLANCE",
@@ -939,6 +955,22 @@
         "inbound": "{{names}} reached out",
         "mutual": "Caught up with {{names}}"
       }
+    }
+  },
+  "icloud": {
+    "title": "iCloud",
+    "switchLabel": "Sync with iCloud",
+    "onHint": "Your chores and People stay in step on every iPhone and iPad signed in to your Apple ID. Nothing to set up.",
+    "offHint": "Off on this device. The copy in iCloud and your other devices are untouched.",
+    "firstRun": {
+      "title": "Restore from iCloud?",
+      "bodyChores": "iCloud holds lastGLANCE data from your other devices. Chores in iCloud: {{count}}.",
+      "bodyPeople": "iCloud holds lastGLANCE data from your other devices. People in iCloud: {{count}}.",
+      "lastModified": "Last changed {{when}}",
+      "restore": "Restore from iCloud",
+      "restoreHint": "Bring your chores and People onto this device and keep them in sync.",
+      "startFresh": "Start fresh on this device",
+      "startFreshHint": "Turn iCloud sync off here. The copy in iCloud stays, and you can turn it on later in Cloud Sync."
     }
   }
 }

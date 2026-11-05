@@ -119,14 +119,16 @@ function onChoreCompleted(chore: { sync_id: string; name: string; completedAt: s
 }
 
 // Builds the production IntentContext. `onChanged` refreshes derived UI (heatmap)
-// after a mutating action, mirroring how the pollers call loadHeatmap.
-export function buildIntentContext(onChanged?: () => void): IntentContext {
+// after a mutating action, mirroring how the pollers call loadHeatmap. `via`
+// names the sender in the activity log: Tasker for the automation transport,
+// GLANCElauncher for its writes.
+export function buildIntentContext(onChanged?: () => void, via = 'Tasker'): IntentContext {
   return {
     listChores,
     ensureCategory,
     createChore: async (input) => {
       const created = await createChore(input)
-      addActivityEntry({ type: 'received', message: `Created "${input.name}" via Tasker` })
+      addActivityEntry({ type: 'received', message: `Created "${input.name}" via ${via}` })
       // Mirror the COMPLETE path and the poller transports: lg:chore-logged is
       // what makes the Ribbon reload its data. Without it, an intent-created
       // chore lands in the DB but stays invisible until the next app restart.
@@ -142,14 +144,14 @@ export function buildIntentContext(onChanged?: () => void): IntentContext {
     },
     navigate,
     onChoreCompleted: (chore) => {
-      addActivityEntry({ type: 'received', message: `Completed "${chore.name}" via Tasker` })
+      addActivityEntry({ type: 'received', message: `Completed "${chore.name}" via ${via}` })
       onChoreCompleted(chore)
     },
     listPeople: async () => visibleToMe(await getPeople(), getMultiUserEnabled(), getMeUserSyncId()),
     interactionExists,
     logInteraction: async (input) => {
       const logged = await logInteraction(input)
-      addActivityEntry({ type: 'received', message: 'Logged a contact via Tasker' })
+      addActivityEntry({ type: 'received', message: `Logged a contact via ${via}` })
       return logged
     },
   }

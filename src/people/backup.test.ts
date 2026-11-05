@@ -1,10 +1,11 @@
 import 'fake-indexeddb/auto'
 import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest'
 import { db } from '@/db/client'
-import { createCategory, exportBackup, restoreFromBackup } from '@/db/queries'
+import { createCategory, createChore, exportBackup, restoreFromBackup } from '@/db/queries'
 import { createPerson, logInteraction, deletePerson } from './queries'
 import { buildFullBackupPayload, buildPayload } from '@/sync/engine'
 import { registerPeopleFileSyncRunner } from './sync/dirtyTracker'
+import { lastPeopleLocalEditAt } from '@/sync/localEditStamp'
 
 beforeEach(async () => {
   const store = new Map<string, string>()
@@ -23,6 +24,29 @@ afterEach(() => {
 })
 
 describe('People in full backups', () => {
+  it('preserves pinned chores and People in local and remote full backups', async () => {
+    const categoryId = await createCategory('Home')
+    await createChore({
+      category_id: categoryId, name: 'Water plants', pinned: true,
+      target_cadence_days: 7, notify_when_overdue: false, auto_schedule_to_dayglance: false,
+      preferred_schedule_behavior: null, seasonal_start: null, seasonal_end: null,
+      details: null, assigned_user_sync_ids: [],
+    })
+    await createPerson({ name: 'Sam' })
+    const backup = await exportBackup()
+    const remote = await buildFullBackupPayload()
+    expect(remote.chores[0].pinned).toBe(true)
+    expect(remote.peopleData.people).toHaveLength(1)
+    await db.chores.clear()
+    await db.people.clear()
+    await restoreFromBackup(backup)
+    expect((await db.chores.toArray())[0].pinned).toBe(true)
+    expect((await db.people.toArray())[0].name).toBe('Sam')
+    await restoreFromBackup(remote)
+    expect((await db.chores.toArray())[0].pinned).toBe(true)
+    expect((await db.people.toArray())[0].name).toBe('Sam')
+  })
+
   it('restores a People-only export and tombstones people omitted by the snapshot', async () => {
     const person = await createPerson({ name: 'Sam' })
     await logInteraction({ person_sync_ids: [person.sync_id], channel: 'call' })
@@ -82,6 +106,7 @@ describe('People in full backups', () => {
     const sync = vi.fn(async () => {})
     registerPeopleFileSyncRunner(sync)
     const person = await createPerson({ name: 'Sam' })
+    expect(lastPeopleLocalEditAt()).not.toBeNull()
     await deletePerson(person.sync_id)
     expect(sync).not.toHaveBeenCalled()
     await vi.advanceTimersByTimeAsync(1000)

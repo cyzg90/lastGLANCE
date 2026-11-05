@@ -7,9 +7,12 @@ import {
   getContactLinks, getDatesForPerson, getInteractionsForPerson, getPeople, getPerson, logInteraction,
   removeContactLink, setContactLink, updateInteraction, updatePerson,
 } from './queries'
+import { applyPeoplePayload, buildPeoplePayload } from './sync/fileEngine'
+import { PEOPLE_LOCAL_EDIT_KEY, LOCAL_EDIT_KEY } from '@/sync/localEditStamp'
 
-// markPeopleDirty is a no-op without a registered People vault engine, and
-// window is guarded, so these run cleanly under node.
+// markPeopleDirty only stamps this device's People edit time without a
+// registered People vault engine, and window is guarded, so these run cleanly
+// under node.
 
 function installLocalStorage(): void {
   const store = new Map<string, string>()
@@ -165,5 +168,28 @@ describe('contact links', () => {
     await removeContactLink(a.sync_id)
     expect(await getContactLinks()).toEqual([])
     expect(await getPerson(a.sync_id)).toBeDefined()
+  })
+})
+
+describe('the People "edited here" stamp (Direct Access People file)', () => {
+  it('every write of the data layer stamps it; an apply from sync never does; chores are untouched', async () => {
+    localStorage.removeItem(PEOPLE_LOCAL_EDIT_KEY)
+    localStorage.removeItem(LOCAL_EDIT_KEY)
+    const p = await createPerson({ name: 'Maya' })
+    const first = localStorage.getItem(PEOPLE_LOCAL_EDIT_KEY)
+    expect(first).not.toBeNull()
+    expect(localStorage.getItem(LOCAL_EDIT_KEY)).toBeNull()
+
+    localStorage.removeItem(PEOPLE_LOCAL_EDIT_KEY)
+    await logInteraction({ person_sync_ids: [p.sync_id], channel: 'call' })
+    expect(localStorage.getItem(PEOPLE_LOCAL_EDIT_KEY)).not.toBeNull()
+
+    // A payload arriving from another device (any transport's apply).
+    const payload = await buildPeoplePayload()
+    await db.people.clear(); await db.interactions.clear()
+    localStorage.removeItem(PEOPLE_LOCAL_EDIT_KEY)
+    await applyPeoplePayload(payload, { allowEmpty: false })
+    expect((await getPeople()).map(x => x.name)).toEqual(['Maya'])
+    expect(localStorage.getItem(PEOPLE_LOCAL_EDIT_KEY)).toBeNull()
   })
 })

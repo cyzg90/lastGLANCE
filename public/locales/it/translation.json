@@ -146,7 +146,9 @@
     "cancel": "Annulla",
     "saving": "Salvataggio…",
     "save": "Salva",
-    "add": "Aggiungi"
+    "add": "Aggiungi",
+    "pinLabel": "Fissata",
+    "pinHint": "Compare anche in Fissate, prima le più in ritardo."
   },
   "choreRow": {
     "everyNDays": "ogni {{n}}g",
@@ -161,7 +163,8 @@
     "quickLogAriaLabel": "Registra {{name}} rapidamente",
     "sendAriaLabel": "Invia {{name}} a dayGLANCE",
     "choreLabel": "{{name}} — {{elapsed}}",
-    "seasonalRange": "Stagionale: {{start}} – {{end}}"
+    "seasonalRange": "Stagionale: {{start}} – {{end}}",
+    "pinned": "Fissata"
   },
   "dateTimePicker": {
     "setDate": "Scegli una data…",
@@ -304,6 +307,11 @@
       "notConnected": "Collega prima una cartella in Sincronizzazione cloud. Fino ad allora questo trasporto resta inattivo.",
       "reload": "Salvato alla chiusura; l'app si ricarica per iniziare a controllare la cartella.",
       "passphraseRequired": "Gli intent ad accesso diretto sono cifrati con la tua passphrase di sincronizzazione. Inseriscila per attivarli."
+    },
+    "icloudIntents": {
+      "title": "Intent iCloud",
+      "label": "Intent tramite iCloud",
+      "hint": "Scambia intent con dayGLANCE su questo iPhone o iPad tramite iCloud, senza altro da configurare. Anche in dayGLANCE devono essere attivati gli intent iCloud."
     }
   },
   "journal": {
@@ -378,7 +386,9 @@
     "daysLater_one": "{{count}} giorno dopo",
     "daysLater_other": "{{count}} giorni dopo",
     "delete": "Elimina",
-    "viaDayglance": "via dayGLANCE"
+    "viaDayglance": "via dayGLANCE",
+    "pin": "Fissa",
+    "unpin": "Non fissare"
   },
   "notifications": {
     "itsBeenDays_one": "È passato {{count}} giorno",
@@ -418,7 +428,8 @@
     "showFabsAriaLabel": "Mostra i pulsanti azione",
     "nothingNeedsAttention": "Al momento non c'è nulla di urgente.",
     "nothingAssignedToYou": "Qui non c'è nulla assegnato a te.",
-    "showAllChores": "Mostra tutte le attività"
+    "showAllChores": "Mostra tutte le attività",
+    "pinned": "Fissate"
   },
   "search": {
     "placeholder": "Cerca attività…",
@@ -464,6 +475,7 @@
       "AUTH_FAILURE": "Accesso non riuscito. Controlla nome utente e password.",
       "LOCKED": "Un altro dispositivo sta sincronizzando in questo momento. Riprova tra poco.",
       "NETWORK_ERROR": "Impossibile raggiungere il server di sincronizzazione. Controlla la connessione e riprova.",
+      "PAYLOAD_TOO_LARGE": "Il server di sincronizzazione ha rifiutato il caricamento perché è troppo grande. Le tue modifiche sono salvate su questo dispositivo. Chiedi a chi gestisce il server di sincronizzazione di aumentare il limite di dimensione dei caricamenti.",
       "KEY_MISMATCH": "Passphrase errata — deve corrispondere esattamente a quella degli altri tuoi dispositivi.",
       "ROW_DECRYPT_FAILED": "Alcuni dati sincronizzati non possono essere decifrati. Controlla la tua passphrase.",
       "VERIFIER_UNSUPPORTED": "Il tuo server di sincronizzazione deve essere aggiornato per supportare la verifica delle chiavi.",
@@ -496,6 +508,7 @@
     "password": "Password",
     "passwordPlaceholder": "••••••••",
     "passwordHint": "Memorizzata nel localStorage del browser — proteggi il tuo dispositivo.",
+    "cleartextWarning": "Questa connessione non è cifrata. Password e dati viaggiano in chiaro, quindi usa http solo su una rete di cui ti fidi.",
     "testConnection": "Testa connessione",
     "connected": "Connesso",
     "testFailed": "Fallito",
@@ -562,6 +575,9 @@
       "encryptPassphraseHint": "Scegli una passphrase di sincronizzazione. Ogni dispositivo che usa questa cartella inserisce la stessa.",
       "encryptTurnOn": "Attiva",
       "cancel": "Annulla",
+      "peopleHint": "Persone si sincronizza in un secondo file accanto al file di sincronizzazione: lastglance-people.json. Scegli quello creato da un altro dispositivo o crealo nella stessa cartella.",
+      "peopleChosen": "File Persone: {{name}}",
+      "peopleNotChosen": "Nessun file Persone scelto. Persone non si sincronizzerà tramite la cartella finché non ne scegli uno.",
       "rosterHint": "L'elenco della famiglia è un secondo file nella cartella: glance-users.json.",
       "rosterChosen": "File dell'elenco: {{name}}",
       "rosterNotChosen": "Nessun file dell'elenco scelto.",
@@ -600,7 +616,7 @@
     "syncNow": "Sincronizza ora",
     "syncOk": "Sincronizzato!",
     "syncFailed": "Sincronizzazione fallita",
-    "syncNotConfigured": "La sincronizzazione cloud non è configurata. Configura WebDAV o l'accesso diretto in Impostazioni → Sincronizzazione cloud."
+    "syncNotConfigured": "La sincronizzazione cloud non è configurata. Configura GLANCEvault, WebDAV o l'accesso diretto in Impostazioni → Sincronizzazione cloud."
   },
   "welcome": {
     "title": "Benvenuto in lastGLANCE",
@@ -939,6 +955,22 @@
         "inbound": "Notizie da {{names}}",
         "mutual": "Contatto con {{names}}"
       }
+    }
+  },
+  "icloud": {
+    "title": "iCloud",
+    "switchLabel": "Sincronizza con iCloud",
+    "onHint": "Le tue faccende e le tue Persone restano allineate su ogni iPhone e iPad con il tuo ID Apple. Niente da configurare.",
+    "offHint": "Disattivato su questo dispositivo. La copia in iCloud e gli altri dispositivi restano invariati.",
+    "firstRun": {
+      "title": "Ripristinare da iCloud?",
+      "bodyChores": "iCloud contiene dati di lastGLANCE dai tuoi altri dispositivi. Faccende in iCloud: {{count}}.",
+      "bodyPeople": "iCloud contiene dati di lastGLANCE dai tuoi altri dispositivi. Persone in iCloud: {{count}}.",
+      "lastModified": "Ultima modifica: {{when}}",
+      "restore": "Ripristina da iCloud",
+      "restoreHint": "Porta le tue faccende e Persone su questo dispositivo e mantienile sincronizzate.",
+      "startFresh": "Ricomincia da zero su questo dispositivo",
+      "startFreshHint": "Disattiva qui la sincronizzazione iCloud. La copia in iCloud resta e puoi riattivarla più tardi in Sincronizzazione cloud."
     }
   }
 }

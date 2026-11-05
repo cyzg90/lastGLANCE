@@ -7,7 +7,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // RevenueCat, before the scene loads BridgeViewController and its web
+        // view: BillingBridgePlugin reads the cached entitlement and prices
+        // this starts fetching. The key is RevenueCat's public Apple SDK key.
+        RevenueCatBilling.shared.configure(apiKey: "appl_xWQMlBxhFQklvPrhJlwwwSkuCWX")
         return true
     }
 
@@ -101,6 +104,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             return (id.isEmpty || id == "/") ? nil : "log:\(id)"
         case "people":
             return "people"
+        case "chores":
+            return "chores"
         case "action":
             switch url.lastPathComponent {
             case "search": return "action:search"

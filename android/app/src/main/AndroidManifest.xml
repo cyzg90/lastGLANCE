@@ -7,6 +7,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:localeConfig="@xml/locales_config"
+        android:networkSecurityConfig="@xml/network_security_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
@@ -54,6 +55,28 @@
                 <action android:name="app.lastglance.OPEN" />
                 <action android:name="app.lastglance.QUERY" />
                 <action android:name="app.lastglance.LOG_INTERACTION" />
+            </intent-filter>
+        </receiver>
+
+        <!-- GLANCElauncher (docs/launcher-integration.md): the launcher snapshot,
+             read-only, and the launcher's write receiver beside the automation
+             one. Both behind the launcher permission declared below; the
+             receiver does not consult the automation-intents toggle. -->
+        <provider
+            android:name=".launcher.LauncherProvider"
+            android:authorities="com.lastglance.app.launcher"
+            android:exported="true"
+            android:readPermission="com.lastglance.permission.LAUNCHER" />
+
+        <receiver
+            android:name=".launcher.LauncherIntentReceiver"
+            android:exported="true"
+            android:permission="com.lastglance.permission.LAUNCHER">
+            <intent-filter>
+                <action android:name="com.lastglance.app.launcher.CREATE" />
+                <action android:name="com.lastglance.app.launcher.COMPLETE" />
+                <action android:name="com.lastglance.app.launcher.LOG_INTERACTION" />
+                <action android:name="com.lastglance.app.launcher.REFRESH" />
             </intent-filter>
         </receiver>
 
@@ -109,6 +132,18 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/soon_list_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".glance.PinnedWidgetReceiver"
+            android:label="@string/widget_label_pinned"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/pinned_widget_info" />
         </receiver>
 
         <receiver
@@ -174,6 +209,19 @@
 
     <!-- Permissions -->
 
+    <!-- The GLANCElauncher's permission to read the launcher snapshot and send
+         writes. signature|knownSigner: lastGLANCE's own signature, or one of the
+         LAUNCHER's certificates in res/values/launcher_certs.xml (release,
+         debug until public release, Play once it ships there). knownSigner
+         exists from Android 12; below that only the signature half applies and
+         the launcher stays in demo mode. -->
+    <permission
+        android:name="com.lastglance.permission.LAUNCHER"
+        android:label="@string/launcher_permission_label"
+        android:description="@string/launcher_permission_description"
+        android:protectionLevel="signature|knownSigner"
+        android:knownCerts="@array/launcher_known_certs" />
+
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Play Billing, declared ahead of the paywall integration: the Play Console
          only allows creating in-app products/subscriptions once an uploaded
@@ -186,6 +234,10 @@
     <!-- Exact alarms for Doze-proof overdue reminders (Android 12+). The plugin
          already declares POST_NOTIFICATIONS and RECEIVE_BOOT_COMPLETED. -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Expedited WorkManager jobs run as a foreground service below Android 12
+         (launcher/LauncherAwakeWorker.kt); from 12 on they are JobScheduler
+         expedited jobs and this permission is unused. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" android:maxSdkVersion="30" />
     <!-- People: read-only address book access for importing and linking people
          (ContactsPlugin). Requested only when the user taps Import or Link,
          after the in-app disclosure, and only when the People contacts setting

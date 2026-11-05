@@ -28,6 +28,19 @@ public final class SharedDataStore {
     // Single-depth on purpose: each Activity intent is self-sufficient and a live
     // broadcast wakes the WebView immediately, so bursts don't queue here.
     private static final String KEY_PENDING_INTENT = "pending_intent";
+    // The GLANCElauncher snapshot (docs/launcher-integration.md), pushed by the
+    // web app through LauncherBridgePlugin and served read-only by
+    // LauncherProvider. Separate from the widget snapshot: a different shape,
+    // with a different reader.
+    private static final String KEY_LAUNCHER_SNAPSHOT = "launcher_snapshot";
+    // The launcher's inbound writes, a JSON array of {action, payload, clientId,
+    // receivedAt}, appended by LauncherIntentReceiver and drained by the web app
+    // through LauncherBridgePlugin. A QUEUE, unlike the automation slot above:
+    // the launcher may send two writes in a row at a dead app and the second
+    // must not replace the first. Each write carries its own client id, so the
+    // web layer dedupes a re-sent one and the queue can be bounded.
+    private static final String KEY_PENDING_LAUNCHER_INTENTS = "pending_launcher_intents";
+    private static final int PENDING_LAUNCHER_INTENTS_MAX = 200;
 
     private SharedDataStore() {}
 
@@ -97,6 +110,176 @@ public final class SharedDataStore {
         String value = prefs(context).getString(KEY_PENDING_INTENT, null);
         if (value != null) prefs(context).edit().remove(KEY_PENDING_INTENT).apply();
         return value;
+    }
+
+    public static void writeLauncherSnapshot(Context context, String json) {
+        prefs(context).edit().putString(KEY_LAUNCHER_SNAPSHOT, json).apply();
+    }
+
+    public static String readLauncherSnapshot(Context context) {
+        return prefs(context).getString(KEY_LAUNCHER_SNAPSHOT, null);
+    }
+
+    // Append one launcher write to the durable queue, dropping the oldest past
+    // the cap. Written synchronously (commit) so the entry is on disk before the
+    // receiver returns and the wake broadcast goes out.
+    public static void appendPendingLauncherIntent(Context context, String entryJson) {
+        synchronized (LAUNCHER_QUEUE_LOCK) {
+        try {
+            JSONArray arr = new JSONArray(prefs(context).getString(KEY_PENDING_LAUNCHER_INTENTS, "[]"));
+            arr.put(new JSONObject(entryJson));
+            while (arr.length() > PENDING_LAUNCHER_INTENTS_MAX) arr.remove(0);
+            prefs(context).edit().putString(KEY_PENDING_LAUNCHER_INTENTS, arr.toString()).commit();
+        } catch (Exception e) {
+            // A malformed entry is the receiver's bug, not a write to keep.
+        }
+        }
+    }
+
+    // The receiver appends on the main thread while the page takes and acks on a bridge thread.
+    private static final Object LAUNCHER_QUEUE_LOCK = new Object();
+
+    // Every queued launcher entry as a JSON array string, oldest first. The writes
+    // STAY queued until the page acknowledges each one as handled
+    // (ackPendingLauncherIntents); a REFRESH is taken off at once
+    // (launcher/LauncherWriteQueue.kt says why).
+    public static String takePendingLauncherIntents(Context context) {
+        synchronized (LAUNCHER_QUEUE_LOCK) {
+            String raw = prefs(context).getString(KEY_PENDING_LAUNCHER_INTENTS, "[]");
+            com.lastglance.app.launcher.LauncherWriteQueue.Taken taken =
+                com.lastglance.app.launcher.LauncherWriteQueue.take(raw, com.lastglance.app.launcher.LauncherIntentReceiver.ACTION_REFRESH);
+            prefs(context).edit().putString(KEY_PENDING_LAUNCHER_INTENTS, taken.getKept()).commit();
+            return taken.getDelivered();
+        }
+    }
+
+    // Removes the launcher writes the page has handled, by clientId (a JSON array of strings).
+    public static void ackPendingLauncherIntents(Context context, String idsJson) {
+        synchronized (LAUNCHER_QUEUE_LOCK) {
+            String raw = prefs(context).getString(KEY_PENDING_LAUNCHER_INTENTS, "[]");
+            prefs(context).edit().putString(KEY_PENDING_LAUNCHER_INTENTS,
+                com.lastglance.app.launcher.LauncherWriteQueue.ack(raw, idsJson)).commit();
+        }
+    }
+
+    // The launcher heartbeat (src/native/launcherHeartbeat.ts): {checkedAt, syncedAt},
+    // written on every run of the snapshot builder whether or not the snapshot
+    // changed, and merged into the provider's meta row.
+    private static final String KEY_LAUNCHER_HEARTBEAT = "launcher_heartbeat";
+    // The last few launcher REFRESH requests and how each went, newest last.
+    private static final String KEY_LAUNCHER_REFRESH_LOG = "launcher_refresh_log";
+    private static final int MAX_LAUNCHER_REFRESH_LOG = 20;
+    // When the last headless refresh started (ms): the floor between runs
+    // (launcher/HeadlessRefreshPolicy.kt). Stamped at the start, so a run that
+    // crashed still counts.
+    private static final String KEY_LAUNCHER_HEADLESS_LAST_RUN = "launcher_headless_last_run";
+
+    public static long launcherHeadlessLastRunAt(Context context) {
+        return prefs(context).getLong(KEY_LAUNCHER_HEADLESS_LAST_RUN, 0L);
+    }
+
+    public static void setLauncherHeadlessLastRunAt(Context context, long at) {
+        prefs(context).edit().putLong(KEY_LAUNCHER_HEADLESS_LAST_RUN, at).apply();
+    }
+
+    public static void mergeLauncherHeartbeat(Context context, String json) {
+        try {
+            JSONObject incoming = new JSONObject(json);
+            String existing = prefs(context).getString(KEY_LAUNCHER_HEARTBEAT, null);
+            JSONObject merged = existing != null ? new JSONObject(existing) : new JSONObject();
+            for (java.util.Iterator<String> it = incoming.keys(); it.hasNext(); ) {
+                String key = it.next();
+                merged.put(key, incoming.get(key));
+            }
+            prefs(context).edit().putString(KEY_LAUNCHER_HEARTBEAT, merged.toString()).apply();
+        } catch (Exception e) {
+            // A malformed heartbeat is the web layer's bug; the last good one stands.
+        }
+    }
+
+    public static String readLauncherHeartbeat(Context context) {
+        return prefs(context).getString(KEY_LAUNCHER_HEARTBEAT, null);
+    }
+
+    public static String readLauncherRefreshLog(Context context) {
+        String raw = prefs(context).getString(KEY_LAUNCHER_REFRESH_LOG, null);
+        return raw != null ? raw : "[]";
+    }
+
+    private static JSONArray launcherRefreshEntries(Context context) {
+        try {
+            return new JSONArray(readLauncherRefreshLog(context));
+        } catch (Exception e) {
+            return new JSONArray();
+        }
+    }
+
+    public static boolean launcherRefreshSeen(Context context, String clientId) {
+        JSONArray arr = launcherRefreshEntries(context);
+        for (int i = 0; i < arr.length(); i++) {
+            JSONObject e = arr.optJSONObject(i);
+            if (e != null && clientId.equals(e.optString("clientId"))) return true;
+        }
+        return false;
+    }
+
+    // The log entry for clientId, or null once it has been pruned (or was never written).
+    public static JSONObject launcherRefreshEntry(Context context, String clientId) {
+        JSONArray arr = launcherRefreshEntries(context);
+        for (int i = arr.length() - 1; i >= 0; i--) {
+            JSONObject e = arr.optJSONObject(i);
+            if (e != null && clientId.equals(e.optString("clientId"))) return e;
+        }
+        return null;
+    }
+
+    public static JSONObject lastLauncherRefresh(Context context) {
+        JSONArray arr = launcherRefreshEntries(context);
+        return arr.length() == 0 ? null : arr.optJSONObject(arr.length() - 1);
+    }
+
+    // Guards the refresh log's read-modify-write: the receiver, the web layer
+    // and the workers each write it.
+    private static final Object REFRESH_LOG_LOCK = new Object();
+
+    public static void appendLauncherRefresh(Context context, JSONObject entry) {
+        synchronized (REFRESH_LOG_LOCK) {
+            JSONArray arr = launcherRefreshEntries(context);
+            arr.put(entry);
+            while (arr.length() > MAX_LAUNCHER_REFRESH_LOG) arr.remove(0);
+            prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
+        }
+    }
+
+    public static void updateLauncherRefresh(Context context, String clientId, JSONObject patch) {
+        updateLauncherRefreshIf(context, clientId, e -> patch);
+    }
+
+    // Merges the patch `decide` returns for the entry with this client id, or
+    // nothing when it returns null; read and write under one lock, so the
+    // decision cannot be made against an answer that has since landed.
+    // Returns whether it wrote.
+    public static boolean updateLauncherRefreshIf(Context context, String clientId, java.util.function.Function<JSONObject, JSONObject> decide) {
+        synchronized (REFRESH_LOG_LOCK) {
+            JSONArray arr = launcherRefreshEntries(context);
+            for (int i = arr.length() - 1; i >= 0; i--) {
+                JSONObject e = arr.optJSONObject(i);
+                if (e == null || !clientId.equals(e.optString("clientId"))) continue;
+                JSONObject patch = decide.apply(e);
+                if (patch == null) return false;
+                try {
+                    for (java.util.Iterator<String> it = patch.keys(); it.hasNext(); ) {
+                        String key = it.next();
+                        e.put(key, patch.get(key));
+                    }
+                } catch (Exception ex) {
+                    return false;
+                }
+                prefs(context).edit().putString(KEY_LAUNCHER_REFRESH_LOG, arr.toString()).apply();
+                return true;
+            }
+            return false;
+        }
     }
 
     // Master switch for the Android/Tasker automation-intents transport. OFF by

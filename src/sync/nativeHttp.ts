@@ -1,9 +1,13 @@
 import { Capacitor, CapacitorHttp, registerPlugin } from '@capacitor/core'
+import { headlessBridge } from '@/headless/headlessMode'
+import { headlessHttpRequest } from '@/headless/headlessHttp'
 
 // True when running inside the Capacitor native shell (Android/iOS), false in
 // the browser/PWA. Used to bypass the WebDAV CORS proxy: native HTTP requests
-// are not subject to the WebView's same-origin policy.
-export const isNativePlatform = Capacitor.isNativePlatform()
+// are not subject to the WebView's same-origin policy. A headless refresh
+// (src/headless/) has no Capacitor bridge but the same native HTTP, through the
+// shell's HeadlessBridge.
+export const isNativePlatform = Capacitor.isNativePlatform() || headlessBridge() !== null
 
 // Opt-in browser/PWA setting: skip the WebDAV CORS proxy and talk to the target
 // server directly. Only meaningful off-native — native already connects
@@ -77,6 +81,20 @@ export async function nativeHttpFetch(
   // normalizeEtag() below is the safety net for servers that ignore this.
   if (verb === 'GET' && !Object.keys(requestHeaders).some(h => h.toLowerCase() === 'accept-encoding')) {
     requestHeaders['Accept-Encoding'] = 'identity'
+  }
+
+  // A headless run sends every verb through the shell's OkHttp.
+  const headless = headlessBridge()
+  if (headless) {
+    const res = await headlessHttpRequest(headless, method, url, requestHeaders, body)
+    const etag = etagFromHeaders(res.headers)
+    return {
+      status: res.status,
+      ok: res.status >= 200 && res.status < 300,
+      statusText: '',
+      body: res.body,
+      headers: etag ? { etag } : undefined,
+    }
   }
 
   if (!HTTP_URL_CONNECTION_METHODS.has(verb) && Capacitor.getPlatform() === 'android') {

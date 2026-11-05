@@ -13,5 +13,7 @@ class BridgeViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(SecureStorePlugin())
         bridge?.registerPluginInstance(DirectAccessPlugin())
         bridge?.registerPluginInstance(ContactsPlugin())
+        bridge?.registerPluginInstance(ICloudPlugin())
+        bridge?.registerPluginInstance(BillingBridgePlugin())
     }
 }

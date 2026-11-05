@@ -146,7 +146,9 @@
     "cancel": "Annuler",
     "saving": "Enregistrement…",
     "save": "Enregistrer",
-    "add": "Ajouter"
+    "add": "Ajouter",
+    "pinLabel": "Épinglée",
+    "pinHint": "Apparaît aussi dans Épinglées, les plus en retard en premier."
   },
   "choreRow": {
     "everyNDays": "tous les {{n}}j",
@@ -161,7 +163,8 @@
     "quickLogAriaLabel": "Enregistrer {{name}} rapidement",
     "sendAriaLabel": "Envoyer {{name}} à dayGLANCE",
     "choreLabel": "{{name}} — {{elapsed}}",
-    "seasonalRange": "Saisonnier : {{start}} – {{end}}"
+    "seasonalRange": "Saisonnier : {{start}} – {{end}}",
+    "pinned": "Épinglée"
   },
   "dateTimePicker": {
     "setDate": "Choisir une date…",
@@ -304,6 +307,11 @@
       "notConnected": "Connectez d'abord un dossier dans Synchronisation cloud. D'ici là, ce transport reste inactif.",
       "reload": "Enregistré à la fermeture ; l'application se recharge pour commencer à interroger le dossier.",
       "passphraseRequired": "Les intents en accès direct sont chiffrés avec votre phrase secrète de synchronisation. Saisissez-la pour les activer."
+    },
+    "icloudIntents": {
+      "title": "Intents iCloud",
+      "label": "Intents par iCloud",
+      "hint": "Échangez des intents avec dayGLANCE sur cet iPhone ou iPad par iCloud, sans rien d'autre à configurer. Les intents iCloud doivent aussi être activés dans dayGLANCE."
     }
   },
   "journal": {
@@ -378,7 +386,9 @@
     "daysLater_one": "{{count}} jour plus tard",
     "daysLater_other": "{{count}} jours plus tard",
     "delete": "Supprimer",
-    "viaDayglance": "via dayGLANCE"
+    "viaDayglance": "via dayGLANCE",
+    "pin": "Épingler",
+    "unpin": "Désépingler"
   },
   "notifications": {
     "itsBeenDays_one": "Cela fait {{count}} jour",
@@ -418,7 +428,8 @@
     "showFabsAriaLabel": "Afficher les boutons d'action",
     "nothingNeedsAttention": "Rien ne nécessite d'attention pour le moment.",
     "nothingAssignedToYou": "Rien ne vous est attribué ici.",
-    "showAllChores": "Afficher toutes les tâches"
+    "showAllChores": "Afficher toutes les tâches",
+    "pinned": "Épinglées"
   },
   "search": {
     "placeholder": "Rechercher des tâches…",
@@ -464,6 +475,7 @@
       "AUTH_FAILURE": "Échec de la connexion. Vérifiez votre nom d'utilisateur et votre mot de passe.",
       "LOCKED": "Un autre appareil synchronise en ce moment. Réessayez dans un instant.",
       "NETWORK_ERROR": "Impossible de joindre le serveur de synchronisation. Vérifiez votre connexion et réessayez.",
+      "PAYLOAD_TOO_LARGE": "Le serveur de synchronisation a refusé l'envoi car il est trop volumineux. Vos modifications sont enregistrées sur cet appareil. Demandez à la personne qui gère votre serveur de synchronisation d'augmenter sa limite de taille d'envoi.",
       "KEY_MISMATCH": "Phrase secrète incorrecte — elle doit correspondre exactement à celle de vos autres appareils.",
       "ROW_DECRYPT_FAILED": "Certaines données synchronisées n'ont pas pu être déchiffrées. Vérifiez votre phrase secrète.",
       "VERIFIER_UNSUPPORTED": "Votre serveur de synchronisation doit être mis à jour pour prendre en charge la vérification des clés.",
@@ -496,6 +508,7 @@
     "password": "Mot de passe",
     "passwordPlaceholder": "••••••••",
     "passwordHint": "Stocké dans le localStorage du navigateur — sécurisez votre appareil.",
+    "cleartextWarning": "Cette connexion n'est pas chiffrée. Votre mot de passe et vos données circulent en clair : n'utilisez http que sur un réseau de confiance.",
     "testConnection": "Tester la connexion",
     "connected": "Connecté",
     "testFailed": "Échec",
@@ -562,6 +575,9 @@
       "encryptPassphraseHint": "Choisissez une phrase secrète de synchronisation. Chaque appareil qui utilise ce dossier saisit la même.",
       "encryptTurnOn": "Activer",
       "cancel": "Annuler",
+      "peopleHint": "Proches se synchronise dans un second fichier à côté du fichier de synchronisation : lastglance-people.json. Choisissez celui qu'un autre appareil a créé, ou créez-le dans le même dossier.",
+      "peopleChosen": "Fichier Proches : {{name}}",
+      "peopleNotChosen": "Aucun fichier Proches choisi. Proches ne se synchronisera pas par le dossier tant que vous n'en aurez pas choisi un.",
       "rosterHint": "La liste du foyer est un deuxième fichier du dossier : glance-users.json.",
       "rosterChosen": "Fichier de la liste : {{name}}",
       "rosterNotChosen": "Aucun fichier de liste choisi.",
@@ -600,7 +616,7 @@
     "syncNow": "Synchroniser",
     "syncOk": "Synchronisé !",
     "syncFailed": "Échec de la sync",
-    "syncNotConfigured": "La sync cloud n'est pas configurée. Configurez WebDAV ou l'accès direct dans Paramètres → Sync cloud."
+    "syncNotConfigured": "La sync cloud n'est pas configurée. Configurez GLANCEvault, WebDAV ou l'accès direct dans Paramètres → Sync cloud."
   },
   "welcome": {
     "title": "Bienvenue sur lastGLANCE",
@@ -939,6 +955,22 @@
         "inbound": "Des nouvelles de {{names}}",
         "mutual": "Échange avec {{names}}"
       }
+    }
+  },
+  "icloud": {
+    "title": "iCloud",
+    "switchLabel": "Synchroniser avec iCloud",
+    "onHint": "Vos tâches et vos Proches restent à jour sur chaque iPhone et iPad connecté à votre identifiant Apple. Rien à configurer.",
+    "offHint": "Désactivé sur cet appareil. La copie dans iCloud et vos autres appareils ne sont pas modifiés.",
+    "firstRun": {
+      "title": "Restaurer depuis iCloud ?",
+      "bodyChores": "iCloud contient des données lastGLANCE de vos autres appareils. Tâches dans iCloud : {{count}}.",
+      "bodyPeople": "iCloud contient des données lastGLANCE de vos autres appareils. Proches dans iCloud : {{count}}.",
+      "lastModified": "Dernière modification : {{when}}",
+      "restore": "Restaurer depuis iCloud",
+      "restoreHint": "Récupérez vos tâches et vos Proches sur cet appareil et gardez-les synchronisés.",
+      "startFresh": "Repartir de zéro sur cet appareil",
+      "startFreshHint": "Désactive la synchronisation iCloud ici. La copie dans iCloud est conservée, et vous pourrez la réactiver dans Sync cloud."
     }
   }
 }

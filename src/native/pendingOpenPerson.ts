@@ -4,6 +4,8 @@
 export type PendingPeopleOpen =
   | { action: 'open' | 'log'; personSyncId: string }
   | { action: 'home' }
+  // The add-person form (GLANCElauncher's "Add person"; lastglance://action/addPerson).
+  | { action: 'add' }
 
 export const OPEN_PERSON_PENDING_EVENT = 'lg:open-person-pending'
 

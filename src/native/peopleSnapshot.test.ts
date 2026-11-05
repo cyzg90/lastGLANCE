@@ -97,6 +97,7 @@ describe('peopleRequest', () => {
     expect(peopleRequest('person:abc')).toEqual({ action: 'open', personSyncId: 'abc' })
     expect(peopleRequest('log:abc')).toEqual({ action: 'log', personSyncId: 'abc' })
     expect(peopleRequest('people')).toEqual({ action: 'home' })
+    expect(peopleRequest('action:add-person')).toEqual({ action: 'add' })
   })
 
   it('ignores anything else', () => {

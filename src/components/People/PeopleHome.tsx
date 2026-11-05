@@ -135,6 +135,7 @@ export function PeopleHome() {
       if (!req) return
       clearPendingOpenPerson()
       if (req.action === 'home') return
+      if (req.action === 'add') { setAdding({ circleId: null }); return }
       if (!mine.some(p => p.sync_id === req.personSyncId)) return
       if (req.action === 'log') setLogFor({ ids: [req.personSyncId], direction: 'outbound' })
       else setOpenId(req.personSyncId)

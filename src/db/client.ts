@@ -285,6 +285,17 @@ class LastGlanceDB extends Dexie {
         contactLinks: 'person_sync_id',
       })
 
+    // Keep existing chores and initialize the new pin flag when upgrading.
+    this.version(15)
+      .stores({})
+      .upgrade(tx =>
+        tx.table('chores').toCollection().modify((chore: Chore) => {
+          if ((chore as { pinned?: boolean }).pinned === undefined) {
+            chore.pinned = false
+          }
+        })
+      )
+
   }
 }
 
@@ -326,6 +337,11 @@ const SEED_SYNC_IDS = new Set<string>([...SEED_CAT_SYNC_IDS, ...SEED_CHORE_SYNC_
 // task edits don't sync).
 export function isPristineSeed(row: { sync_id?: string; updated_at?: string }): boolean {
   return !!row.sync_id && SEED_SYNC_IDS.has(row.sync_id) && row.updated_at === SEED_TIMESTAMP
+}
+
+/** isPristineSeed for a sync-payload row (`id`, `updatedAt`). */
+export function isPristineSeedRow(row: { id?: unknown; updatedAt?: unknown } | null | undefined): boolean {
+  return !!row && typeof row.id === 'string' && SEED_SYNC_IDS.has(row.id) && row.updatedAt === SEED_TIMESTAMP
 }
 
 export const db = new LastGlanceDB()

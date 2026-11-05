@@ -5,6 +5,7 @@
 // about a person's sync_id. Managed file pushes run independently of vault.
 
 import type { DbSyncEngine } from '@glance-apps/sync'
+import { markPeopleLocalEdit } from '@/sync/localEditStamp'
 
 const PUSH_DEBOUNCE_MS = 3000
 
@@ -45,6 +46,7 @@ export function registerPeopleDbEngine(engine: DbSyncEngine | null): void {
 // absence, pushing a soft-delete when getLocalEntity returns null).
 export function markPeopleDirty(syncId: string | null | undefined): void {
   if (!syncId) return
+  markPeopleLocalEdit()
   if (peopleDbEngine) {
     peopleDbEngine.markDirty(syncId)
     schedulePush()

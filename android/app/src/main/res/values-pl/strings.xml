@@ -4,6 +4,10 @@
     <string name="single_chore_widget_description">Obowiązek, który najbardziej wymaga uwagi, z oznaczaniem jednym dotknięciem.</string>
     <string name="soon_list_widget_description">Obowiązki, które wkrótce będą wymagać uwagi, z oznaczaniem jednym dotknięciem.</string>
     <string name="soon_list_widget_title">Wkrótce</string>
+    <string name="pinned_widget_description">Twoje przypięte obowiązki, najbardziej zaległe najpierw, z oznaczaniem jednym dotknięciem.</string>
+    <string name="pinned_widget_title">Przypięte</string>
+    <string name="widget_label_pinned">lastGLANCE Przypięte</string>
+    <string name="widget_no_pinned">Przypnij obowiązki w aplikacji, aby je tu zobaczyć.</string>
     <string name="widget_done">Zrobione</string>
     <string name="widget_all_caught_up">Wszystko zrobione</string>
     <string name="widget_config_auto">Najbardziej zaległy (automatycznie)</string>
@@ -33,4 +37,8 @@
     <string name="widget_days_ago">%1$d dn. temu</string>
     <string name="widget_count_overdue">Zaległe: %1$d</string>
     <string name="widget_count_soon">Wkrótce: %1$d</string>
+    <string name="launcher_permission_label">Odczyt danych lastGLANCE dla GLANCElauncher</string>
+    <string name="launcher_permission_description">Pozwala GLANCElauncher odczytywać Twoje obowiązki i osoby oraz wysyłać mu obowiązki do dodania lub odhaczenia i kontakty do zapisania.</string>
+    <string name="launcher_refresh_notification">Odświeżanie dla GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Odświeżanie GLANCElauncher</string>
 </resources>

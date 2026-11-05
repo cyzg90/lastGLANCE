@@ -2,7 +2,8 @@
 //
 // The user picks a folder (Android) or the sync file itself (iOS) that a
 // third-party tool already keeps in step across devices; lastGLANCE reads and
-// writes lastglance-sync.json there and the tool moves it. The cycle, the
+// writes lastglance-sync.json there, and People's lastglance-people.json beside
+// it, and the tool moves them. The cycle, the
 // merge and every data-safety guard are `@glance-apps/sync`'s
 // runSnapshotFileCycle (directAccessCycle.ts); this module is the bridge to
 // the native plugin (src/native/directAccess.ts) plus the small state machine
@@ -32,6 +33,13 @@ export const DIRECT_ACCESS_POLL_MS = 15 * 1000
 export const DIRECT_ACCESS_WRITE_THROTTLE_MS = 15 * 1000
 /** Stamped by the shared cycle on every read of a real snapshot (the seed guard). */
 export const DIRECT_ACCESS_LAST_SYNCED_KEY = 'lastglance-direct-access-last-synced'
+/**
+ * People's own snapshot, beside the chore file (Android: in the folder by path;
+ * iOS: its own bookmarked file). The same name the People WebDAV file uses.
+ */
+export const DIRECT_ACCESS_PEOPLE_FILE = 'lastglance-people.json'
+/** The People cycle's seed-guard stamp, kept apart from the chore file's. */
+export const DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY = 'lastglance-direct-access-people-last-synced'
 /** 'true' | 'false' | absent. Absent means ON once a folder is connected. */
 export const DIRECT_ACCESS_PREF_KEY = 'lastglance-direct-access-enabled'
 /**
@@ -62,6 +70,8 @@ export interface DirectAccessSnapshot {
   enabled: boolean
   encrypt: boolean
   pickError: string | null
+  /** iOS: the People file's own status; null where it is a path in the folder. */
+  people: FileStatus | null
   /** iOS: the roster file's own status; null where the roster is a path in the folder. */
   roster: FileStatus | null
   /** iOS: likewise for the intents event set. */
@@ -120,8 +130,8 @@ export function createDirectAccessTransport({
   setTimer = setTimeout,
   clearTimer = clearTimeout,
 }: DirectAccessTransportDeps = {}) {
-  const state: { status: DirectAccessConnection; name: string | null; path: string | null; pickError: string | null; roster: FileStatus | null; events: FileStatus | null } =
-    { status: 'unknown', name: null, path: null, pickError: null, roster: null, events: null }
+  const state: { status: DirectAccessConnection; name: string | null; path: string | null; pickError: string | null; people: FileStatus | null; roster: FileStatus | null; events: FileStatus | null } =
+    { status: 'unknown', name: null, path: null, pickError: null, people: null, roster: null, events: null }
   const statusListeners = new Set<(s: DirectAccessSnapshot) => void>()
   const changeListeners = new Set<() => void>()
   let initPromise: Promise<void> | null = null
@@ -141,6 +151,7 @@ export function createDirectAccessTransport({
     enabled: isEnabled(),
     encrypt: encryptsWrites(),
     pickError: state.pickError,
+    people: state.people,
     roster: state.roster,
     events: state.events,
   })
@@ -173,6 +184,7 @@ export function createDirectAccessTransport({
     initPromise = (async () => {
       try { applyStatus(await b.restore()) }
       catch (e) { log.warn('[direct-access] restore failed:', (e as Error)?.message ?? e); applyStatus(null) }
+      if (b.people) { try { state.people = normalizeFileStatus(await b.people.status()); notify() } catch { /* unknown until a pick */ } }
       if (b.users) { try { state.roster = normalizeFileStatus(await b.users.status()); notify() } catch { /* unknown until a pick */ } }
       if (b.events) { try { state.events = normalizeFileStatus(await b.events.status()); notify() } catch { /* unknown until a pick */ } }
     })()
@@ -194,6 +206,7 @@ export function createDirectAccessTransport({
   }
 
   const clearLastSynced = () => { try { storage()?.removeItem(DIRECT_ACCESS_LAST_SYNCED_KEY) } catch { /* ignore */ } }
+  const clearPeopleLastSynced = () => { try { storage()?.removeItem(DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY) } catch { /* ignore */ } }
   const writePref = (enabled: boolean) => { try { storage()?.setItem(DIRECT_ACCESS_PREF_KEY, enabled ? 'true' : 'false') } catch { /* ignore */ } }
   const writeEncryptPref = (on: boolean) => {
     try {
@@ -202,11 +215,11 @@ export function createDirectAccessTransport({
     } catch { /* ignore */ }
   }
 
-  // A file slot beside the snapshot: the household roster and the intents
-  // event set (step 3). Android offers files by path, confined to the folder
+  // A file slot beside the snapshot: People's snapshot, the household roster
+  // and the intents event set (step 3). Android offers files by path, confined to the folder
   // in the shell; an iPhone has no folder and offers each as its own
   // bookmarked file. The caller hands over the relative path either way.
-  const fileSlot = (name: 'users' | 'events', label: string): DirectAccessFileSlot => ({
+  const fileSlot = (name: 'people' | 'users' | 'events', label: string): DirectAccessFileSlot => ({
     supported: () => { const b = bridge(); return !!(b && (b.paths || b[name])) },
     read: async (relPath) => {
       const b = bridge()
@@ -240,11 +253,37 @@ export function createDirectAccessTransport({
       const b = bridge()
       try { await b?.[name]?.forget() } catch { /* forgotten on this side regardless */ }
       const next = b?.[name] ? normalizeFileStatus(null) : null
-      if (name === 'users') state.roster = next; else state.events = next
+      if (name === 'people') { state.people = next; clearPeopleLastSynced() }
+      else if (name === 'users') state.roster = next
+      else state.events = next
       notify()
     },
   })
+  const peopleSlot = fileSlot('people', 'People file')
   const usersSlot = fileSlot('users', 'roster')
+
+  // People's snapshot as a transport of its own for the shared cycle (the
+  // People cycle, people/sync/directAccessCycle.ts): the same folder, switch,
+  // reachability and encrypt choice as the chore file, its own file, seed-guard
+  // stamp and write throttle. Android reaches it by path in the folder; iOS
+  // needs its bookmarked file, so it is unavailable there until one is chosen.
+  const peopleFile = {
+    id: 'direct-access-people',
+    pollMs: DIRECT_ACCESS_POLL_MS,
+    writeThrottleMs: DIRECT_ACCESS_WRITE_THROTTLE_MS,
+    lastSyncedKey: DIRECT_ACCESS_PEOPLE_LAST_SYNCED_KEY,
+    allowsPlaintextReseed: false,
+    firstRunDecided: () => true,
+    encryptsWrites,
+    isAvailable: (): boolean => {
+      const b = bridge()
+      if (!b || state.status !== 'connected' || !isEnabled()) return false
+      if (b.paths) return true
+      return !!(b.people && state.people?.configured)
+    },
+    read: (): Promise<string | null> => peopleSlot.read(DIRECT_ACCESS_PEOPLE_FILE),
+    write: (text: string): Promise<boolean> => peopleSlot.write(DIRECT_ACCESS_PEOPLE_FILE, text),
+  }
   const eventsSlot = fileSlot('events', 'event set')
 
   // Files by path, confined to the folder in the shell. Android only; an
@@ -269,7 +308,7 @@ export function createDirectAccessTransport({
     },
   }
 
-  async function runPick(method: 'pick' | 'pickFile' | 'createFile', slot: 'snapshot' | 'users' | 'events' = 'snapshot'): Promise<DirectAccessSnapshot | null> {
+  async function runPick(method: 'pick' | 'pickFile' | 'createFile', slot: 'snapshot' | 'people' | 'users' | 'events' = 'snapshot'): Promise<DirectAccessSnapshot | null> {
     const b = bridge()
     if (!b) return null
     if (slot !== 'snapshot' && !b[slot]) {
@@ -295,6 +334,15 @@ export function createDirectAccessTransport({
     if (!st) return null
     const status = st as DirectAccessStatus
     if (slot !== 'snapshot') {
+      if (slot === 'people') {
+        // A different People file has its own history (see below), and a
+        // chosen one should sync now rather than at the next tick.
+        state.people = normalizeFileStatus(status)
+        clearPeopleLastSynced()
+        notify()
+        emitChanged()
+        return snapshot
+      }
       if (slot === 'users') state.roster = normalizeFileStatus(status)
       else state.events = normalizeFileStatus(status)
       notify()
@@ -303,6 +351,7 @@ export function createDirectAccessTransport({
     // A different folder has its own history: the seed guard must not read an
     // empty new folder as an eviction of the old one and wait ten minutes.
     clearLastSynced()
+    clearPeopleLastSynced()
     writePref(true)
     applyStatus(status)
     emitChanged()
@@ -340,7 +389,9 @@ export function createDirectAccessTransport({
 
     write: async (text: string): Promise<boolean> => (await bridge()?.write(text)) === true,
 
-    // The household roster and the intents event set (step 3), and files by path.
+    // People's snapshot, the household roster and the intents event set (step 3), and files by path.
+    people: peopleSlot,
+    peopleFile,
     roster: usersSlot,
     events: eventsSlot,
     files,
@@ -382,6 +433,10 @@ export function createDirectAccessTransport({
     /** iOS: the sync file itself, picked (pickFile) or created in a chosen folder (createFile). */
     pickFile: () => runPick('pickFile'),
     createFile: () => runPick('createFile'),
+    /** iOS: People's snapshot, a bookmarked file of its own. */
+    pickPeopleFile: () => runPick('pickFile', 'people'),
+    createPeopleFile: () => runPick('createFile', 'people'),
+    forgetPeopleFile: peopleSlot.forget,
     /** iOS: the roster and the event set, bookmarked files of their own (step 3). */
     pickUsersFile: () => runPick('pickFile', 'users'),
     createUsersFile: () => runPick('createFile', 'users'),
@@ -393,6 +448,8 @@ export function createDirectAccessTransport({
     disconnect: async () => {
       try { await bridge()?.disconnect() } catch { /* this side still forgets it */ }
       clearLastSynced()
+      clearPeopleLastSynced()
+      if (state.people) state.people = normalizeFileStatus(null)
       writeEncryptPref(false)
       applyStatus(null)
     },

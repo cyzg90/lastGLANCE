@@ -146,7 +146,9 @@
     "cancel": "取消",
     "saving": "正在保存…",
     "save": "保存",
-    "add": "添加"
+    "add": "添加",
+    "pinLabel": "置顶",
+    "pinHint": "同时显示在“已置顶”中，逾期最久的排在最前。"
   },
   "choreRow": {
     "everyNDays": "每 {{n}} 天",
@@ -161,7 +163,8 @@
     "quickLogAriaLabel": "快速记录 {{name}}",
     "sendAriaLabel": "将 {{name}} 发送到 dayGLANCE",
     "choreLabel": "{{name}} — {{elapsed}}",
-    "seasonalRange": "日期范围：{{start}} – {{end}}"
+    "seasonalRange": "日期范围：{{start}} – {{end}}",
+    "pinned": "已置顶"
   },
   "dateTimePicker": {
     "setDate": "设置日期…",
@@ -304,6 +307,11 @@
       "notConnected": "请先在“云同步”中连接文件夹。在此之前，此传输方式保持停用。",
       "reload": "关闭时保存；应用将重新加载并开始轮询该文件夹。",
       "passphraseRequired": "直接访问意图使用您的同步口令加密。请输入口令以启用。"
+    },
+    "icloudIntents": {
+      "title": "iCloud 意图",
+      "label": "通过 iCloud 传递意图",
+      "hint": "在此 iPhone 或 iPad 上通过 iCloud 与 dayGLANCE 交换意图，无需其他设置。dayGLANCE 中也需要开启 iCloud 意图。"
     }
   },
   "journal": {
@@ -378,7 +386,9 @@
     "daysLater_one": "{{count}} 天后",
     "daysLater_other": "{{count}} 天后",
     "delete": "删除",
-    "viaDayglance": "通过 dayGLANCE"
+    "viaDayglance": "通过 dayGLANCE",
+    "pin": "置顶",
+    "unpin": "取消置顶"
   },
   "notifications": {
     "itsBeenDays_one": "已过去 {{count}} 天",
@@ -418,7 +428,8 @@
     "showFabsAriaLabel": "显示操作按钮",
     "nothingNeedsAttention": "当前没有需要关注的事项。",
     "nothingAssignedToYou": "此处没有分配给你的事项。",
-    "showAllChores": "显示所有事项"
+    "showAllChores": "显示所有事项",
+    "pinned": "已置顶"
   },
   "search": {
     "placeholder": "搜索事项…",
@@ -464,6 +475,7 @@
       "AUTH_FAILURE": "登录失败。请检查用户名和密码。",
       "LOCKED": "另一台设备正在同步。请稍后重试。",
       "NETWORK_ERROR": "无法连接同步服务器。请检查网络连接并重试。",
+      "PAYLOAD_TOO_LARGE": "同步服务器拒绝了上传，因为数据太大。你的更改已保存在此设备上。请联系同步服务器的管理员提高上传大小限制。",
       "KEY_MISMATCH": "同步加密口令错误，必须与其他设备使用的口令完全一致。",
       "ROW_DECRYPT_FAILED": "部分同步数据无法解密。请检查同步加密口令。",
       "VERIFIER_UNSUPPORTED": "你的同步服务器需要更新以支持密钥验证。",
@@ -496,6 +508,7 @@
     "password": "密码",
     "passwordPlaceholder": "••••••••",
     "passwordHint": "存储在浏览器 localStorage 中，请确保设备安全。",
+    "cleartextWarning": "此连接未加密。您的密码和数据以明文传输，请仅在可信网络中使用 http。",
     "testConnection": "测试连接",
     "connected": "已连接",
     "testFailed": "失败",
@@ -562,6 +575,9 @@
       "encryptPassphraseHint": "请选择一个同步口令。使用此文件夹的每台设备都要输入同一个口令。",
       "encryptTurnOn": "开启",
       "cancel": "取消",
+      "peopleHint": "联系人会同步到同步文件旁边的第二个文件：lastglance-people.json。请选择其他设备创建的文件，或在同一文件夹中创建它。",
+      "peopleChosen": "联系人文件：{{name}}",
+      "peopleNotChosen": "尚未选择联系人文件。选择之前，联系人不会通过该文件夹同步。",
       "rosterHint": "家庭成员名单是文件夹中的第二个文件：glance-users.json。",
       "rosterChosen": "名单文件：{{name}}",
       "rosterNotChosen": "尚未选择名单文件。",
@@ -600,7 +616,7 @@
     "syncNow": "立即同步",
     "syncOk": "已同步！",
     "syncFailed": "同步失败",
-    "syncNotConfigured": "尚未配置云同步。请先在“设置 → 云同步”中配置 WebDAV 或直接访问。"
+    "syncNotConfigured": "尚未配置云同步。请先在“设置 → 云同步”中配置 GLANCEvault、WebDAV 或直接访问。"
   },
   "welcome": {
     "title": "欢迎使用 lastGLANCE",
@@ -939,6 +955,22 @@
         "inbound": "{{names}}联系了我",
         "mutual": "和{{names}}聊了聊"
       }
+    }
+  },
+  "icloud": {
+    "title": "iCloud",
+    "switchLabel": "通过 iCloud 同步",
+    "onHint": "你的家务和联系人会在登录同一 Apple ID 的每台 iPhone 和 iPad 上保持同步，无需任何设置。",
+    "offHint": "已在此设备上关闭。iCloud 中的副本和你的其他设备不受影响。",
+    "firstRun": {
+      "title": "从 iCloud 恢复？",
+      "bodyChores": "iCloud 中有来自你其他设备的 lastGLANCE 数据。iCloud 中的家务：{{count}}。",
+      "bodyPeople": "iCloud 中有来自你其他设备的 lastGLANCE 数据。iCloud 中的联系人：{{count}}。",
+      "lastModified": "最后更改：{{when}}",
+      "restore": "从 iCloud 恢复",
+      "restoreHint": "将你的家务和联系人带到此设备并保持同步。",
+      "startFresh": "在此设备上重新开始",
+      "startFreshHint": "在此关闭 iCloud 同步。iCloud 中的副本会保留，你之后可以在云同步中重新开启。"
     }
   }
 }

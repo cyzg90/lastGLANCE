@@ -1,11 +1,30 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { managedWebdavEndpoint } from './managedWebdav'
+import { managedWebdavEndpoint, managedWebdavFetch } from './managedWebdav'
 
 afterEach(() => {
   vi.unstubAllEnvs()
+  vi.unstubAllGlobals()
 })
 
 describe('managedWebdavEndpoint', () => {
+  it('preserves conditional writes and ETags through the managed proxy', async () => {
+    const fetchMock = vi.fn(async () => new Response('remote changed', {
+      status: 412, headers: { ETag: '"remote-v2"' },
+    }))
+    vi.stubGlobal('fetch', fetchMock)
+    const result = await managedWebdavFetch('PUT',
+      'https://internal.lastglance.invalid/GLANCE/lastglance/lastglance-sync.json',
+      { 'Content-Type': 'application/json', 'If-Match': '"remote-v1"', Authorization: 'Basic ignored' },
+      '{"chores":[]}',
+    )
+    expect(fetchMock).toHaveBeenCalledWith('/api/internal-webdav/sync', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'If-Match': '"remote-v1"' },
+      body: '{"chores":[]}',
+    })
+    expect(result).toMatchObject({ status: 412, ok: false, body: 'remote changed', headers: { etag: '"remote-v2"' } })
+  })
+
   it.each([
     ['https://internal.lastglance.invalid/GLANCE/lastglance/lastglance-people.json', '/api/internal-webdav/people'],
     ['https://internal.lastglance.invalid/GLANCE/', '/api/internal-webdav/glance-directory'],

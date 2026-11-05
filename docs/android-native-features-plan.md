@@ -7,9 +7,11 @@ This plan was informed by a teardown of how the sibling app **dayGLANCE**
 solved timely closed-app notifications (its process is referenced throughout).
 Where lastGLANCE differs from dayGLANCE, it is called out explicitly.
 
-> **▶ STATUS (last updated 2026-08-09)**
-> **Android: feature-complete against this plan. iOS: Phase 0 written but never
-> compiled — see the companion `docs/ios-native-features-plan.md`.**
+> **▶ STATUS (last updated 2026-10-31)**
+> **Android: feature-complete against this plan. iOS: also feature-complete,
+> and ahead of Android in a few places — see the companion
+> `docs/ios-native-features-plan.md`, whose status block is the current one for
+> both platforms' divergences.**
 >
 > - **Phases 0–3 are all built and in the tree.** Snapshot bridge, exact-alarm
 >   overdue notifications, action widgets with optimistic tap-to-complete, dynamic
@@ -29,7 +31,9 @@ Where lastGLANCE differs from dayGLANCE, it is called out explicitly.
 >   OEM-killer re-arm backstop deferred until on-device testing proves alarms get
 >   cleared; background CRDT sync out of scope. Cheap known gaps not yet closed: a
 >   `TIMEZONE_CHANGED` receiver and a midnight snapshot re-render for "Xd ago"
->   freshness while closed.
+>   freshness while closed. iOS closed the second one in `SnapshotProvider.swift`
+>   by asking WidgetKit for exactly one refresh at the next local midnight; the
+>   Glance equivalent would be the same idea on a different scheduler.
 
 ---
 
@@ -184,6 +188,8 @@ URI scheme, two verb classes:
 |---|---|---|
 | `lastglance://chore/<syncId>` | navigate | open app, focus chore (reuse `lg:open-chore` event, `useNotifications.ts:72`) |
 | `lastglance://filter/soon` | navigate | open app with attention filter on (`setAttentionOnly`, `App.tsx:124`) |
+| `lastglance://chores` | navigate | open app in Chores mode, nothing more (the counterpart of `lastglance://people`; a launcher's Chores card) |
+| `lastglance://pinned` | navigate | Chores mode with Soon off, on the Pinned tab on a phone (GLANCElauncher's Pinned list); Android only |
 | `lastglance://complete/<syncId>` | act | log completion (idempotent, see Phase 2) |
 
 Native components can't call JS directly, so "act" intents land in a **pending

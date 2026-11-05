@@ -4,6 +4,10 @@
     <string name="single_chore_widget_description">L\'attività che ha più bisogno di attenzione, con Fatto in un tocco.</string>
     <string name="soon_list_widget_description">Le attività che presto avranno bisogno di attenzione, con Fatto in un tocco.</string>
     <string name="soon_list_widget_title">Presto</string>
+    <string name="pinned_widget_description">Le tue attività fissate, prima le più in ritardo, con Fatto in un tocco.</string>
+    <string name="pinned_widget_title">Fissate</string>
+    <string name="widget_label_pinned">lastGLANCE Fissate</string>
+    <string name="widget_no_pinned">Fissa delle attività nell\'app per vederle qui.</string>
     <string name="widget_done">Fatto</string>
     <string name="widget_all_caught_up">Tutto fatto</string>
     <string name="widget_config_auto">La più in ritardo (automatico)</string>
@@ -33,4 +37,8 @@
     <string name="widget_days_ago">%1$d g fa</string>
     <string name="widget_count_overdue">%1$d in ritardo</string>
     <string name="widget_count_soon">%1$d in scadenza</string>
+    <string name="launcher_permission_label">Leggere i dati di lastGLANCE per GLANCElauncher</string>
+    <string name="launcher_permission_description">Consente a GLANCElauncher di leggere le tue faccende e le tue persone e di inviargli faccende da aggiungere o registrare e contatti da annotare.</string>
+    <string name="launcher_refresh_notification">Aggiornamento per GLANCElauncher</string>
+    <string name="launcher_refresh_channel">Aggiornamento di GLANCElauncher</string>
 </resources>

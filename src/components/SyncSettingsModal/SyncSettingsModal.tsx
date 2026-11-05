@@ -7,17 +7,20 @@ import { setupEncryptionKey, clearEncryptionKey, ensureSyncFolder, resetEnsuredF
 import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
 import { backoffStatusText, currentBackoff, type BackoffDescriptor } from '@/sync/backoffStatus'
-import { clearCredentialHalt, getVaultConfig, resetVaultSyncState, setVaultConfig, vaultIdentityChanged } from '@/sync/vaultConfig'
+import { clearCredentialHalt, getVaultConfig, isProConnection, resetVaultSyncState, setVaultConfig, vaultIdentityChanged, type VaultConfig } from '@/sync/vaultConfig'
+import { connectVaultPro, VaultProEnrollError } from '@/sync/vaultPro'
 import { testVaultConnection } from '@/sync/testVaultConnection'
 import { cloudSyncProviders } from '@/utils/cloudSyncProviders'
 import { useEscapeKey } from '@/hooks/useEscapeKey'
 import { useTranslation } from 'react-i18next'
 import { isWebCryptoAvailable } from '@/utils/secureContext'
+import { isCleartextRemoteUrl } from '@/utils/insecureUrl'
 import { formatDateTime } from '@/utils/datetime'
 import { buildSyncConfigToSave } from './buildSyncConfig'
 import { MANAGED_WEBDAV } from '@/sync/managedWebdav'
 import { ManagedSyncStatus } from './ManagedSyncStatus'
 import { DirectAccessSection } from './DirectAccessSection'
+import { ICloudSection } from './ICloudSection'
 
 interface Props {
   peopleEngine?: SyncEngine | null
@@ -40,12 +43,25 @@ interface Props {
   onClearSyncHalt: () => void
   // Direct Access (docs/direct-access.md): a cycle on demand and the last
   // folder error, from useDirectAccessSync in App.
-  directAccess: { runSync: () => Promise<void>; lastError: string | null }
+  directAccess: { runSync: () => Promise<unknown>; lastError: string | null }
+  /** iOS: zero-config iCloud sync's switch and status. */
+  icloud?: { runSync: () => Promise<string | null>; lastError: string | null }
   onClose: () => void
 }
 
 type TestStatus = 'idle' | 'testing' | 'ok' | 'fail'
 type SyncResult = 'idle' | 'ok' | 'error'
+
+// GLANCEvault Pro connect failures. Hardcoded English like the rest of the
+// GLANCEvault (beta) section, which is not localized.
+function vaultProErrorText(err: unknown): string {
+  if (err instanceof VaultProEnrollError) {
+    if (err.code === 'KEY_REJECTED') return "That account key wasn't accepted. Check it and try again."
+    if (err.code === 'UNAVAILABLE') return "Couldn't reach GLANCEvault Pro. Check your connection and try again."
+    return `GLANCEvault Pro couldn't connect this device. ${err.message}`
+  }
+  return err instanceof Error ? err.message : String(err)
+}
 
 // Messages for the vault "Test connection" failure outcomes. Hardcoded English
 // to match the rest of the GLANCEvault (beta) section, which is not localized.
@@ -74,7 +90,7 @@ export function SyncSettingsModal(props: Props) {
   return <ConfigurableSyncSettingsView {...props} />
 }
 
-function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, directAccess, onClose }: Props) {
+function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, directAccess, icloud, onClose }: Props) {
   const { t } = useTranslation()
   const existingConfig = engine?.getConfig() ?? null
   const initFolder = getSyncFolder()
@@ -120,6 +136,14 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
   const [vaultUrl, setVaultUrl] = useState(() => initVault.current?.vaultUrl ?? '')
   const [vaultToken, setVaultToken] = useState(() => initVault.current?.vaultToken ?? '')
   const [vaultAccountId, setVaultAccountId] = useState(() => initVault.current?.accountId ?? '')
+  // GLANCEvault Pro: the hosted vault. Checked, the section asks only for the
+  // account key; Connect enrolls this device with it, stores the connection,
+  // turns on GLANCEvault intents and reloads. The key lives in this state only.
+  const [vaultPro, setVaultPro] = useState(() => !!initVault.current?.pro)
+  const [vaultAccountKey, setVaultAccountKey] = useState('')
+  const [vaultProConnecting, setVaultProConnecting] = useState(false)
+  const [vaultProError, setVaultProError] = useState('')
+  const vaultProConnected = isProConnection(initVault.current)
 
   // Pre-save connection test for the vault credentials. 'ok' covers both good
   // states (account initialized, or a fresh account with no salt yet); the
@@ -159,20 +183,9 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
   const activeProvider = cloudSyncProviders[provider]
   const requiredFieldsFilled = activeProvider?.configFields.every(f => formData[f.key]) ?? false
 
-  function saveConfig() {
-    // GLANCEvault config is independent of the file engine: only saved when the
-    // toggle is on, cleared (reverting to file tier) when off.
-    const prevVault = initVault.current
-    const nextVault = vaultEnabled
-      ? { enabled: true, vaultUrl: vaultUrl.trim(), vaultToken: vaultToken.trim(), accountId: vaultAccountId.trim() }
-      : null
-    setVaultConfig(nextVault)
-    const vaultChanged =
-      (prevVault?.enabled ?? false) !== (nextVault?.enabled ?? false) ||
-      (prevVault?.vaultUrl ?? '') !== (nextVault?.vaultUrl ?? '') ||
-      (prevVault?.vaultToken ?? '') !== (nextVault?.vaultToken ?? '') ||
-      (prevVault?.accountId ?? '') !== (nextVault?.accountId ?? '')
-
+  // Persists the WebDAV config and folder. Returns true when the folder moved
+  // (the engines then need a reload).
+  function saveFileConfig(): boolean {
     // Stored normalized, so a leading or trailing slash can't double up in the
     // WebDAV URL (krelltunez/dayGLANCE#2037).
     const savedFolder = normalizeSyncFolder(folderPath)
@@ -187,6 +200,28 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
       localStorage.setItem(SYNC_FOLDER_KEY, savedFolder)
       resetEnsuredFolder()
     }
+    return savedFolder !== originalFolder.current
+  }
+
+  function saveConfig() {
+    // GLANCEvault config is independent of the file engine: only saved when the
+    // toggle is on, cleared (reverting to file tier) when off. With Pro checked
+    // the connection is written by Connect (handleVaultProConnect), so closing
+    // keeps whatever is stored: the Pro connection, switched on, or the
+    // previous connection untouched when Pro was ticked but never connected.
+    const prevVault = initVault.current
+    let nextVault: VaultConfig | null
+    if (!vaultEnabled) nextVault = null
+    else if (vaultPro) nextVault = isProConnection(prevVault) ? { ...prevVault!, enabled: true } : prevVault
+    else nextVault = { enabled: true, vaultUrl: vaultUrl.trim(), vaultToken: vaultToken.trim(), accountId: vaultAccountId.trim() }
+    setVaultConfig(nextVault)
+    const vaultChanged =
+      (prevVault?.enabled ?? false) !== (nextVault?.enabled ?? false) ||
+      (prevVault?.vaultUrl ?? '') !== (nextVault?.vaultUrl ?? '') ||
+      (prevVault?.vaultToken ?? '') !== (nextVault?.vaultToken ?? '') ||
+      (prevVault?.accountId ?? '') !== (nextVault?.accountId ?? '')
+
+    const folderChanged = saveFileConfig()
     // A folder change or any vault change requires a reload so the engines are
     // reconstructed with the new transport config on next mount. On Android the
     // credential writes above are an async write-through to the SecureStore
@@ -206,12 +241,36 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     } else if (vaultChanged && nextVault) {
       clearCredentialHalt()
     }
-    if (savedFolder !== originalFolder.current || vaultChanged) {
+    if (folderChanged || vaultChanged) {
       flushSecureWrites().finally(() => window.location.reload())
     }
   }
 
+  // GLANCEvault Pro: enroll with the pasted key, store the connection, turn on
+  // sync and intents (src/sync/vaultPro.ts), save the rest of the form, reload.
+  // On failure nothing is stored and the modal stays open with the reason.
+  async function handleVaultProConnect() {
+    if (!vaultAccountKey.trim() || vaultProConnecting) return
+    setVaultProConnecting(true)
+    setVaultProError('')
+    try {
+      await connectVaultPro(vaultAccountKey)
+    } catch (err) {
+      setVaultProError(vaultProErrorText(err))
+      setVaultProConnecting(false)
+      return
+    }
+    // The stored connection is now the Pro one; a close before the reload
+    // must keep it rather than write back what the modal opened with.
+    initVault.current = getVaultConfig()
+    setVaultAccountKey('')
+    saveFileConfig()
+    flushSecureWrites().finally(() => window.location.reload())
+  }
+
   function handleClose() {
+    // Connect is mid-enrollment and will save and reload on its own.
+    if (vaultProConnecting) return
     saveConfig()
     onClose()
   }
@@ -470,6 +529,12 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                 {field.type === 'password' && (
                   <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t('sync.passwordHint')}</p>
                 )}
+                {field.type === 'url' && isCleartextRemoteUrl(formData[field.key] ?? '') && (
+                  <p className="flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">
+                    <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                    {t('sync.cleartextWarning')}
+                  </p>
+                )}
               </div>
             ))}
 
@@ -658,6 +723,9 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
             </div>
           </div>
 
+          {/* iCloud (iOS): on by default, its per-device switch */}
+          {icloud && <ICloudSection runSync={icloud.runSync} lastError={icloud.lastError} />}
+
           {/* Direct Access section: a folder a third-party tool keeps in step */}
           <DirectAccessSection runSync={directAccess.runSync} lastError={directAccess.lastError} />
 
@@ -666,9 +734,11 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
             <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
               GLANCEvault (beta)
             </h3>
-            <p className="text-xs text-amber-600 dark:text-amber-400">
-              ⚠️ Experimental. Requires a self-hosted GLANCEvault server. Not recommended for most users.
-            </p>
+            {!(vaultEnabled && vaultPro) && (
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                ⚠️ Experimental. Requires a self-hosted GLANCEvault server, or a GLANCEvault Pro account key. Not recommended for most users.
+              </p>
+            )}
             <div className="flex items-center justify-between gap-3 py-1">
               <div className="min-w-0">
                 <p className="text-sm text-slate-700 dark:text-slate-300">Sync via GLANCEvault</p>
@@ -688,6 +758,69 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
             </div>
 
             {vaultEnabled && (
+              <label className="flex items-start gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={vaultPro}
+                  onChange={e => { setVaultPro(e.target.checked); setVaultProError(''); setVaultTestStatus('idle'); setVaultTestMsg('') }}
+                  className="mt-0.5 accent-green-500"
+                  data-vault-pro
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm text-slate-700 dark:text-slate-300">GLANCEvault Pro</span>
+                  <span className="block text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                    Hosted for you. Paste the account key you were sent; there is no server to set up. Turns on GLANCEvault sync and intents.
+                  </span>
+                </span>
+              </label>
+            )}
+
+            {vaultEnabled && vaultPro && (
+              <div className="space-y-3">
+                {vaultProConnected && (
+                  <p className="text-xs text-green-600 dark:text-green-400" data-vault-pro-connected>
+                    Connected to GLANCEvault Pro. Paste a key only if you were sent a new one.
+                  </p>
+                )}
+                <div>
+                  <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
+                    Account key
+                  </label>
+                  <input
+                    type="password"
+                    value={vaultAccountKey}
+                    onChange={e => { setVaultAccountKey(e.target.value); setVaultProError('') }}
+                    onKeyDown={e => { if (e.key === 'Enter') handleVaultProConnect() }}
+                    placeholder="gvk_…"
+                    autoComplete="off"
+                    data-vault-account-key
+                    className="w-full bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
+                  />
+                </div>
+                <p className="text-xs text-slate-400 dark:text-slate-500">
+                  Connecting reloads the app. Your data is end-to-end encrypted with your sync passphrase, which the app asks for next if this device doesn't have it.
+                </p>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <button
+                    onClick={handleVaultProConnect}
+                    disabled={vaultProConnecting || !vaultAccountKey.trim()}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 transition-colors"
+                    data-vault-pro-connect
+                  >
+                    {vaultProConnecting && <Loader size={12} className="animate-spin" />}
+                    Connect
+                  </button>
+                  {vaultProError && (
+                    <span className="flex items-center gap-1.5 text-xs text-red-500 dark:text-red-400">
+                      <XCircle size={13} />
+                      {vaultProError}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {vaultEnabled && !vaultPro && (
               <div className="space-y-3">
                 <div>
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
@@ -701,6 +834,12 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                     autoComplete="off"
                     className="w-full bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
                   />
+                  {isCleartextRemoteUrl(vaultUrl) && (
+                    <p className="flex items-start gap-1 text-xs text-amber-600 dark:text-amber-400 mt-1">
+                      <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+                      {t('sync.cleartextWarning')}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1">
@@ -762,7 +901,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
               </div>
             )}
 
-            {vaultEnabled && (
+            {vaultEnabled && (!vaultPro || vaultProConnected) && (
               <div className="space-y-2 pt-1">
                 <div className="flex items-center gap-3 flex-wrap">
                   <button

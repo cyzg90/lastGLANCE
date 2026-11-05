@@ -24,3 +24,17 @@ export function markLocalEdit(now: () => number = Date.now): void {
 export function lastLocalEditAt(): string | null {
   try { return storage()?.getItem(LOCAL_EDIT_KEY) ?? null } catch { return null }
 }
+
+// People's own stamp, for the People Direct Access file: set by the People
+// data layer (people/sync/dirtyTracker.markPeopleDirty) on every write of its
+// own, never by an apply. Kept apart from the chore stamp so an edit to a chore
+// does not make this device write the People file at once, and vice versa.
+export const PEOPLE_LOCAL_EDIT_KEY = 'lastglance-people-local-edit-at'
+
+export function markPeopleLocalEdit(now: () => number = Date.now): void {
+  try { storage()?.setItem(PEOPLE_LOCAL_EDIT_KEY, new Date(now()).toISOString()) } catch { /* private mode / quota */ }
+}
+
+export function lastPeopleLocalEditAt(): string | null {
+  try { return storage()?.getItem(PEOPLE_LOCAL_EDIT_KEY) ?? null } catch { return null }
+}

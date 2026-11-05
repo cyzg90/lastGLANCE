@@ -20,6 +20,7 @@ import type { SyncCategory, SyncChore, SyncCompletionEvent, SyncUser } from './t
 import { getVaultConfig, isVaultEnabled } from './vaultConfig'
 import { getDeviceId } from './deviceId'
 import { DB_ROOT_KEY_HOOKS } from './nativeKeyHooks'
+import { headlessFetchImpl } from '@/headless/headlessHttp'
 import { addDeferredChore, removeDeferredChore, getDeferredChores } from './deferredChores'
 import {
   addDeferredCompletion,
@@ -91,10 +92,22 @@ export function isInsertOnly(entity: unknown): boolean {
 // Timestamp the engine compares for entity-grain last-writer-wins (and against
 // tombstone deletedAt stamps): updatedAt everywhere, with completion events
 // falling back to completedAt for shapes written before note edits synced.
+//
+// A pinned chore reads 1ms later than its updatedAt. A build that predates
+// pinning applied pulled chores with their updatedAt but without the flag, so
+// after it upgrades its copy ties the vault's pinned one, and the engine keeps
+// local on a tie: the pin was lost for good. A real pin or unpin always stamps a
+// new updatedAt (far more than 1ms apart), so the nudge only ever decides that
+// tie, and in the pin's favour. The vault's copies still carry the pins; the
+// recovery generation 3 re-pull below brings them back.
 export function getEntityLastModified(entity: unknown): string | number | undefined {
   if (!entity || typeof entity !== 'object') return undefined
   const e = entity as Record<string, unknown>
   if (entityKind(e) === 'completionEvent') return (e.updatedAt ?? e.completedAt) as string | undefined
+  if (entityKind(e) === 'chore' && e.pinned === true) {
+    const t = Date.parse(e.updatedAt as string)
+    if (!Number.isNaN(t)) return t + 1
+  }
   return e.updatedAt as string | undefined
 }
 
@@ -125,6 +138,7 @@ function toSyncChore(c: Chore): SyncChore {
     seasonalStart: c.seasonal_start ?? null,
     seasonalEnd: c.seasonal_end ?? null,
     details: c.details ?? null,
+    pinned: c.pinned ?? false,
     icon: c.icon,
     assignedUserSyncIds: c.assigned_user_sync_ids ?? [],
     createdAt: c.created_at,
@@ -266,6 +280,7 @@ async function applyChore(chore: SyncChore): Promise<void> {
         seasonal_start: chore.seasonalStart ?? null,
         seasonal_end: chore.seasonalEnd ?? null,
         details: chore.details ?? null,
+        pinned: chore.pinned ?? existing.pinned ?? false,
         icon: chore.icon,
         assigned_user_sync_ids: chore.assignedUserSyncIds ?? [],
         updated_at: chore.updatedAt,
@@ -287,6 +302,7 @@ async function applyChore(chore: SyncChore): Promise<void> {
         seasonal_start: chore.seasonalStart ?? null,
         seasonal_end: chore.seasonalEnd ?? null,
         details: chore.details ?? null,
+        pinned: chore.pinned ?? false,
         icon: chore.icon,
         assigned_user_sync_ids: chore.assignedUserSyncIds ?? [],
         created_at: chore.createdAt,
@@ -476,6 +492,9 @@ export interface DbEngineCallbacks {
 //   gen 1 (v1.8.6): split-cursor poisoning from @glance-apps/sync ≤ 1.3.x.
 //   gen 2 (v1.8.7): re-pull so completions dropped on a not-yet-present chore by
 //                   the old applyCompletionEvent are re-listed and now parked.
+//   gen 3:          re-pull so pins a pre-pinning build dropped on apply come
+//                   back (see getEntityLastModified's tie-break for pinned
+//                   chores, without which the re-pulled copy would lose the tie).
 //
 // A generation rewind forces a full re-PULL only. It deliberately no longer
 // re-snapshot-pushes local data (the seed gate below is a one-shot flag, not an
@@ -484,13 +503,25 @@ export interface DbEngineCallbacks {
 // generation ever needs a forced re-push (e.g. after server-side data loss), it
 // must ALSO remove SNAPSHOT_SEEDED_FLAG — rewinding the cursor alone will not
 // re-seed.
-const RECOVERY_GENERATION = 2
+const RECOVERY_GENERATION = 3
 const HWM_RECOVERY_FLAG = `${APP_ID}-db-sync-hwm-recovery-gen`
 
 // One-shot gate for the first-sync full-snapshot seed (see the seeding wrapper
 // in createDbEngine). Present-and-'1' means this device has completed its
 // initial marking; the engine's persisted dirty set owns delivery from there.
 const SNAPSHOT_SEEDED_FLAG = `${APP_ID}-db-sync-snapshot-seeded`
+
+// The seeding wrapper's migration shim, run at engine creation so it sees the
+// cursor before recoverStalePullCursor can rewind it.
+function latchSeededIfAlreadySynced(engine: DbSyncEngine): void {
+  if (typeof localStorage === 'undefined') return
+  if (localStorage.getItem(SNAPSHOT_SEEDED_FLAG) === '1') return
+  try {
+    if (engine.getHighWaterMark() > 0) localStorage.setItem(SNAPSHOT_SEEDED_FLAG, '1')
+  } catch (err) {
+    console.warn('[lastglance] vault seed-flag latch failed:', err)
+  }
+}
 
 function recoverStalePullCursor(engine: DbSyncEngine): void {
   if (typeof localStorage === 'undefined') return
@@ -554,6 +585,8 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
     ...DB_ROOT_KEY_HOOKS,
     vaultUrl: cfg.vaultUrl,
     vaultToken: cfg.vaultToken,
+    // A headless refresh has no CapacitorHttp; the shell's HTTP stands in.
+    fetchImpl: headlessFetchImpl(),
     accountId: cfg.accountId,
     deviceId: getDeviceId(),
     getLocalEntity,
@@ -567,11 +600,20 @@ export function createDbEngine(callbacks: DbEngineCallbacks = {}): DbSyncEngine 
     onRowsSkipped: callbacks.onRowsSkipped,
   })
 
+  // Latch the seed flag for a device that has already synced BEFORE any cursor
+  // rewind. The seeding wrapper's migration shim reads "cursor past 0" as proof
+  // the first sync happened; run after a recovery rewind, a device without the
+  // flag would read 0, take itself for a fresh install and mark everything
+  // dirty. That full push is an unconditional upsert, so its copies would
+  // overwrite newer ones in the vault (a recovery re-pull that was meant to
+  // restore data would instead clobber it).
+  latchSeededIfAlreadySynced(engine)
+
   // Recover devices whose pull cursor was poisoned by the ≤1.3.x push/pull bug
-  // before deciding whether this is a first-ever sync below. The cursor rewind
-  // no longer re-triggers the snapshot seed (the seed gate is a one-shot flag,
-  // not an HWM check) — under SSE a rewind-triggered re-seed would not be
-  // harmless; see the seeding wrapper below.
+  // (and later generations, see RECOVERY_GENERATION). With the seed flag
+  // latched above, the rewind never re-triggers the snapshot seed: under SSE a
+  // rewind-triggered re-seed would not be harmless; see the seeding wrapper
+  // below.
   recoverStalePullCursor(engine)
 
   // Repair categories that were stored flat by an earlier build, immediately on

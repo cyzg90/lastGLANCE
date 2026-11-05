@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Pencil, Check, Cloud, CloudOff, RefreshCw, HelpCircle, Settings, UserCircle, Clock, NotebookText, Settings2, UserPlus } from 'lucide-react'
+import { Pencil, Check, Cloud, CloudOff, RefreshCw, HelpCircle, Settings, UserCircle, Clock, NotebookText, Settings2, UserPlus, Pin } from 'lucide-react'
 import { Ribbon } from '@/components/Ribbon/Ribbon'
+import { OPEN_PINNED_EVENT, SHOW_PINNED_EVENT, type PinnedState } from '@/components/Ribbon/pinnedNav'
 import { BackupModal } from '@/components/BackupModal/BackupModal'
 import { WelcomeModal } from '@/components/WelcomeModal/WelcomeModal'
 import { clearSeedData, getUsers as getDBUsers, deduplicateUsers } from '@/db/queries'
@@ -29,6 +30,7 @@ import { UsersContext } from '@/multiuser/UsersContext'
 import { useUsers } from '@/multiuser/useUsers'
 import { useNotifications } from '@/hooks/useNotifications'
 import { useWidgetSnapshot } from '@/hooks/useWidgetSnapshot'
+import { useLauncherSnapshot, configureLauncherHeartbeat, latestSyncedAt, touchHeartbeatNow } from '@/hooks/useLauncherSnapshot'
 import { useReminders } from '@/hooks/useReminders'
 import { usePeopleIntents } from '@/hooks/usePeopleIntents'
 import { usePendingCompletions } from '@/hooks/usePendingCompletions'
@@ -37,8 +39,13 @@ import { useIntentsPoller } from '@/hooks/useIntentsPoller'
 import { useDbIntentsPoller, drainDbIntents } from '@/hooks/useDbIntentsPoller'
 import { useVaultEventStream } from '@/hooks/useVaultEventStream'
 import { useDirectAccessSync } from '@/hooks/useDirectAccessSync'
+import { useSnapshotFileSync } from '@/hooks/useSnapshotFileSync'
+import { icloudTransport, choresHaveRealData } from '@/sync/icloud'
+import { ICloudFirstRunModal } from '@/components/ICloudFirstRunModal/ICloudFirstRunModal'
 import { useDirectAccessIntents } from '@/hooks/useDirectAccessIntents'
+import { useICloudIntents } from '@/hooks/useICloudIntents'
 import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
+import { runCappedRefreshCycle, type RefreshTier } from '@/intents/launcherRefreshCycle'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { useDayRollover } from '@/hooks/useDayRollover'
 import { IntentsProvider, useIntents } from '@/intents/IntentsContext'
@@ -54,6 +61,8 @@ import { OPEN_PERSON_PENDING_EVENT, peekPendingOpenPerson } from '@/native/pendi
 import { createPeopleFileEngine } from '@/people/sync/fileEngine'
 import { createPeopleDbEngine } from '@/people/sync/dbEngine'
 import { registerPeopleDbEngine, registerPeopleFileSyncRunner } from '@/people/sync/dirtyTracker'
+import { createRosterDbEngine } from '@/multiuser/rosterVault'
+import { registerRosterDbEngine } from '@/multiuser/rosterDirtyTracker'
 import { registerDbEngine } from '@/sync/dirtyTracker'
 import { isVaultEnabled } from '@/sync/vaultConfig'
 import { applyStatusBarTheme, initFullScreenInLandscape } from '@/native/statusBar'
@@ -74,7 +83,7 @@ type AppMode = 'chores' | 'people'
 const MODE_KEY = 'lg-mode'
 // Events that open something in the chores view (notification taps, widgets,
 // launcher shortcuts, shares). In People mode they switch back to chores.
-const CHORE_EVENTS = ['lg:open-chore', 'lg:open-chore-pending', 'lg:open-search', 'lg:new-chore', 'lg:widget-filter-soon']
+const CHORE_EVENTS = ['lg:open-chore', 'lg:open-chore-pending', 'lg:open-search', 'lg:new-chore', 'lg:widget-filter-soon', 'lg:open-chores', OPEN_PINNED_EVENT]
 
 function buildHeaderHeatmap(counts: Map<string, number>): HeatDay[][] {
   const today = dayjs()
@@ -171,6 +180,7 @@ function AppInner() {
   const { showToast } = useToast()
   useNotifications()
   useWidgetSnapshot()
+  useLauncherSnapshot()
   useReminders()
   usePeopleIntents()
   usePendingCompletions()
@@ -183,6 +193,8 @@ function AppInner() {
   // gated stays false and the hard gate below never renders).
   const billing = useSubscription()
   const [editMode, setEditMode] = useState(false)
+  // Reported by the Ribbon for the phone header's Pinned button.
+  const [pinnedState, setPinnedState] = useState<PinnedState>({ available: false, showing: false })
   // Chores | People.
   // A notification tap that launched the app opens the mode it is about,
   // whatever mode was last used.
@@ -259,6 +271,7 @@ function AppInner() {
   // lastglance-people vault app). Null until sync starts.
   const peopleFileEngineRef = useRef<SyncEngine | null>(null)
   const peopleDbEngineRef = useRef<DbSyncEngine | null>(null)
+  const rosterDbEngineRef = useRef<DbSyncEngine | null>(null)
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [syncError, setSyncError] = useState<string | null>(null)
   const [peopleSyncStatus, setPeopleSyncStatus] = useState<SyncStatus>('idle')
@@ -297,6 +310,8 @@ function AppInner() {
         .then(res => setVaultSkipped(res?.skipped ?? 0))
         .catch(() => {/* surfaced via onError */})
     }
+    // The household roster every GLANCE app shares rides the same triggers.
+    rosterDbEngineRef.current?.dbSyncCycle().catch(() => {/* logged by the engine */})
   }, [])
 
   // Runs both People sync roads, riding the same triggers as the chore
@@ -428,6 +443,12 @@ function AppInner() {
     })
     peopleDbEngineRef.current = peopleDb
     registerPeopleDbEngine(peopleDb)
+    const rosterDb = createRosterDbEngine({
+      onError: (msg, code) => { if (msg) console.warn('[lastglance] roster vault sync error:', code ?? '(no code)', msg) },
+      onUnsupported: () => console.warn('[lastglance] vault does not know glance-users yet; the roster syncs on the file roads only'),
+    })
+    rosterDbEngineRef.current = rosterDb
+    registerRosterDbEngine(rosterDb)
 
     managedBootstrap
       .then(() => deduplicateUsers().catch(() => {}))
@@ -437,7 +458,7 @@ function AppInner() {
       .catch(() => {/* errors surfaced via onError */})
     runDbSync()
 
-    return () => { registerDbEngine(null); registerPeopleDbEngine(null); registerPeopleFileSyncRunner(null) }
+    return () => { registerDbEngine(null); registerPeopleDbEngine(null); registerPeopleFileSyncRunner(null); registerRosterDbEngine(null) }
     // Mount-once engine init; runSharedUserSync is a stable callback invoked
     // imperatively elsewhere and intentionally not a dependency here.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -555,6 +576,9 @@ function AppInner() {
   // Direct Access intents transport (docs/direct-access.md, step 3): the
   // event-set file in the folder. A no-op unless its opt-in is on.
   useDirectAccessIntents(loadHeatmap, { onKeyNeeded: () => setShowPassphrase(true) })
+  // iCloud intents (intents/icloudIntents.ts): dayGLANCE's events folder in its
+  // iCloud container. iOS only, and inert unless its opt-in is on.
+  useICloudIntents(loadHeatmap)
   // GLANCEvault SSE push: nudges from the vault trigger the SAME drains the
   // polls run (runDbSync for the sync tier, the intents poller's drain for the
   // intents tier), so remote changes land in seconds instead of at the next
@@ -582,9 +606,40 @@ function AppInner() {
     onKeyNeeded: () => setShowPassphrase(true),
   })
   const runDirectAccessSync = directAccessSync.runSync
+  // iCloud (docs/icloud-sync.md), iOS only: lastGLANCE's own container, on by
+  // default with nothing to set up. The same two cycles over a plaintext
+  // transport; the first launch that finds iCloud data and none of this
+  // device's own asks before restoring, and "data" leaves the sample chores out.
+  const icloudSync = useSnapshotFileSync({
+    transport: icloudTransport,
+    cycleDeps: { hasData: choresHaveRealData },
+    onKeyNeeded: () => setShowPassphrase(true),
+  })
+  // The launcher heartbeat's syncedAt: the latest completed cycle across the
+  // roads that are on (file, vault); null without one.
+  useEffect(() => {
+    configureLauncherHeartbeat(() => latestSyncedAt([engineRef.current?.getLastSynced?.(), dbEngineRef.current?.getLastSynced?.()]))
+  }, [])
+  // The launcher's REFRESH: every road to completion, then the heartbeat.
+  const runLauncherSyncCycle = useCallback(async () => {
+    // Capped (intents/launcherRefreshCycle.ts): a tier that never returns fails
+    // the refresh with its name instead of leaving it unanswered.
+    const tiers: RefreshTier[] = []
+    const file = engineRef.current
+    if (file) tiers.push(['the chores file sync', () => file.sync()])
+    const vault = dbEngineRef.current
+    if (vault) tiers.push(['the chores vault sync', () => vault.dbSyncCycle()])
+    const peopleFile = peopleFileEngineRef.current
+    if (peopleFile) tiers.push(['the people file sync', () => peopleFile.sync()])
+    const peopleVault = peopleDbEngineRef.current
+    if (peopleVault) tiers.push(['the people vault sync', () => peopleVault.dbSyncCycle()])
+    const rosterVault = rosterDbEngineRef.current
+    if (rosterVault) tiers.push(['the household roster vault sync', () => rosterVault.dbSyncCycle()])
+    await runCappedRefreshCycle(tiers)
+  }, [])
   // Android/Tasker intents transport — lets another Android app drive lastGLANCE
   // via app.lastglance.* intents. No-op off native Android.
-  useAndroidIntentBridge(loadHeatmap)
+  useAndroidIntentBridge(loadHeatmap, { runSyncCycle: runLauncherSyncCycle, touchHeartbeat: touchHeartbeatNow })
   // OUTBOUND: drain the durable intents outbox on mount, on focus, and on the
   // poll cadence (enqueue also triggers a flush). Guarantees queued intents are
   // delivered/retried and never lost across restarts.
@@ -623,8 +678,15 @@ function AppInner() {
   // attention filter once the app is foregrounded.
   useEffect(() => {
     function onFilterSoon() { setAttentionOnly(true) }
+    // The launcher's Pinned list shows every pin, so Soon goes off (the Ribbon
+    // then moves to the Pinned tab).
+    function onOpenPinned() { setAttentionOnly(false) }
     window.addEventListener('lg:widget-filter-soon', onFilterSoon)
-    return () => window.removeEventListener('lg:widget-filter-soon', onFilterSoon)
+    window.addEventListener(OPEN_PINNED_EVENT, onOpenPinned)
+    return () => {
+      window.removeEventListener('lg:widget-filter-soon', onFilterSoon)
+      window.removeEventListener(OPEN_PINNED_EVENT, onOpenPinned)
+    }
   }, [setAttentionOnly])
 
   // The D shortcut flips to an explicit light/dark, leaving 'system'.
@@ -752,12 +814,11 @@ function AppInner() {
         {/* Controls */}
         <div className="flex flex-col items-end gap-1.5 shrink-0">
 
-          {/* ── Mobile: journal + settings + Edit. The heatmap is hidden at
-              this width, so the journal gets its own button rather than
-              hiding inside settings. ── */}
-          {/* In People mode the four buttons form a 2x2 block: Journal and
-              Settings above, Circles and Add person below. */}
-          <div className={`${choresMode ? 'flex items-center' : 'grid grid-cols-2'} gap-2 sm:hidden`}>
+          {/* ── Mobile: a 2x2 block. Journal and Settings above; below, Pinned
+              and Edit for Chores, Circles and Add person for People. The
+              heatmap is hidden at this width, so the journal gets its own
+              button rather than hiding inside settings. ── */}
+          <div className="grid grid-cols-2 gap-2 sm:hidden">
             <button
               onClick={() => openJournal(null)}
               className="p-2 rounded-lg text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors"
@@ -776,6 +837,17 @@ function AppInner() {
                 controls ran into the logo: below 375px in English, and on
                 every phone in languages with a long word for it ("Bearbeiten",
                 "Редагувати"). */}
+            {/* Back to the Pinned tab. Disabled when there is none (nothing
+                pinned, or edit mode); green while it is the tab on screen. */}
+            {choresMode && <button
+              onClick={() => window.dispatchEvent(new Event(SHOW_PINNED_EVENT))}
+              disabled={!pinnedState.available}
+              className={`p-2 rounded-lg transition-colors border disabled:opacity-40 disabled:pointer-events-none ${pinnedState.showing ? 'text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60' : 'text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+              aria-label={t('ribbon.pinned')}
+              aria-pressed={pinnedState.showing}
+            >
+              <Pin size={15} />
+            </button>}
             {choresMode && <button
               onClick={() => setEditMode(e => !e)}
               className={`p-2 rounded-lg transition-colors border ${editMode ? 'text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60' : 'text-slate-500 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
@@ -857,11 +929,33 @@ function AppInner() {
                 </button>
               </>}
             </div>
-            {/* Row 2: sync (doubles as the status light), journal, help,
-                settings. Every control here is icon-only, so each carries a
-                tooltip. Set-once panels (integration, users, backup, theme,
-                language, time format) live in the settings panel. */}
+            {/* Row 2: pinned (chores, tabbed layout only), sync (doubles as
+                the status light), journal, help, settings. Every control here
+                is icon-only, so each carries a tooltip. Set-once panels
+                (integration, users, backup, theme, language, time format)
+                live in the settings panel. */}
             <div className="flex items-center gap-2">
+              {/* Back to the Pinned tab, as on phones. Only while the tabbed
+                  layout is on screen (below 1060px; above it Pinned is a row
+                  at the top of the page). Disabled when there is no Pinned
+                  tab (nothing pinned, or edit mode); green while it is the
+                  tab on screen. */}
+              {choresMode && (
+                <button
+                  onClick={() => window.dispatchEvent(new Event(SHOW_PINNED_EVENT))}
+                  disabled={!pinnedState.available}
+                  className={`min-[1060px]:hidden p-2 rounded-lg border transition-colors disabled:opacity-40 disabled:pointer-events-none ${
+                    pinnedState.showing
+                      ? 'text-green-400 border-green-400/40 hover:text-green-300 hover:bg-green-400/10 hover:border-green-400/60'
+                      : 'text-slate-400 dark:text-slate-500 border-slate-200 dark:border-slate-700 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                  }`}
+                  aria-pressed={pinnedState.showing}
+                  aria-label={t('ribbon.pinned')}
+                  data-tooltip={t('ribbon.pinned')}
+                >
+                  <Pin size={15} />
+                </button>
+              )}
               <button
                 onClick={() => setShowSyncSettings(true)}
                 className={`p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors ${syncWarn ? 'text-amber-400 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-200'}`}
@@ -890,13 +984,16 @@ function AppInner() {
           launches and shortcuts that target chores still find their listeners;
           those same events bring the chores view back (see CHORE_EVENTS). */}
       <main className={choresMode ? 'flex-1 flex flex-col overflow-hidden' : 'hidden'}>
-        <Ribbon key={ribbonKey} editMode={editMode} onLogged={loadHeatmap} />
+        <Ribbon key={ribbonKey} editMode={editMode} onLogged={loadHeatmap} onPinnedState={setPinnedState} />
       </main>
       {!choresMode && (
         <main className="flex-1 flex flex-col overflow-hidden">
           <PeopleHome />
         </main>
       )}
+
+      {/* Above the welcome sheet (z-[60]), which a fresh install shows at the same time. */}
+      <ICloudFirstRunModal info={icloudSync.firstRun} onRestore={icloudSync.acceptFirstRun} onStartFresh={icloudSync.declineFirstRun} />
 
       {showWelcome && (
         <WelcomeModal
@@ -950,6 +1047,7 @@ function AppInner() {
           vaultSkipped={vaultSkipped}
           onClearSyncHalt={() => { setSyncHalted(false); setPeopleSyncHalted(false) }}
           directAccess={directAccessSync}
+          icloud={icloudTransport.isSupported() ? icloudSync : undefined}
           onClose={() => { setShowSyncSettings(false); runSharedUserSync(); backToSettings() }}
         />
       )}

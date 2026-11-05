@@ -1,5 +1,6 @@
 import { registerPlugin } from '@capacitor/core'
 import { isNativeShell } from './platform'
+import { headlessBridge } from '@/headless/headlessMode'
 
 // Native bridge to hardware-backed secret storage (issue #210), so secrets are
 // no longer plaintext-at-rest in WebView storage. Both shells implement the
@@ -21,18 +22,32 @@ export interface SecureStorePlugin {
 const SecureStore = registerPlugin<SecureStorePlugin>('SecureStore')
 
 // The shim and key hooks must only engage where the plugin exists — anywhere
-// else the fallback is the status quo (localStorage / IndexedDB).
-export const isSecureStoreAvailable = isNativeShell()
+// else the fallback is the status quo (localStorage / IndexedDB). A headless
+// refresh has no Capacitor bridge but reads the same Keystore-backed store
+// through the shell's HeadlessBridge (src/headless/headlessMode.ts).
+export const isSecureStoreAvailable = isNativeShell() || headlessBridge() !== null
 
 export async function secureGet(key: string): Promise<string | null> {
+  const headless = headlessBridge()
+  if (headless) return (JSON.parse(headless.secureGet(key)) as { value?: string | null }).value ?? null
   const res = await SecureStore.get({ key })
   return res.value ?? null
 }
 
 export async function secureSet(key: string, value: string): Promise<void> {
+  const headless = headlessBridge()
+  if (headless) {
+    if (!headless.secureSet(key, value)) throw new Error('secure write failed')
+    return
+  }
   await SecureStore.set({ key, value })
 }
 
 export async function secureDelete(key: string): Promise<void> {
+  const headless = headlessBridge()
+  if (headless) {
+    headless.secureDelete(key)
+    return
+  }
   await SecureStore.delete({ key })
 }

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The signers com.lastglance.permission.LAUNCHER trusts (AndroidManifest.xml,
+  docs/launcher-integration.md): SHA-256 digests of the GLANCElauncher's
+  signing certificates, lowercase hex, no colons. These are the LAUNCHER's
+  certificates, not lastGLANCE's, and the same three digests dayGLANCE lists.
+
+  To read one:  keytool -list -v -keystore <keystore> -alias <alias> | grep SHA256
+  then strip the colons and lowercase. The debug keystore is
+  ~/.android/debug.keystore (alias androiddebugkey, password android).
+
+  PLACEHOLDERS: every entry below is a placeholder and must be replaced before
+  the permission admits anything. The DEBUG entry is removed before any public
+  release; the PLAY entry is filled in once the launcher ships on Play (Play
+  Console → App integrity → App signing key certificate).
+-->
+<resources>
+    <string-array name="launcher_known_certs">
+        <!-- GLANCElauncher release certificate (PLACEHOLDER: replace with the real digest) -->
+        <item>0000000000000000000000000000000000000000000000000000000000000001</item>
+        <!-- GLANCElauncher debug certificate (the Android debug key on the maintainer's Mac; REMOVE before any public release) -->
+        <item>72d984906c2e8974da1800fca30f221186be504b89b9f3a5331eae21d55e01b9</item>
+        <!-- GLANCElauncher Play app signing certificate (PLACEHOLDER: fill in once the launcher ships on Play) -->
+        <item>0000000000000000000000000000000000000000000000000000000000000003</item>
+    </string-array>
+</resources>

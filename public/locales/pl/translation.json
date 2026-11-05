@@ -148,7 +148,9 @@
     "cancel": "Anuluj",
     "saving": "Zapisywanie…",
     "save": "Zapisz",
-    "add": "Dodaj"
+    "add": "Dodaj",
+    "pinLabel": "Przypięty",
+    "pinHint": "Widoczny też w sekcji Przypięte, najbardziej zaległe najpierw."
   },
   "choreRow": {
     "everyNDays": "co {{n}} dn.",
@@ -163,7 +165,8 @@
     "quickLogAriaLabel": "Szybko odnotuj {{name}}",
     "sendAriaLabel": "Wyślij {{name}} do dayGLANCE",
     "choreLabel": "{{name}} — {{elapsed}}",
-    "seasonalRange": "Sezonowy: {{start}} – {{end}}"
+    "seasonalRange": "Sezonowy: {{start}} – {{end}}",
+    "pinned": "Przypięty"
   },
   "dateTimePicker": {
     "setDate": "Ustaw datę…",
@@ -312,6 +315,11 @@
       "notConnected": "Najpierw połącz folder w Synchronizacji w chmurze. Do tego czasu ten transport pozostaje nieaktywny.",
       "reload": "Zapisywane przy zamknięciu; aplikacja uruchomi się ponownie, aby zacząć odpytywać folder.",
       "passphraseRequired": "Intencje przez dostęp bezpośredni są szyfrowane Twoim hasłem synchronizacji. Wpisz je, aby je włączyć."
+    },
+    "icloudIntents": {
+      "title": "Intencje iCloud",
+      "label": "Intencje przez iCloud",
+      "hint": "Wymieniaj intencje z dayGLANCE na tym iPhonie lub iPadzie przez iCloud, bez dodatkowej konfiguracji. W dayGLANCE też muszą być włączone intencje iCloud."
     }
   },
   "journal": {
@@ -392,7 +400,9 @@
     "daysLater_many": "{{count}} dni później",
     "daysLater_other": "{{count}} dnia później",
     "delete": "Usuń",
-    "viaDayglance": "przez dayGLANCE"
+    "viaDayglance": "przez dayGLANCE",
+    "pin": "Przypnij",
+    "unpin": "Odepnij"
   },
   "notifications": {
     "itsBeenDays_one": "Minął {{count}} dzień",
@@ -438,7 +448,8 @@
     "showFabsAriaLabel": "Pokaż przyciski akcji",
     "nothingNeedsAttention": "Nic nie wymaga teraz uwagi.",
     "nothingAssignedToYou": "Nic tutaj nie jest przypisane do Ciebie.",
-    "showAllChores": "Pokaż wszystkie obowiązki"
+    "showAllChores": "Pokaż wszystkie obowiązki",
+    "pinned": "Przypięte"
   },
   "search": {
     "placeholder": "Szukaj obowiązków…",
@@ -484,6 +495,7 @@
       "AUTH_FAILURE": "Logowanie nie powiodło się. Sprawdź nazwę użytkownika i hasło.",
       "LOCKED": "Inne urządzenie właśnie synchronizuje. Spróbuj ponownie za chwilę.",
       "NETWORK_ERROR": "Nie udało się połączyć z serwerem synchronizacji. Sprawdź połączenie i spróbuj ponownie.",
+      "PAYLOAD_TOO_LARGE": "Serwer synchronizacji odrzucił przesyłanie, ponieważ jest zbyt duże. Twoje zmiany są zapisane na tym urządzeniu. Poproś osobę zarządzającą serwerem synchronizacji o zwiększenie limitu rozmiaru przesyłanych plików.",
       "KEY_MISMATCH": "Nieprawidłowe hasło synchronizacji — musi być dokładnie takie samo jak na Twoich pozostałych urządzeniach.",
       "ROW_DECRYPT_FAILED": "Nie udało się odszyfrować części zsynchronizowanych danych. Sprawdź swoje hasło synchronizacji.",
       "VERIFIER_UNSUPPORTED": "Twój serwer synchronizacji wymaga aktualizacji, aby obsługiwać weryfikację klucza.",
@@ -516,6 +528,7 @@
     "password": "Hasło",
     "passwordPlaceholder": "••••••••",
     "passwordHint": "Przechowywane w localStorage przeglądarki — dbaj o bezpieczeństwo urządzenia.",
+    "cleartextWarning": "To połączenie nie jest szyfrowane. Hasło i dane są przesyłane otwartym tekstem, więc używaj http tylko w zaufanej sieci.",
     "testConnection": "Testuj połączenie",
     "connected": "Połączono",
     "testFailed": "Niepowodzenie",
@@ -584,6 +597,9 @@
       "encryptPassphraseHint": "Wybierz hasło synchronizacji. Każde urządzenie korzystające z tego folderu wpisuje to samo.",
       "encryptTurnOn": "Włącz",
       "cancel": "Anuluj",
+      "peopleHint": "Ludzie synchronizują się w drugim pliku obok pliku synchronizacji: lastglance-people.json. Wybierz plik utworzony przez inne urządzenie albo utwórz go w tym samym folderze.",
+      "peopleChosen": "Plik Ludzi: {{name}}",
+      "peopleNotChosen": "Nie wybrano pliku Ludzi. Ludzie nie będą synchronizowani przez folder, dopóki go nie wybierzesz.",
       "rosterHint": "Lista domowników to drugi plik w folderze: glance-users.json.",
       "rosterChosen": "Plik listy: {{name}}",
       "rosterNotChosen": "Nie wybrano pliku listy.",
@@ -622,7 +638,7 @@
     "syncNow": "Synchronizuj teraz",
     "syncOk": "Zsynchronizowano!",
     "syncFailed": "Synchronizacja nie powiodła się",
-    "syncNotConfigured": "Synchronizacja w chmurze nie jest skonfigurowana. Najpierw skonfiguruj WebDAV lub dostęp bezpośredni w Ustawienia → Synchronizacja w chmurze."
+    "syncNotConfigured": "Synchronizacja w chmurze nie jest skonfigurowana. Najpierw skonfiguruj GLANCEvault, WebDAV lub dostęp bezpośredni w Ustawienia → Synchronizacja w chmurze."
   },
   "welcome": {
     "title": "Witaj w lastGLANCE",
@@ -987,6 +1003,22 @@
         "inbound": "Kontakt od: {{names}}",
         "mutual": "Kontakt: {{names}}"
       }
+    }
+  },
+  "icloud": {
+    "title": "iCloud",
+    "switchLabel": "Synchronizuj z iCloud",
+    "onHint": "Twoje obowiązki i Ludzie są aktualne na każdym iPhonie i iPadzie zalogowanym na Twój Apple ID. Nic nie trzeba konfigurować.",
+    "offHint": "Wyłączone na tym urządzeniu. Kopia w iCloud i inne urządzenia pozostają bez zmian.",
+    "firstRun": {
+      "title": "Przywrócić z iCloud?",
+      "bodyChores": "W iCloud są dane lastGLANCE z Twoich innych urządzeń. Obowiązki w iCloud: {{count}}.",
+      "bodyPeople": "W iCloud są dane lastGLANCE z Twoich innych urządzeń. Ludzie w iCloud: {{count}}.",
+      "lastModified": "Ostatnia zmiana: {{when}}",
+      "restore": "Przywróć z iCloud",
+      "restoreHint": "Przenieś obowiązki i Ludzi na to urządzenie i synchronizuj je.",
+      "startFresh": "Zacznij od nowa na tym urządzeniu",
+      "startFreshHint": "Wyłącza tutaj synchronizację z iCloud. Kopia w iCloud zostaje, a synchronizację możesz włączyć później w Synchronizacji w chmurze."
     }
   }
 }
