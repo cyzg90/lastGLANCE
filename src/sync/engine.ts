@@ -1,4 +1,3 @@
-import { buildPeoplePayload } from '@/people/sync/fileEngine'
 import {
   createSyncEngine,
   mergeArrayById,
@@ -12,12 +11,14 @@ import type { SyncEngine, SyncStatus, SyncErrorCode, BackupFrequency } from '@gl
 import { db } from '@/db/client'
 import type { Category, Chore, CompletionEvent, User } from '@/types'
 import { buildAuthHeader, ensureFolder, forgetEnsuredFolders } from '@/intents/webdav'
-import { browserDirectFetch, isNativePlatform, nativeHttpFetch, webdavDirect } from './nativeHttp'
+import { browserDirectFetch, hasNativeHttp, nativeHttpFetch, webdavDirect } from './nativeHttp'
 import { DB_ROOT_KEY_HOOKS, FILE_SYNC_KEY_HOOKS } from './nativeKeyHooks'
 import type { SyncPayload, SyncSettings } from './types'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 import { MANAGED_SYNC_FOLDER, MANAGED_WEBDAV, managedWebdavFetch } from './managedWebdav'
 import { getSyncFolder } from './syncFolder'
+import { buildPeoplePayload } from '@/people/sync/apply'
+import type { PeoplePayload } from '@/people/sync/types'
 
 // On Android the spread hooks route key storage to the Keystore-backed
 // SecureStore instead of IndexedDB (issue #210); elsewhere they spread to
@@ -479,6 +480,17 @@ export const applyPayload = async (rawData: unknown, { allowEmpty }: { allowEmpt
   window.dispatchEvent(new CustomEvent('lg:chore-logged'))
 }
 
+// What every backup snapshot holds: the chore payload plus a `people` section,
+// so the automatic backups (hourly/daily/weekly, local and in the WebDAV
+// backups/ folder) and the pre-restore safety snapshot carry People too (issue
+// #424). Only for backups: the sync file stays buildPayload, because an older
+// build's mergePayloads would drop a `people` key it doesn't know (see
+// src/people/sync/fileEngine.ts). restoreFromBackup reads either.
+export const buildBackupPayload = async (): Promise<SyncPayload & { people: PeoplePayload }> => {
+  const [payload, people] = await Promise.all([buildPayload(), buildPeoplePayload()])
+  return { ...payload, people }
+}
+
 const BACKUP_LS_KEY = (freq: BackupFrequency) => `lastglance_backup_last_${freq}`
 export const REMOTE_BACKUPS_ENABLED_KEY = 'lastglance_remote_backups_enabled'
 
@@ -491,10 +503,6 @@ export function setRemoteBackupsEnabled(enabled: boolean): void {
 }
 
 const _backupInProgress = new WeakSet<SyncEngine>()
-
-export async function buildFullBackupPayload() {
-  return { ...await buildPayload(), peopleData: await buildPeoplePayload() }
-}
 
 export async function runAutoBackups(engine: SyncEngine): Promise<void> {
   if (!getRemoteBackupsEnabled()) return
@@ -591,13 +599,13 @@ export function createEngine(proxyUrl: string | undefined, callbacks: EngineCall
     // works without the CORS proxy. In the browser use a direct fetch when
     // VITE_WEBDAV_DIRECT is enabled. Takes priority over proxyUrl in the engine,
     // so leaving it undefined keeps the proxy path.
-    electronProxyFetch: isNativePlatform
+    electronProxyFetch: hasNativeHttp
       ? nativeHttpFetch
       : MANAGED_WEBDAV
         ? managedWebdavFetch
         : webdavDirect ? browserDirectFetch : undefined,
     buildPayload,
-    buildBackupPayload: buildFullBackupPayload,
+    buildBackupPayload,
     applyPayload,
     mergePayloads,
     onFirstSyncReload: () => {

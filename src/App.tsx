@@ -21,10 +21,12 @@ import { ToastProvider, useToast } from '@/components/Toast/Toast'
 import { PaywallModal } from '@/components/PaywallModal/PaywallModal'
 import { SettingsPanel, type ThemePref, type SettingsSection } from '@/components/SettingsPanel/SettingsPanel'
 import {
-  getTimeFormat, setTimeFormat as applyTimeFormat, type TimeFormat,
+  getTimeFormat, setTimeFormat as applyTimeFormat, type TimeFormat, TIME_FORMAT_CHANGED_EVENT,
   getWeekStartPref, setWeekStartPref as applyWeekStartPref, type WeekStartPref, WEEK_START_CHANGED_EVENT,
 } from '@/utils/datetime'
 import { ReviewerBanner } from '@/components/ReviewerBanner/ReviewerBanner'
+import { UpdateNotice } from '@/components/UpdateNotice/UpdateNotice'
+import { useUpdateNotice } from '@/hooks/useUpdateNotice'
 import { useSubscription, exitReviewerMode } from '@/billing/billing'
 import { UsersContext } from '@/multiuser/UsersContext'
 import { useUsers } from '@/multiuser/useUsers'
@@ -45,6 +47,7 @@ import { ICloudFirstRunModal } from '@/components/ICloudFirstRunModal/ICloudFirs
 import { useDirectAccessIntents } from '@/hooks/useDirectAccessIntents'
 import { useICloudIntents } from '@/hooks/useICloudIntents'
 import { useAndroidIntentBridge } from '@/hooks/useAndroidIntentBridge'
+import { useDesktopCommands } from '@/hooks/useDesktopCommands'
 import { runCappedRefreshCycle, type RefreshTier } from '@/intents/launcherRefreshCycle'
 import { useOutboxFlush } from '@/hooks/useOutboxFlush'
 import { useDayRollover } from '@/hooks/useDayRollover'
@@ -66,6 +69,7 @@ import { registerRosterDbEngine } from '@/multiuser/rosterDirtyTracker'
 import { registerDbEngine } from '@/sync/dirtyTracker'
 import { isVaultEnabled } from '@/sync/vaultConfig'
 import { applyStatusBarTheme, initFullScreenInLandscape } from '@/native/statusBar'
+import { desktopBridge } from '@/native/desktop'
 import { hasDbRootKey, initDbRootKey, getSyncPassphrase } from '@glance-apps/sync'
 import type { SyncEngine, SyncStatus, DbSyncEngine, SyncErrorCode } from '@glance-apps/sync'
 import { syncSharedUsers, syncSharedUsersViaDirectAccess, type SyncSharedUsersResult } from '@/multiuser/sharedUsers'
@@ -184,6 +188,7 @@ function AppInner() {
   useReminders()
   usePeopleIntents()
   usePendingCompletions()
+  const updateNotice = useUpdateNotice()
   usePendingDeepLink()
   const { refreshConfig } = useIntents()
   const usersCtx = useUsers()
@@ -239,6 +244,8 @@ function AppInner() {
   // section it was opened from. Cleared when Settings itself closes.
   const [settingsReturn, setSettingsReturn] = useState<SettingsSection | null>(null)
   const [timeFormat, setTimeFormatState] = useState<TimeFormat>(getTimeFormat)
+  // Bumped when the OS clock behind 'auto' changes, to repaint every time.
+  const [, setClockTick] = useState(0)
   const [weekStartPref, setWeekStartPrefState] = useState<WeekStartPref>(getWeekStartPref)
   const [ribbonKey, setRibbonKey] = useState(0)
   const [heatmapWeeks, setHeatmapWeeks] = useState<HeatDay[][]>([])
@@ -288,6 +295,10 @@ function AppInner() {
   // throwing, so this is how the Cloud Sync modal shows what went wrong.
   const [vaultSyncError, setVaultSyncError] = useState<string | null>(null)
   const [vaultSyncErrorCode, setVaultSyncErrorCode] = useState<SyncErrorCode | null>(null)
+  // Any vault engine failed its key check (KEY_MISMATCH). Sticky for the
+  // session: the cached key cannot change without the reload the recovery in
+  // Cloud Sync performs, so the next cycle would only fail the same way.
+  const [vaultKeyMismatch, setVaultKeyMismatch] = useState(false)
   // Durable count of rows the last vault cycle could not decrypt (1.5.0 per-row
   // quarantine). Survives after the transient toast dismisses so a key mismatch on
   // some rows stays visible in the Cloud Sync settings panel.
@@ -326,6 +337,8 @@ function AppInner() {
   useEffect(() => {
     document.documentElement.classList.toggle('dark', isDark)
     applyStatusBarTheme(isDark)
+    // The desktop window paints this color before its next launch's first frame.
+    desktopBridge()?.shell.setTheme(isDark)
   }, [isDark])
 
   useEffect(() => {
@@ -392,6 +405,22 @@ function AppInner() {
     })
     engineRef.current = engine
 
+    // All three vault engines share one cached root key, so a KEY_MISMATCH from
+    // any of them means that key is wrong for this account. People and roster
+    // errors were only logged to the console, which left the user in
+    // glance-vault #41 with a stalled People sync and nothing on screen. Flag
+    // it once: a toast pointing at Cloud Sync, where the panel offers the fix.
+    let keyMismatchReported = false
+    const reportKeyMismatch = (code: SyncErrorCode | null) => {
+      if (code !== 'KEY_MISMATCH' || keyMismatchReported) return
+      keyMismatchReported = true
+      setVaultKeyMismatch(true)
+      showToastRef.current({
+        title: i18n.t('notifications.vaultKeyMismatchTitle'),
+        body: i18n.t('notifications.vaultKeyMismatchBody'),
+      })
+    }
+
     // Construct the DB transport engine alongside the file engine when the vault
     // is enabled. It shares the local data but uses an entirely separate cycle.
     const dbEngine = createDbEngine({
@@ -410,6 +439,7 @@ function AppInner() {
         // is never polluted; ACCOUNT_ID_REQUIRED is retryable ("not ready yet").
         setVaultSyncError(msg)
         setVaultSyncErrorCode(code)
+        reportKeyMismatch(code)
         if (msg) console.warn('[lastglance] vault sync error:', code ?? '(no code)', msg)
       },
       onRowsSkipped: (count) => {
@@ -438,13 +468,19 @@ function AppInner() {
     })
     if (MANAGED_WEBDAV) registerPeopleFileSyncRunner(() => peopleFileEngineRef.current!.sync())
     const peopleDb = createPeopleDbEngine({
-      onError: (msg, code) => { if (msg) console.warn('[lastglance] people vault sync error:', code ?? '(no code)', msg) },
+      onError: (msg, code) => {
+        reportKeyMismatch(code)
+        if (msg) console.warn('[lastglance] people vault sync error:', code ?? '(no code)', msg)
+      },
       onUnsupported: () => console.warn('[lastglance] vault does not know lastglance-people yet; People sync on the file road only'),
     })
     peopleDbEngineRef.current = peopleDb
     registerPeopleDbEngine(peopleDb)
     const rosterDb = createRosterDbEngine({
-      onError: (msg, code) => { if (msg) console.warn('[lastglance] roster vault sync error:', code ?? '(no code)', msg) },
+      onError: (msg, code) => {
+        reportKeyMismatch(code)
+        if (msg) console.warn('[lastglance] roster vault sync error:', code ?? '(no code)', msg)
+      },
       onUnsupported: () => console.warn('[lastglance] vault does not know glance-users yet; the roster syncs on the file roads only'),
     })
     rosterDbEngineRef.current = rosterDb
@@ -640,6 +676,7 @@ function AppInner() {
   // Android/Tasker intents transport — lets another Android app drive lastGLANCE
   // via app.lastglance.* intents. No-op off native Android.
   useAndroidIntentBridge(loadHeatmap, { runSyncCycle: runLauncherSyncCycle, touchHeartbeat: touchHeartbeatNow })
+  useDesktopCommands(loadHeatmap)
   // OUTBOUND: drain the durable intents outbox on mount, on focus, and on the
   // poll cadence (enqueue also triggers a flush). Guarantees queued intents are
   // delivered/retried and never lost across restarts.
@@ -647,6 +684,14 @@ function AppInner() {
 
   // Switching modes swaps what the heatmap counts, and replays the wave.
   useEffect(() => { loadHeatmap() }, [loadHeatmap, mode])
+
+  // The OS clock changed under an Automatic time format (system settings,
+  // read again on return): repaint every time on the new clock.
+  useEffect(() => {
+    const onClock = () => setClockTick(n => n + 1)
+    window.addEventListener(TIME_FORMAT_CHANGED_EVENT, onClock)
+    return () => window.removeEventListener(TIME_FORMAT_CHANGED_EVENT, onClock)
+  }, [])
 
   // A new week start (the setting, or the OS answering after the first paint)
   // reshapes every column, so rebuild the grid on it.
@@ -1046,6 +1091,7 @@ function AppInner() {
           vaultSyncErrorCode={vaultSyncErrorCode}
           vaultSkipped={vaultSkipped}
           onClearSyncHalt={() => { setSyncHalted(false); setPeopleSyncHalted(false) }}
+          vaultKeyMismatch={vaultKeyMismatch}
           directAccess={directAccessSync}
           icloud={icloudTransport.isSupported() ? icloudSync : undefined}
           onClose={() => { setShowSyncSettings(false); runSharedUserSync(); backToSettings() }}
@@ -1143,6 +1189,9 @@ function AppInner() {
       {billing.isReviewerUnlocked && (
         <ReviewerBanner onExit={exitReviewerMode} />
       )}
+
+      {/* A newer desktop release to download (direct desktop builds only). */}
+      {updateNotice.update && <UpdateNotice update={updateNotice.update} onDismiss={updateNotice.dismiss} />}
 
       <TooltipHost />
 

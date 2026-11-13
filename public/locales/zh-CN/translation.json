@@ -45,6 +45,8 @@
     "replaceWarning": "这将使用备份<strong>替换所有当前数据</strong>。",
     "replaceRemoteWarning": "这将使用远程备份<strong>替换所有当前数据</strong>。",
     "summary": "{{categories}} 个分类 · {{chores}} 个事项 · {{events}} 条完成记录",
+    "summaryPeople": "{{people}} 位联系人 · {{interactions}} 条互动",
+    "noPeopleInBackup": "此备份来自旧版本，不含联系人数据。你当前的联系人数据将保留。",
     "areYouSure": "确定吗？",
     "areYouSureBody": "这会用备份替换你当前的所有数据。如果已启用云同步，此更改将应用到所有已同步设备。",
     "snapshotNote": "系统会先保存一份当前数据的备份，因此可以撤销此次操作。",
@@ -132,7 +134,8 @@
     "cadencePlaceholder": "例如：14",
     "cadenceHint": "留空则不设置目标间隔，仅记录完成情况。",
     "notifyOverdue": "逾期时通知",
-    "notifyBlocked": "通知已被阻止，请在设置中启用。",
+    "notifyBlocked": "此网站的通知已被阻止。请在浏览器的网站设置中允许通知，然后重试。",
+    "notifyBlockedDevice": "lastGLANCE 的通知已关闭。请在设备设置中允许通知，然后重试。",
     "autoSendDayglance": "逾期时自动发送到 dayGLANCE",
     "autoSendHint": "此事项逾期后，每天发送一次创建事项的 Intent",
     "assignedTo": "分配给",
@@ -311,7 +314,7 @@
     "icloudIntents": {
       "title": "iCloud 意图",
       "label": "通过 iCloud 传递意图",
-      "hint": "在此 iPhone 或 iPad 上通过 iCloud 与 dayGLANCE 交换意图，无需其他设置。dayGLANCE 中也需要开启 iCloud 意图。"
+      "hint": "在此设备上通过 iCloud 与 dayGLANCE 交换意图，无需其他设置。dayGLANCE 中也需要开启 iCloud 意图。"
     }
   },
   "journal": {
@@ -402,7 +405,9 @@
     "channelDescription": "当事项超过设定间隔时提醒你。",
     "rowsSkippedTitle_one": "有 {{count}} 项无法读取",
     "rowsSkippedTitle_other": "有 {{count}} 项无法读取",
-    "rowsSkippedBody": "部分同步数据无法解密。请检查云同步设置。"
+    "rowsSkippedBody": "部分同步数据无法解密。请检查云同步设置。",
+    "vaultKeyMismatchTitle": "vault 同步已暂停：口令不匹配",
+    "vaultKeyMismatchBody": "此设备上保存的 vault 密钥与该账户不匹配。请打开云同步设置，重新输入口令。"
   },
   "passphrase": {
     "title": "解锁同步",
@@ -555,7 +560,7 @@
       "desc": "通过另一款应用已在您的设备间保持同步的文件夹进行同步（Nextcloud、Syncthing、FolderSync、Google 云端硬盘、Dropbox）。lastGLANCE 在其中读写一个文件，由那款应用负责传输。",
       "androidHint": "请选择同步应用所管理文件夹中的 GLANCE 文件夹。每台设备都必须选择同一个文件夹。",
       "iosHint": "在 iPhone 和 iPad 上，您在“文件”中选择同步文件本身：选择另一台设备已创建的文件，或在同步应用所管理的文件夹中创建它。",
-      "unsupported": "在 Android 和 iOS 应用中可用。",
+      "unsupported": "在 Android、iOS 和桌面应用中可用。",
       "notConnected": "尚未连接文件夹。",
       "notConnectedFile": "尚未连接同步文件。",
       "chooseFolder": "选择文件夹",
@@ -588,6 +593,24 @@
       "fileCreate": "创建文件",
       "fileChange": "更换文件",
       "fileForget": "忘记文件"
+    },
+    "privateAddress": {
+      "needsPermission": "{{origin}} 位于私有网络中，lastGLANCE 需要你的许可才能连接。尚未联系该服务器。",
+      "refused": "{{origin}} 是保留地址，lastGLANCE 不会连接到它。",
+      "allow": "允许此地址…",
+      "allowHint": "lastGLANCE 会请你确认。请只允许你自己网络中的地址。",
+      "grantFailed": "无法允许此地址。",
+      "allowedTitle": "已允许的专用地址",
+      "remove": "移除",
+      "consentTitle": "允许连接专用网络地址？",
+      "consentQuestion": "允许 lastGLANCE 连接到此地址吗？",
+      "consentResolvesTo": "它指向一个专用网络地址：",
+      "consentWarning": "请仅在这是你自己网络中的服务器时允许（家庭或办公局域网、Docker 主机，或 Tailscale 之类的 VPN）。允许后 lastGLANCE 即可访问它，它返回的任何内容都会成为你的数据的一部分。",
+      "consentWarningLoopbackVault": "此地址是运行在这台电脑上的服务。请仅在它是你自己的 GLANCEvault、且端口正是它监听的端口时才允许。这台机器上的其他程序通过其他端口提供服务，本授权并不包含它们。",
+      "consentWarningLoopbackServer": "此地址是运行在这台电脑上的服务。请仅在它是你自己的同步服务器、且端口正是它监听的端口时才允许。这台机器上的其他程序通过其他端口提供服务，本授权并不包含它们。",
+      "consentScope": "此设置仅适用于该地址。你之后可以在“设置”的“云同步”中移除它。",
+      "consentAllow": "允许",
+      "consentCancel": "取消"
     }
   },
   "users": {
@@ -694,7 +717,7 @@
     "themeSystem": "跟随系统",
     "timeFormat": "时间格式",
     "timeAuto": "自动",
-    "timeAutoHint": "自动将使用你所选语言的时钟格式（{{example}}）。",
+    "timeAutoHint": "自动将跟随设备的时钟设置（{{example}}）。",
     "weekStart": "每周开始于",
     "weekStartHint": "自动将跟随设备的地区和设置。",
     "syncAttention": "需要处理",
@@ -718,7 +741,25 @@
     "on": "开",
     "off": "关",
     "datesToDayglance": "生日发送到 dayGLANCE",
-    "datesToDayglanceHint": "将今天的生日和日期作为全天事项发送到 dayGLANCE。仅限本设备。"
+    "datesToDayglanceHint": "将今天的生日和日期作为全天事项发送到 dayGLANCE。仅限本设备。",
+    "launcherPromo": {
+      "body": "一款围绕你的一天打造的主屏幕启动器：dayGLANCE 中的任务和日常安排，以及 lastGLANCE 中的家务和联系人，解锁设备时即可看到。",
+      "viewOnGithub": "在 GitHub 上查看",
+      "getOnPlay": "在 Google Play 上获取",
+      "notNow": "稍后再说"
+    },
+    "desktop": "桌面应用",
+    "keepRunning": "在后台继续运行",
+    "keepRunningHint": "关闭窗口后，lastGLANCE 会留在系统托盘中，提醒照常送达。",
+    "openAtLogin": "登录时打开",
+    "openAtLoginHint": "登录这台电脑时启动 lastGLANCE。",
+    "globalShortcuts": "全局快捷键",
+    "shortcutPopupHint": "随时打开弹出窗口，搜索并记录一项家务。",
+    "shortcutWindowHint": "随时显示 lastGLANCE 窗口。",
+    "shortcutPlaceholder": "点击后按下快捷键…",
+    "shortcutClear": "清除",
+    "shortcutNeedsModifier": "请包含 Ctrl、Alt 或 Cmd，以免快捷键妨碍打字。",
+    "shortcutTaken": "无法设置该快捷键，可能已有其他应用在使用。"
   },
   "people": {
     "close": "关闭",
@@ -960,7 +1001,7 @@
   "icloud": {
     "title": "iCloud",
     "switchLabel": "通过 iCloud 同步",
-    "onHint": "你的家务和联系人会在登录同一 Apple ID 的每台 iPhone 和 iPad 上保持同步，无需任何设置。",
+    "onHint": "你的家务和联系人会在登录同一 Apple ID 的每台 iPhone、iPad 和 Mac 上保持同步，无需任何设置。",
     "offHint": "已在此设备上关闭。iCloud 中的副本和你的其他设备不受影响。",
     "firstRun": {
       "title": "从 iCloud 恢复？",
@@ -972,5 +1013,50 @@
       "startFresh": "在此设备上重新开始",
       "startFreshHint": "在此关闭 iCloud 同步。iCloud 中的副本会保留，你之后可以在云同步中重新开启。"
     }
+  },
+  "menu": {
+    "file": "文件",
+    "edit": "编辑",
+    "view": "查看",
+    "window": "窗口",
+    "quit": "退出",
+    "close": "关闭",
+    "undo": "撤销",
+    "redo": "重做",
+    "cut": "剪切",
+    "copy": "复制",
+    "paste": "粘贴",
+    "delete": "删除",
+    "selectAll": "全选",
+    "reload": "重新加载",
+    "forceReload": "强制重新加载",
+    "toggleDevTools": "切换开发者工具",
+    "resetZoom": "实际大小",
+    "zoomIn": "放大",
+    "zoomOut": "缩小",
+    "toggleFullScreen": "切换全屏",
+    "minimize": "最小化",
+    "zoom": "缩放",
+    "backgroundTitle": "lastGLANCE 仍在运行",
+    "backgroundBody": "窗口关闭后提醒照常送达。可从系统托盘打开 lastGLANCE。",
+    "trayOpen": "打开 lastGLANCE",
+    "trayQuit": "退出 lastGLANCE",
+    "trayMarkDone": "标记为完成",
+    "trayNothingDue": "暂无到期事项"
+  },
+  "tray": {
+    "overdue": "已逾期：{{count}}",
+    "soon": "即将到期：{{count}}",
+    "nothingDue": "目前没有到期事项。",
+    "notReady": "先打开一次 lastGLANCE，即可在这里查看到期事项。",
+    "open": "打开 lastGLANCE",
+    "searchPlaceholder": "搜索家务",
+    "searchClear": "清除搜索",
+    "noMatches": "没有匹配的家务。"
+  },
+  "update": {
+    "available": "lastGLANCE {{version}} 已推出。",
+    "download": "下载",
+    "dismiss": "关闭"
   }
 }

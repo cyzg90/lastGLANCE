@@ -45,6 +45,8 @@
     "replaceWarning": "Isto irá <strong>substituir todos os dados atuais</strong> pelo backup.",
     "replaceRemoteWarning": "Isto irá <strong>substituir todos os dados atuais</strong> pelo backup remoto.",
     "summary": "{{categories}} categorias · {{chores}} tarefas · {{events}} eventos",
+    "summaryPeople": "{{people}} pessoas · {{interactions}} interações",
+    "noPeopleInBackup": "Esta cópia é de uma versão anterior e não tem dados de Pessoas. Os seus dados de Pessoas atuais serão mantidos.",
     "areYouSure": "Tem certeza?",
     "areYouSureBody": "Isto substitui todos os seus dados atuais pelo backup. Se a sincronização na nuvem estiver ativa, a alteração aplica-se a todos os dispositivos sincronizados.",
     "snapshotNote": "Primeiro é salvo um backup dos seus dados atuais, para que você possa desfazer esta ação.",
@@ -132,7 +134,8 @@
     "cadencePlaceholder": "ex. 14",
     "cadenceHint": "Deixar em branco para apenas registrar sem objetivo.",
     "notifyOverdue": "Notificar quando atrasada",
-    "notifyBlocked": "Notificações bloqueadas — ative-as nas configurações.",
+    "notifyBlocked": "As notificações estão bloqueadas para este site. Permita-as nas configurações do site no seu navegador e tente novamente.",
+    "notifyBlockedDevice": "As notificações estão desativadas para o lastGLANCE. Permita-as nas configurações do seu dispositivo e tente novamente.",
     "autoSendDayglance": "Enviar automaticamente para dayGLANCE quando atrasada",
     "autoSendHint": "Emite uma intenção uma vez por dia quando esta tarefa está atrasada",
     "assignedTo": "Atribuída a",
@@ -311,7 +314,7 @@
     "icloudIntents": {
       "title": "Intents do iCloud",
       "label": "Intents através do iCloud",
-      "hint": "Troque intents com o dayGLANCE neste iPhone ou iPad através do iCloud, sem mais nada para configurar. No dayGLANCE, os intents do iCloud também devem estar ativados."
+      "hint": "Troque intents com o dayGLANCE neste dispositivo pelo iCloud, sem mais nada para configurar. No dayGLANCE, os intents do iCloud também precisam estar ativados."
     }
   },
   "journal": {
@@ -402,7 +405,9 @@
     "channelDescription": "Avisa quando uma tarefa ultrapassa a sua frequência.",
     "rowsSkippedTitle_one": "Não foi possível ler {{count}} item",
     "rowsSkippedTitle_other": "Não foi possível ler {{count}} itens",
-    "rowsSkippedBody": "Alguns dados sincronizados não puderam ser decifrados. Verifique as configurações de sincronização na nuvem."
+    "rowsSkippedBody": "Alguns dados sincronizados não puderam ser decifrados. Verifique as configurações de sincronização na nuvem.",
+    "vaultKeyMismatchTitle": "Sincronização do vault em pausa: a frase de sincronização não corresponde",
+    "vaultKeyMismatchBody": "A chave do vault guardada neste dispositivo não corresponde a esta conta. Abra a sincronização na nuvem para voltar a introduzir a sua frase de sincronização."
   },
   "passphrase": {
     "title": "Desbloquear sincronização",
@@ -555,7 +560,7 @@
       "desc": "Sincronize através de uma pasta que outra ferramenta já mantém em dia entre os seus dispositivos (Nextcloud, Syncthing, FolderSync, Google Drive, Dropbox). O lastGLANCE lê e escreve um arquivo nela; essa ferramenta trata do transporte.",
       "androidHint": "Escolha a pasta GLANCE dentro da pasta mantida pela sua ferramenta de sincronização. Deve ser a mesma pasta em todos os dispositivos.",
       "iosHint": "No iPhone e no iPad, o que se escolhe em Arquivos é o próprio arquivo de sincronização: o que outro dispositivo já criou, ou crie-o na pasta mantida pela sua ferramenta de sincronização.",
-      "unsupported": "Disponível nas apps para Android e iOS.",
+      "unsupported": "Disponível nos apps para Android, iOS e computador.",
       "notConnected": "Nenhuma pasta conectada.",
       "notConnectedFile": "Nenhum arquivo de sincronização conectado.",
       "chooseFolder": "Escolher pasta",
@@ -588,6 +593,24 @@
       "fileCreate": "Criar arquivo",
       "fileChange": "Mudar de arquivo",
       "fileForget": "Esquecer arquivo"
+    },
+    "privateAddress": {
+      "needsPermission": "{{origin}} está em uma rede privada, então o lastGLANCE precisa da sua permissão para se conectar. O servidor ainda não foi contatado.",
+      "refused": "{{origin}} é um endereço reservado ao qual o lastGLANCE não se conecta.",
+      "allow": "Permitir este endereço…",
+      "allowHint": "O lastGLANCE pedirá sua confirmação. Permita apenas endereços da sua própria rede.",
+      "grantFailed": "Não foi possível permitir este endereço.",
+      "allowedTitle": "Endereços privados permitidos",
+      "remove": "Remover",
+      "consentTitle": "Permitir um endereço de rede privada?",
+      "consentQuestion": "Permitir que o lastGLANCE se conecte a este endereço?",
+      "consentResolvesTo": "Ele aponta para um endereço de rede privada:",
+      "consentWarning": "Só permita se for o seu próprio servidor, na sua própria rede (uma rede doméstica ou de escritório, um host Docker ou uma VPN como o Tailscale). O lastGLANCE poderá acessá-lo, e tudo o que ele retornar passará a fazer parte dos seus dados.",
+      "consentWarningLoopbackVault": "Este endereço é um serviço em execução neste computador. Só permita se for o seu próprio GLANCEvault e a porta for aquela em que ele escuta. Outros programas nesta máquina ficam acessíveis em outras portas, e esta permissão não os abrange.",
+      "consentWarningLoopbackServer": "Este endereço é um serviço em execução neste computador. Só permita se for o seu próprio servidor de sincronização e a porta for aquela em que ele escuta. Outros programas nesta máquina ficam acessíveis em outras portas, e esta permissão não os abrange.",
+      "consentScope": "Isso vale apenas para este endereço. Você pode removê-lo depois em Configurações, em Sincronização na nuvem.",
+      "consentAllow": "Permitir",
+      "consentCancel": "Cancelar"
     }
   },
   "users": {
@@ -694,7 +717,7 @@
     "themeSystem": "Sistema",
     "timeFormat": "Formato de hora",
     "timeAuto": "Automático",
-    "timeAutoHint": "Automático usa o relógio do seu idioma ({{example}}).",
+    "timeAutoHint": "Automático segue a configuração de relógio do seu dispositivo ({{example}}).",
     "weekStart": "Início da semana",
     "weekStartHint": "Automático segue a região e as configurações do seu dispositivo.",
     "syncAttention": "Requer atenção",
@@ -718,7 +741,25 @@
     "on": "Sim",
     "off": "Não",
     "datesToDayglance": "Aniversários para o dayGLANCE",
-    "datesToDayglanceHint": "Envia os aniversários e datas de hoje para o dayGLANCE como eventos de dia inteiro. Apenas neste dispositivo."
+    "datesToDayglanceHint": "Envia os aniversários e datas de hoje para o dayGLANCE como eventos de dia inteiro. Apenas neste dispositivo.",
+    "launcherPromo": {
+      "body": "Um launcher para a tela principal pensado em torno do seu dia: as suas tarefas e rotinas do dayGLANCE e as suas tarefas recorrentes e pessoas do lastGLANCE, exatamente onde as verá ao desbloquear o dispositivo.",
+      "viewOnGithub": "Ver no GitHub",
+      "getOnPlay": "Disponível no Google Play",
+      "notNow": "Agora não"
+    },
+    "desktop": "App para computador",
+    "keepRunning": "Continuar em segundo plano",
+    "keepRunningHint": "Ao fechar a janela, o lastGLANCE fica na bandeja do sistema e os lembretes continuam chegando.",
+    "openAtLogin": "Abrir ao fazer login",
+    "openAtLoginHint": "Iniciar o lastGLANCE quando você fizer login neste computador.",
+    "globalShortcuts": "Atalhos globais",
+    "shortcutPopupHint": "Abrir o popup de qualquer lugar, para buscar e registrar uma tarefa.",
+    "shortcutWindowHint": "Mostrar a janela do lastGLANCE de qualquer lugar.",
+    "shortcutPlaceholder": "Clique e pressione um atalho…",
+    "shortcutClear": "Limpar",
+    "shortcutNeedsModifier": "Inclua Ctrl, Alt ou Cmd, para que o atalho não atrapalhe a digitação.",
+    "shortcutTaken": "Não foi possível definir esse atalho. Talvez outro app já o use."
   },
   "people": {
     "close": "Fechar",
@@ -960,7 +1001,7 @@
   "icloud": {
     "title": "iCloud",
     "switchLabel": "Sincronizar com o iCloud",
-    "onHint": "As suas tarefas e Pessoas mantêm-se atualizadas em todos os iPhone e iPad com o seu ID Apple. Nada para configurar.",
+    "onHint": "Suas tarefas e Pessoas ficam em dia em todo iPhone, iPad e Mac com seu ID Apple. Nada para configurar.",
     "offHint": "Desativado neste dispositivo. A cópia no iCloud e os seus outros dispositivos não são alterados.",
     "firstRun": {
       "title": "Restaurar a partir do iCloud?",
@@ -972,5 +1013,50 @@
       "startFresh": "Começar do zero neste dispositivo",
       "startFreshHint": "Desativa aqui a sincronização com o iCloud. A cópia no iCloud mantém-se e pode ativá-la mais tarde em Sincronização na nuvem."
     }
+  },
+  "menu": {
+    "file": "Arquivo",
+    "edit": "Editar",
+    "view": "Exibir",
+    "window": "Janela",
+    "quit": "Sair",
+    "close": "Fechar",
+    "undo": "Desfazer",
+    "redo": "Refazer",
+    "cut": "Recortar",
+    "copy": "Copiar",
+    "paste": "Colar",
+    "delete": "Excluir",
+    "selectAll": "Selecionar tudo",
+    "reload": "Recarregar",
+    "forceReload": "Forçar recarregamento",
+    "toggleDevTools": "Alternar ferramentas do desenvolvedor",
+    "resetZoom": "Tamanho real",
+    "zoomIn": "Ampliar",
+    "zoomOut": "Reduzir",
+    "toggleFullScreen": "Alternar tela cheia",
+    "minimize": "Minimizar",
+    "zoom": "Zoom",
+    "backgroundTitle": "O lastGLANCE continua em execução",
+    "backgroundBody": "Os lembretes continuam chegando com a janela fechada. Abra o lastGLANCE pela bandeja do sistema.",
+    "trayOpen": "Abrir o lastGLANCE",
+    "trayQuit": "Sair do lastGLANCE",
+    "trayMarkDone": "Marcar como concluída",
+    "trayNothingDue": "Nada pendente"
+  },
+  "tray": {
+    "overdue": "Em atraso: {{count}}",
+    "soon": "Em breve: {{count}}",
+    "nothingDue": "Nada pendente no momento.",
+    "notReady": "Abra o lastGLANCE uma vez para ver o que está pendente.",
+    "open": "Abrir o lastGLANCE",
+    "searchPlaceholder": "Buscar tarefas",
+    "searchClear": "Limpar busca",
+    "noMatches": "Nenhuma tarefa corresponde."
+  },
+  "update": {
+    "available": "O lastGLANCE {{version}} está disponível.",
+    "download": "Baixar",
+    "dismiss": "Dispensar"
   }
 }

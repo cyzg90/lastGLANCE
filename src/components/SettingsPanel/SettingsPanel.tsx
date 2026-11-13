@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom'
 import { useTranslation } from 'react-i18next'
 import {
   X, Settings, ChevronDown, ChevronRight, Palette, Users, Plug, Archive, Info,
-  Sun, Moon, Monitor, Contact,
+  Sun, Moon, Monitor, Contact, AppWindow,
 } from 'lucide-react'
 import type { SyncEngine } from '@glance-apps/sync'
 import type { UseBillingResult } from '@glance-apps/billing/react'
@@ -15,18 +15,25 @@ import {
 } from '@/people/settings'
 import { useIntents } from '@/intents/IntentsContext'
 import { contactsSupported } from '@/native/contacts'
-import { isNativeShell } from '@/native/platform'
+import { hasNativeReminders } from '@/native/platform'
+import { desktopBridge } from '@/native/desktop'
+import { useDesktopBackgroundSettings } from '@/hooks/useDesktopBackgroundSettings'
+import { useDesktopShortcuts } from '@/hooks/useDesktopShortcuts'
+import { recordShortcut } from '@/native/shortcutRecorder'
 import { ContactsModal } from '@/components/People/ContactsModal'
 import { LanguagePicker } from '@/components/LanguagePicker/LanguagePicker'
 import { UsersPanel } from '@/components/UsersPanel/UsersPanel'
 import { BackupPanel } from '@/components/BackupModal/BackupModal'
 import { HelpContent } from '@/components/HelpModal/HelpModal'
 import { SubscriptionStatus } from '@/components/PaywallModal/SubscriptionStatus'
-import { formatTimeSample, formatWeekdayShort, type TimeFormat, type WeekStartPref } from '@/utils/datetime'
+import { LauncherPromoCard, LauncherPromoEntry } from '@/components/LauncherPromo/LauncherPromo'
+import { useLauncherPromo } from '@/hooks/useLauncherPromo'
+import { formatTime, formatTimeSample, formatWeekdayShort, type TimeFormat, type WeekStartPref } from '@/utils/datetime'
+import { ClockTimePicker } from '@/components/ClockTimePicker/ClockTimePicker'
 
 export type ThemePref = 'light' | 'dark' | 'system'
 
-export type SettingsSection = 'appearance' | 'people' | 'sync' | 'integrations' | 'household' | 'data' | 'about'
+export type SettingsSection = 'appearance' | 'people' | 'sync' | 'integrations' | 'household' | 'data' | 'desktop' | 'about'
 type SectionId = SettingsSection
 
 interface Props {
@@ -83,6 +90,13 @@ export function SettingsPanel(props: Props) {
   // Turning Phone contacts on asks for permission right away, after the
   // in-app disclosure; the switch only turns on once it is granted.
   const [askingContacts, setAskingContacts] = useState(false)
+  // GLANCElauncher, Android only: a one-time card above the sections and a
+  // permanent entry under Integrations (src/native/launcherPromo.ts).
+  const launcherPromo = useLauncherPromo()
+  // The desktop app's background settings; macOS always keeps running.
+  const desktop = desktopBridge()
+  const background = useDesktopBackgroundSettings()
+  const shortcuts = useDesktopShortcuts()
 
   const toggle = (id: SectionId) => setOpen(o => (o === id ? null : id))
 
@@ -116,6 +130,9 @@ export function SettingsPanel(props: Props) {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto px-3 py-3">
+          {launcherPromo.card && launcherPromo.entry && (
+            <LauncherPromoCard link={launcherPromo.entry} onDismiss={launcherPromo.dismiss} />
+          )}
           <Section
             id="appearance" open={open} onToggle={toggle}
             icon={<Palette size={16} />} title={t('settings.appearance')}
@@ -199,7 +216,7 @@ export function SettingsPanel(props: Props) {
                 <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.phoneContactsHint')}</p>
               </Field>
             )}
-            {isNativeShell() && (
+            {hasNativeReminders() && (
               <Field label={t('settings.dateReminders')}>
                 <Segmented<'on' | 'off'>
                   label={t('settings.dateReminders')}
@@ -221,7 +238,7 @@ export function SettingsPanel(props: Props) {
                 <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.dateRemindersHint')}</p>
               </Field>
             )}
-            {isNativeShell() && (
+            {hasNativeReminders() && (
               <Field label={t('settings.digestTime')} htmlFor="settings-digest-time">
                 <TimeInput id="settings-digest-time" minutes={digestMinutes} onChange={setDigestMinutes} />
                 <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.digestTimeHint')}</p>
@@ -258,6 +275,7 @@ export function SettingsPanel(props: Props) {
           >
             <Description>{t('settings.integrationsDesc')}</Description>
             <LinkRow icon={<Plug size={15} />} label={t('app.dayglanceIntegration')} onClick={props.onOpenIntegration} />
+            {launcherPromo.entry && <LauncherPromoEntry link={launcherPromo.entry} />}
           </Section>
 
           <Section
@@ -275,6 +293,60 @@ export function SettingsPanel(props: Props) {
                 closes to show the result. */}
             <BackupPanel engine={props.engine} onImported={props.onImported} onDone={onClose} />
           </Section>
+
+          {desktop && background.settings && (
+            <Section
+              id="desktop" open={open} onToggle={toggle}
+              icon={<AppWindow size={16} />} title={t('settings.desktop')}
+            >
+              {desktop.info.platform !== 'darwin' && (
+                <Field label={t('settings.keepRunning')}>
+                  <Segmented<'on' | 'off'>
+                    label={t('settings.keepRunning')}
+                    value={background.settings.keepRunning ? 'on' : 'off'}
+                    onChange={v => background.update({ keepRunning: v === 'on' })}
+                    options={[
+                      { value: 'on', label: t('settings.on') },
+                      { value: 'off', label: t('settings.off') },
+                    ]}
+                  />
+                  <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.keepRunningHint')}</p>
+                </Field>
+              )}
+              <Field label={t('settings.openAtLogin')}>
+                <Segmented<'on' | 'off'>
+                  label={t('settings.openAtLogin')}
+                  value={background.settings.openAtLogin ? 'on' : 'off'}
+                  onChange={v => background.update({ openAtLogin: v === 'on' })}
+                  options={[
+                    { value: 'on', label: t('settings.on') },
+                    { value: 'off', label: t('settings.off') },
+                  ]}
+                />
+                <p className="mt-1.5 text-xs text-slate-400 dark:text-slate-500">{t('settings.openAtLoginHint')}</p>
+              </Field>
+              {shortcuts.shortcuts && (
+                <Field label={t('settings.globalShortcuts')}>
+                  {shortcuts.shortcuts.popupSupported && (
+                    <ShortcutField
+                      hint={t('settings.shortcutPopupHint')}
+                      value={shortcuts.shortcuts.popup}
+                      failed={shortcuts.failed === 'popup'}
+                      platform={desktop.info.platform}
+                      onChange={acc => shortcuts.set('popup', acc)}
+                    />
+                  )}
+                  <ShortcutField
+                    hint={t('settings.shortcutWindowHint')}
+                    value={shortcuts.shortcuts.window}
+                    failed={shortcuts.failed === 'window'}
+                    platform={desktop.info.platform}
+                    onChange={acc => shortcuts.set('window', acc)}
+                  />
+                </Field>
+              )}
+            </Section>
+          )}
 
           <Section
             id="about" open={open} onToggle={toggle}
@@ -353,21 +425,80 @@ function Field({ label, htmlFor, children }: { label: string; htmlFor?: string; 
 }
 
 // A time of day as minutes after midnight. A cleared field changes nothing.
+// A global shortcut, recorded from the next key press (src/native/shortcutRecorder.ts),
+// as dayGLANCE's Settings record them: click the field, press the keys.
+function ShortcutField({ hint, value, failed, platform, onChange }: {
+  hint: string; value: string; failed: boolean; platform: string; onChange: (accelerator: string) => void
+}) {
+  const { t } = useTranslation()
+  const [needsModifier, setNeedsModifier] = useState(false)
+  return (
+    <div className="mt-2 first:mt-0">
+      <p className="mb-1.5 text-xs text-slate-500 dark:text-slate-400">{hint}</p>
+      <div className="flex items-center gap-2">
+        <input
+          readOnly
+          value={value}
+          placeholder={t('settings.shortcutPlaceholder')}
+          aria-label={hint}
+          onKeyDown={e => {
+            if (e.key === 'Tab') return
+            e.preventDefault()
+            const r = recordShortcut(e.nativeEvent, platform)
+            if (r.kind === 'needs-modifier') { setNeedsModifier(true); return }
+            if (r.kind !== 'accelerator') return
+            setNeedsModifier(false)
+            onChange(r.accelerator)
+            e.currentTarget.blur()
+          }}
+          onBlur={() => setNeedsModifier(false)}
+          className="flex-1 min-w-0 bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm font-mono text-slate-800 dark:text-slate-100 placeholder:font-sans placeholder:text-slate-400 border border-slate-200 dark:border-slate-600 cursor-pointer focus:outline-none focus:ring-2 focus:ring-green-400"
+        />
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange('')}
+            className="shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+          >
+            {t('settings.shortcutClear')}
+          </button>
+        )}
+      </div>
+      {needsModifier && <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">{t('settings.shortcutNeedsModifier')}</p>}
+      {failed && <p className="mt-1 text-xs text-red-500 dark:text-red-400">{t('settings.shortcutTaken')}</p>}
+    </div>
+  )
+}
+
+// A time of day, set with the app's clock-face picker (ClockTimePicker), as
+// every other time in the app is, and shown on the user's clock.
 function TimeInput({ id, label, minutes, onChange }: {
   id: string; label?: string; minutes: number; onChange: (minutes: number) => void
 }) {
+  const [open, setOpen] = useState(false)
   const pad = (n: number) => String(n).padStart(2, '0')
+  const value = `${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`
   const input = (
-    <input
-      id={id}
-      type="time"
-      value={`${pad(Math.floor(minutes / 60))}:${pad(minutes % 60)}`}
-      onChange={e => {
-        const [h, m] = e.target.value.split(':').map(Number)
-        if (Number.isInteger(h) && Number.isInteger(m)) onChange(h * 60 + m)
-      }}
-      className="bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 focus:outline-none focus:ring-2 focus:ring-green-400"
-    />
+    <>
+      <button
+        id={id}
+        type="button"
+        onClick={() => setOpen(true)}
+        className="bg-slate-100 dark:bg-slate-700 rounded-lg px-3 py-1.5 text-sm tabular-nums text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 focus:outline-none focus:ring-2 focus:ring-green-400"
+      >
+        {formatTime(`2000-01-01T${value}`)}
+      </button>
+      {open && (
+        <ClockTimePicker
+          value={value}
+          onChange={v => {
+            const [h, m] = v.split(':').map(Number)
+            if (Number.isInteger(h) && Number.isInteger(m)) onChange(h * 60 + m)
+          }}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
   )
   if (!label) return input
   return (

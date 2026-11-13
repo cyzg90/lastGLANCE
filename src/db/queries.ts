@@ -1,6 +1,3 @@
-import { buildPeoplePayload } from '@/people/sync/fileEngine'
-import { PEOPLE_TABLES } from '@/people/sync/apply'
-import type { PeoplePayload } from '@/people/sync/types'
 import { validatePeopleBackup, restorePeopleBackup, notifyPeopleRestored } from '@/people/backup'
 import { db, SEED_CAT_SYNC_IDS, SEED_CHORE_SYNC_IDS } from './client'
 import type { Category, Chore, ChoreWithLastCompletion, CompletionEvent, User } from '@/types'
@@ -8,6 +5,8 @@ import { markDirty, markDeleted } from '@/sync/dirtyTracker'
 import { markRosterDirty } from '@/multiuser/rosterDirtyTracker'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 import dayjs from 'dayjs'
+import { buildPeoplePayload, PEOPLE_TABLES } from '@/people/sync/apply'
+import type { PeoplePayload } from '@/people/sync/types'
 
 // Upper bound on a chore's free-text details, enforced both by the form's
 // maxLength and by backup validation so an edited file can't smuggle in a
@@ -511,37 +510,45 @@ export async function deduplicateUsers(): Promise<number> {
 //     the WebDAV backups/ folder (buildBackupPayload in src/sync/engine.ts).
 // Restore keys off sync_id in either shape, so a file downloaded from the WebDAV
 // backups folder imports as happily as an in-app export (issue #192).
+//
+// Both shapes always carry a `people` section (the People payload, in the same
+// camelCase wire shape as lastglance-people.json). It was missing until issue
+// #424, so a backup written before then has none: restoring such a file leaves
+// the local People data alone rather than wiping it.
 
 const BACKUP_UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
 export interface BackupPayload {
   version: number
   exportedAt: string
-  peopleData?: PeoplePayload
   categories: Category[]
   chores: Chore[]
   completionEvents: CompletionEvent[]
   users?: User[]
   settings?: { multiUserEnabled: boolean }
+  // Always written since version 3; absent only in files from older builds.
+  people?: PeoplePayload
 }
 
 export async function exportBackup(): Promise<BackupPayload> {
-  const [categories, chores, completionEvents, users] = await Promise.all([
+  const [categories, chores, completionEvents, users, people] = await Promise.all([
     db.categories.toArray(),
     db.chores.toArray(),
     db.completionEvents.toArray(),
     db.users.toArray(),
+    buildPeoplePayload(),
   ])
-  // Version 3 includes People; older backups leave People untouched on restore.
+  // version 2 adds users + settings so a file export is a complete snapshot and a
+  // restore from it won't drop the roster. version 3 adds People (issue #424).
   return {
     version: 3,
-    peopleData: await buildPeoplePayload(),
     exportedAt: new Date().toISOString(),
     categories,
     chores,
     completionEvents,
     users,
     settings: { multiUserEnabled: getMultiUserEnabled() },
+    people,
   }
 }
 
@@ -711,14 +718,17 @@ function validateNormalizedBackup(b: NormalizedBackup): void {
  * and chores keep their created_at. Throws on a completely empty backup so a
  * corrupt or truncated file can't silently wipe everything.
  */
-export async function restoreFromBackup(raw: unknown): Promise<{ categories: number; chores: number; completionEvents: number }> {
+export async function restoreFromBackup(raw: unknown): Promise<{ categories: number; chores: number; completionEvents: number; people: number; interactions: number }> {
+  const snapshot = (raw ?? {}) as Raw
+  if (snapshot.peopleData !== undefined) throw new Error('unsupported People backup format')
+  const people = snapshot.people
+  if (people !== undefined) validatePeopleBackup(people)
+
   const now = new Date().toISOString()
   const b = normalizeBackup(raw, now)
   validateNormalizedBackup(b)
-  const peopleData = (raw as { peopleData?: unknown } | null)?.peopleData
-  if (peopleData !== undefined) validatePeopleBackup(peopleData)
-
-  if (b.categories.length === 0 && b.chores.length === 0 && b.completionEvents.length === 0 && b.users.length === 0 && !peopleData?.people.length && !peopleData?.interactions.length && !peopleData?.personDates.length && !peopleData?.personCircles.length) {
+  const peopleCount = people ? people.people.length + people.interactions.length + people.personDates.length + people.personCircles.length : 0
+  if (b.categories.length === 0 && b.chores.length === 0 && b.completionEvents.length === 0 && b.users.length === 0 && peopleCount === 0) {
     throw new Error('empty backup')
   }
 
@@ -811,10 +821,10 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
 
     restoredSyncIds = [...restored].filter(sid => BACKUP_UUID_RE.test(sid))
     tombstonedSyncIds = removed
-    if (peopleData !== undefined) peopleSyncIds = await restorePeopleBackup(peopleData, now)
+    if (people !== undefined) peopleSyncIds = await restorePeopleBackup(people, now)
   })
 
-  if (peopleData !== undefined) notifyPeopleRestored(peopleSyncIds)
+  if (people !== undefined) notifyPeopleRestored(peopleSyncIds)
 
   if (b.multiUserEnabled !== undefined) setMultiUserEnabled(b.multiUserEnabled)
 
@@ -829,7 +839,10 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
     window.dispatchEvent(new CustomEvent('lg:chore-logged'))
   }
 
-  return { categories: b.categories.length, chores: b.chores.length, completionEvents: b.completionEvents.length }
+  return {
+    categories: b.categories.length, chores: b.chores.length, completionEvents: b.completionEvents.length,
+    people: people?.people.length ?? 0, interactions: people?.interactions.length ?? 0,
+  }
 }
 
 // ── Seed data helpers ─────────────────────────────────────────────────────────

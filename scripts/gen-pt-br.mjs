@@ -233,6 +233,66 @@ const RULES = [
 const OVERRIDES = {
   "backup.peopleIncluded": "Pessoas neste backup: {{count}}. A restauração também substitui as pessoas e o histórico de interações.",
   "backup.peoplePreserved": "Este backup não contém pessoas. As pessoas e o histórico de interações atuais serão mantidos.",
+  // The tray search and global shortcuts: buscar, registrar, de qualquer
+  // lugar, pressione, digitação, o app (masculine in Brazil).
+  'tray.searchPlaceholder': "Buscar tarefas",
+  'tray.searchClear': "Limpar busca",
+  'settings.shortcutPopupHint': "Abrir o popup de qualquer lugar, para buscar e registrar uma tarefa.",
+  'settings.shortcutWindowHint': "Mostrar a janela do lastGLANCE de qualquer lugar.",
+  'settings.shortcutPlaceholder': "Clique e pressione um atalho…",
+  'settings.shortcutNeedsModifier': "Inclua Ctrl, Alt ou Cmd, para que o atalho não atrapalhe a digitação.",
+  'settings.shortcutTaken': "Não foi possível definir esse atalho. Talvez outro app já o use.",
+  // The desktop update notice: Baixar (Transferir is European).
+  'update.download': "Baixar",
+  // Automatic time format: configuração (definição is European).
+  'settings.timeAutoHint': "Automático segue a configuração de relógio do seu dispositivo ({{example}}).",
+  // The desktop tray: no momento (de momento is European).
+  'tray.nothingDue': "Nada pendente no momento.",
+  // The desktop app's background mode: bandeja do sistema, fazer login,
+  // continuam chegando (the gerund), você.
+  'settings.keepRunningHint':
+    "Ao fechar a janela, o lastGLANCE fica na bandeja do sistema e os lembretes continuam chegando.",
+  'settings.openAtLogin': "Abrir ao fazer login",
+  'settings.openAtLoginHint':
+    "Iniciar o lastGLANCE quando você fizer login neste computador.",
+  'menu.backgroundBody':
+    "Os lembretes continuam chegando com a janela fechada. Abra o lastGLANCE pela bandeja do sistema.",
+  // iCloud and Direct Access hints that name the Mac and desktop apps:
+  // seu without the article, ficar for manter-se, o app (masculine in Brazil).
+  'icloud.onHint':
+    "Suas tarefas e Pessoas ficam em dia em todo iPhone, iPad e Mac com seu ID Apple. Nada para configurar.",
+  'integration.icloudIntents.hint':
+    "Troque intents com o dayGLANCE neste dispositivo pelo iCloud, sem mais nada para configurar. No dayGLANCE, os intents do iCloud também precisam estar ativados.",
+  'sync.directAccess.unsupported':
+    "Disponível nos apps para Android, iOS e computador.",
+  // Desktop private-address permission (sync.privateAddress), as dayGLANCE's
+  // reviewed pt-BR has it: conectar (not ligar), acessar, em uma, você.
+  'sync.privateAddress.needsPermission':
+    "{{origin}} está em uma rede privada, então o lastGLANCE precisa da sua permissão para se conectar. O servidor ainda não foi contatado.",
+  'sync.privateAddress.refused':
+    "{{origin}} é um endereço reservado ao qual o lastGLANCE não se conecta.",
+  'sync.privateAddress.allowHint':
+    "O lastGLANCE pedirá sua confirmação. Permita apenas endereços da sua própria rede.",
+  'sync.privateAddress.consentQuestion':
+    "Permitir que o lastGLANCE se conecte a este endereço?",
+  'sync.privateAddress.consentResolvesTo':
+    "Ele aponta para um endereço de rede privada:",
+  'sync.privateAddress.consentWarning':
+    "Só permita se for o seu próprio servidor, na sua própria rede (uma rede doméstica ou de escritório, um host Docker ou uma VPN como o Tailscale). O lastGLANCE poderá acessá-lo, e tudo o que ele retornar passará a fazer parte dos seus dados.",
+  'sync.privateAddress.consentWarningLoopbackVault':
+    "Este endereço é um serviço em execução neste computador. Só permita se for o seu próprio GLANCEvault e a porta for aquela em que ele escuta. Outros programas nesta máquina ficam acessíveis em outras portas, e esta permissão não os abrange.",
+  'sync.privateAddress.consentWarningLoopbackServer':
+    "Este endereço é um serviço em execução neste computador. Só permita se for o seu próprio servidor de sincronização e a porta for aquela em que ele escuta. Outros programas nesta máquina ficam acessíveis em outras portas, e esta permissão não os abrange.",
+  'sync.privateAddress.consentScope':
+    "Isso vale apenas para este endereço. Você pode removê-lo depois em Configurações, em Sincronização na nuvem.",
+  // Desktop application menu (Windows and Linux), as dayGLANCE's pt-BR has it.
+  // Menu verbs differ by country rather than by spelling (Exibir, Desfazer,
+  // Recortar), and "ecrã inteiro" (m) would come out as "tela inteiro".
+  'menu.view': 'Exibir',
+  'menu.undo': 'Desfazer',
+  'menu.cut': 'Recortar',
+  'menu.toggleDevTools': 'Alternar ferramentas do desenvolvedor',
+  'menu.toggleFullScreen': 'Alternar tela cheia',
   // pt-PT "num", "Definições" and "hora" for a clock time read European in Brazil.
   'people.form.notifyHint': 'Entra em um único lembrete por dia. Escolha o horário nas Configurações.',
   'settings.dateRemindersHint': 'Uma notificação em aniversários e outras datas, no horário que você escolher.',

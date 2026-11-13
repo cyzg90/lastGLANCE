@@ -1,0 +1,109 @@
+#!/usr/bin/env node
+// Desktop app icons (docs/desktop-app.md, section 11), rendered from the brand
+// SVGs in public/brand/ into electron/resources/:
+//
+//   icon-mac.png  1024px, Apple's macOS grid: the full-bleed artwork
+//                 (icon-primary-square.svg) clipped to an 824px rounded square,
+//                 centered on a transparent canvas with a soft shadow. A
+//                 full-bleed square, as iOS uses, reads oversized and unrounded
+//                 in the Dock next to every other Mac app.
+//   icon.png      1024px, icon-primary.svg as is (its own ~18% rounding), for
+//                 Windows and Linux, where electron-builder derives the .ico
+//                 and the hicolor PNG set from it.
+//   tray/         the tray icon (section 7): the app icon's rounded square
+//                 around a 3x3 grid with its lit middle column: a 20pt
+//                 mark in the menu bar's 22pt image (dayGLANCE's is 19pt).
+//                 trayTemplate.png and @2x for the macOS menu bar (black and
+//                 alpha only; macOS tints it), set 1pt below centre so it
+//                 lines up with dayGLANCE's beside it (TEMPLATE_DROP_PT),
+//                 tray.png and @2x in the brand
+//                 colors on the icon's dark ground for Windows and Linux.
+//                 Shipped as extraResources.
+//
+// Run after a brand change and commit the output:
+//
+//   node scripts/gen-desktop-icons.mjs
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import sharp from 'sharp'
+
+const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
+const brand = (name) => fs.readFileSync(path.join(root, 'public/brand', name), 'utf-8')
+const outDir = path.join(root, 'electron/resources')
+fs.mkdirSync(outDir, { recursive: true })
+
+const CANVAS = 1024
+const BODY = 824 // Apple's icon grid: 824px body on a 1024px canvas.
+const OFFSET = (CANVAS - BODY) / 2
+const RADIUS = 185.4 // The grid's corner radius for an 824px body.
+
+// The square artwork, as an embeddable <svg> scaled to the body size.
+const artwork = brand('icon-primary-square.svg')
+  .replace(/<\?xml[^>]*>/, '')
+  .replace(/<svg([^>]*?)\swidth="512"\sheight="512"/, `<svg$1 x="${OFFSET}" y="${OFFSET}" width="${BODY}" height="${BODY}"`)
+
+const macSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="${CANVAS}" height="${CANVAS}" viewBox="0 0 ${CANVAS} ${CANVAS}">
+  <defs>
+    <clipPath id="body"><rect x="${OFFSET}" y="${OFFSET}" width="${BODY}" height="${BODY}" rx="${RADIUS}"/></clipPath>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="0" dy="10" stdDeviation="12" flood-color="#000" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  <rect x="${OFFSET}" y="${OFFSET}" width="${BODY}" height="${BODY}" rx="${RADIUS}" fill="#05081A" filter="url(#shadow)"/>
+  <g clip-path="url(#body)">${artwork}</g>
+</svg>`
+
+await sharp(Buffer.from(macSvg)).png().toFile(path.join(outDir, 'icon-mac.png'))
+await sharp(Buffer.from(brand('icon-primary.svg')), { density: 72 * (CANVAS / 512) })
+  .resize(CANVAS, CANVAS)
+  .png()
+  .toFile(path.join(outDir, 'icon.png'))
+
+// The tray mark: the app icon's rounded square around a 3x3 grid whose middle
+// column is lit, as the brand mark's bar, drawn as a 20pt mark in a 22pt
+// image and then scaled and placed by `place`; `scale` is 1 or 2. The
+// template draws the frame as an outline, so it reads on any menu bar and
+// still shows when macOS dims an inactive one. The colour version (Windows,
+// Linux) fills the square with the icon's dark ground, so it shows on light
+// and dark taskbars alike.
+//
+// The menu bar template is TEMPLATE_GLYPH_PT square, centred across and
+// TEMPLATE_TOP_PT from the top: sized and placed by eye beside dayGLANCE's
+// mark, whose calendar art is about 16.5pt tall with its top 2.5pt down the
+// image. At 20pt and centred it read larger than dayGLANCE's and sat higher.
+// Both are whole points, so the edges stay on the pixel grid at 1x and 2x.
+// The colour tray (Windows, Linux) stays 20pt and centred.
+const TEMPLATE_GLYPH_PT = 18
+const TEMPLATE_TOP_PT = 2
+
+function traySvg(scale, { frame, fill, lit, dim }, place = { glyphPt: 20, topPt: 1 }) {
+  const u = (n) => n * scale
+  const size = u(22)
+  // Drawn as a 20pt square centred in the 22pt image, then scaled to
+  // place.glyphPt and moved so its top sits place.topPt down, centred across.
+  const k = place.glyphPt / 20
+  const left = (22 - place.glyphPt) / 2
+  const glyph = u(20), pad = (size - glyph) / 2
+  const cell = u(2.95), gap = u(1.15), grid = 3 * cell + 2 * gap
+  const o = (size - grid) / 2
+  let cells = ''
+  for (let r = 0; r < 3; r++) {
+    for (let c = 0; c < 3; c++) {
+      cells += `<rect x="${o + c * (cell + gap)}" y="${o + r * (cell + gap)}" width="${cell}" height="${cell}" rx="${u(0.7)}" fill="${c === 1 ? lit : dim}"/>`
+    }
+  }
+  const sw = u(1.7), inset = pad + sw / 2
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"><g transform="translate(${u(left)} ${u(place.topPt)}) scale(${k}) translate(${-pad} ${-pad})">
+    <rect x="${inset}" y="${inset}" width="${size - 2 * inset}" height="${size - 2 * inset}" rx="${u(4.6)}" fill="${fill}" stroke="${frame}" stroke-width="${sw}"/>${cells}</g></svg>`
+}
+const trayDir = path.join(outDir, 'tray')
+fs.mkdirSync(trayDir, { recursive: true })
+for (const [scale, suffix] of [[1, ''], [2, '@2x']]) {
+  await sharp(Buffer.from(traySvg(scale, { frame: '#000000', fill: 'none', lit: '#000000', dim: 'rgba(0,0,0,0.45)' }, { glyphPt: TEMPLATE_GLYPH_PT, topPt: TEMPLATE_TOP_PT })))
+    .png().toFile(path.join(trayDir, `trayTemplate${suffix}.png`))
+  await sharp(Buffer.from(traySvg(scale, { frame: '#64748b', fill: '#05081A', lit: '#3DDC84', dim: 'rgba(148,163,184,0.7)' })))
+    .png().toFile(path.join(trayDir, `tray${suffix}.png`))
+}
+
+console.log('wrote electron/resources/icon-mac.png, icon.png and tray/')

@@ -8,6 +8,7 @@ import { flushSecureWrites } from '@/sync/secureConfigShim'
 import { syncErrorText } from '@/sync/syncErrorText'
 import { backoffStatusText, currentBackoff, type BackoffDescriptor } from '@/sync/backoffStatus'
 import { clearCredentialHalt, getVaultConfig, isProConnection, resetVaultSyncState, setVaultConfig, vaultIdentityChanged, type VaultConfig } from '@/sync/vaultConfig'
+import { clearCachedVaultKeys } from '@/sync/vaultKeys'
 import { connectVaultPro, VaultProEnrollError } from '@/sync/vaultPro'
 import { testVaultConnection } from '@/sync/testVaultConnection'
 import { cloudSyncProviders } from '@/utils/cloudSyncProviders'
@@ -21,6 +22,9 @@ import { MANAGED_WEBDAV } from '@/sync/managedWebdav'
 import { ManagedSyncStatus } from './ManagedSyncStatus'
 import { DirectAccessSection } from './DirectAccessSection'
 import { ICloudSection } from './ICloudSection'
+import { AllowAddressButton, AllowedAddresses } from './PrivateAddress'
+import { usePrivateAddressGrants } from '@/hooks/usePrivateAddressGrants'
+import { blockedMessage, checkPrivateAddress, grantPrivateAddress, providerServerUrl, type PrivateAddressBlock } from '@/sync/privateAddress'
 
 interface Props {
   peopleEngine?: SyncEngine | null
@@ -41,6 +45,11 @@ interface Props {
   // visible after the transient toast dismisses.
   vaultSkipped: number
   onClearSyncHalt: () => void
+  // True once any vault engine (chores, People, roster) failed its key check
+  // with KEY_MISMATCH this session. Shown as a standing panel with the way out
+  // (re-enter the passphrase), since a People or roster mismatch never reaches
+  // vaultSyncError and Sync now can look healthy around it (glance-vault #41).
+  vaultKeyMismatch: boolean
   // Direct Access (docs/direct-access.md): a cycle on demand and the last
   // folder error, from useDirectAccessSync in App.
   directAccess: { runSync: () => Promise<unknown>; lastError: string | null }
@@ -90,7 +99,7 @@ export function SyncSettingsModal(props: Props) {
   return <ConfigurableSyncSettingsView {...props} />
 }
 
-function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, directAccess, icloud, onClose }: Props) {
+function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCode, vaultSyncError, vaultSyncErrorCode, vaultSkipped, vaultKeyMismatch, directAccess, icloud, onClose }: Props) {
   const { t } = useTranslation()
   const existingConfig = engine?.getConfig() ?? null
   const initFolder = getSyncFolder()
@@ -109,6 +118,10 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
 
   const [testStatus, setTestStatus] = useState<TestStatus>('idle')
   const [testError, setTestError] = useState('')
+  // The desktop refused the server as a private address (src/sync/privateAddress.ts).
+  const [testBlock, setTestBlock] = useState<PrivateAddressBlock | null>(null)
+  const [granting, setGranting] = useState(false)
+  const privateGrants = usePrivateAddressGrants()
 
   // Master on/off for the WebDAV cloud sync. When off, the engine config is
   // persisted with enabled:false — credentials are kept but all auto-sync and
@@ -151,6 +164,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
   // result can't outlive the credentials it verified.
   const [vaultTestStatus, setVaultTestStatus] = useState<TestStatus>('idle')
   const [vaultTestMsg, setVaultTestMsg] = useState('')
+  const [vaultTestBlock, setVaultTestBlock] = useState<PrivateAddressBlock | null>(null)
   const vaultFieldsFilled = Boolean(vaultUrl.trim() && vaultToken.trim() && vaultAccountId.trim())
 
   const [syncing, setSyncing] = useState(false)
@@ -163,6 +177,7 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
   const [vaultSyncing, setVaultSyncing] = useState(false)
   const [vaultSyncResult, setVaultSyncResult] = useState<SyncResult>('idle')
   const [vaultSyncResultMsg, setVaultSyncResultMsg] = useState('')
+  const [vaultKeyResetting, setVaultKeyResetting] = useState(false)
   const [vaultLastSynced, setVaultLastSynced] = useState(() => dbEngine?.getLastSynced() ?? null)
   // Standing backoff window (issue #250), polled from getBackoffState() while
   // the modal is open — onError is an event stream and goes quiet during
@@ -234,16 +249,32 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     //    must never be applied to another, and an unlink drops the credentials,
     //    so the next link has no identity to compare against — it must start
     //    clean. The next cycle re-seeds in both directions.
+    //    The cached vault keys go too, as connectVaultPro already does: they
+    //    derive from the old account's salt, and a cached key is restored on
+    //    every launch before the passphrase is asked for, so a stale one would
+    //    fail the new account's key check (KEY_MISMATCH) with no way to enter
+    //    the passphrase again (glance-vault #41).
     //  - same-identity credential edit: exit any standing sync 1.10 credential
     //    halt only (issue #257) — the stream didn't move, cursors stay.
+    let clearKeys: Promise<void> = Promise.resolve()
     if (vaultIdentityChanged(prevVault, nextVault) || (prevVault && !nextVault)) {
       resetVaultSyncState()
+      clearKeys = clearCachedVaultKeys()
     } else if (vaultChanged && nextVault) {
       clearCredentialHalt()
     }
     if (folderChanged || vaultChanged) {
-      flushSecureWrites().finally(() => window.location.reload())
+      clearKeys.finally(() => flushSecureWrites().finally(() => window.location.reload()))
     }
+  }
+
+  // KEY_MISMATCH recovery: drop the cached vault keys and reload, so the app
+  // asks for the passphrase and derives the key again. The same fix as clearing
+  // the site's data, without losing what this device has not synced yet.
+  async function handleReenterVaultPassphrase() {
+    setVaultKeyResetting(true)
+    await clearCachedVaultKeys()
+    flushSecureWrites().finally(() => window.location.reload())
   }
 
   // GLANCEvault Pro: enroll with the pasted key, store the connection, turn on
@@ -281,6 +312,16 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     if (!engine || !requiredFieldsFilled) return
     setTestStatus('testing')
     setTestError('')
+    setTestBlock(null)
+    // The desktop refuses a private-network server until the user allows it;
+    // say so, instead of a network error from a server never contacted.
+    const block = await checkPrivateAddress(providerServerUrl(activeProvider?.configFields, formData))
+    if (block) {
+      setTestStatus('fail')
+      setTestError(blockedMessage(t, block))
+      setTestBlock(block)
+      return
+    }
     try {
       const result = await engine.test({ provider, ...formData })
       if (result.success) {
@@ -293,6 +334,34 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
       setTestStatus('fail')
       setTestError(err instanceof Error ? err.message : String(err))
     }
+  }
+
+  // "Allow this address…": the main process shows the permission dialog; once
+  // granted, the test runs again and reaches the server.
+  async function handleAllowServer() {
+    const url = providerServerUrl(activeProvider?.configFields, formData)
+    if (!url) return
+    setGranting(true)
+    const refusal = await grantPrivateAddress(t, url, 'server')
+    setGranting(false)
+    await privateGrants.refresh()
+    if (refusal !== null) {
+      setTestError(refusal)
+      return
+    }
+    await handleTest()
+  }
+
+  async function handleAllowVault() {
+    setGranting(true)
+    const refusal = await grantPrivateAddress(t, vaultUrl.trim(), 'vault')
+    setGranting(false)
+    await privateGrants.refresh()
+    if (refusal !== null) {
+      setVaultTestMsg(refusal)
+      return
+    }
+    await handleVaultTest()
   }
 
   async function handleEnableEncryption() {
@@ -379,6 +448,14 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
     if (!vaultFieldsFilled) return
     setVaultTestStatus('testing')
     setVaultTestMsg('')
+    setVaultTestBlock(null)
+    const block = await checkPrivateAddress(vaultUrl.trim())
+    if (block) {
+      setVaultTestStatus('fail')
+      setVaultTestMsg(blockedMessage(t, block))
+      setVaultTestBlock(block)
+      return
+    }
     const outcome = await testVaultConnection({
       vaultUrl: vaultUrl.trim(),
       vaultToken: vaultToken.trim(),
@@ -583,6 +660,9 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                   <span className="text-xs text-red-500 dark:text-red-400">{testError || t('sync.testFailed')}</span>
                 )}
               </div>
+              {testStatus === 'fail' && testBlock?.canGrant && (
+                <AllowAddressButton onClick={handleAllowServer} busy={granting} />
+              )}
               {syncResult === 'ok' && (
                 <span className="flex items-center gap-1.5 text-xs text-green-500 dark:text-green-400">
                   <CheckCircle size={13} />
@@ -897,6 +977,9 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                       </span>
                     )}
                   </div>
+                  {vaultTestStatus === 'fail' && vaultTestBlock?.canGrant && (
+                    <AllowAddressButton onClick={handleAllowVault} busy={granting} />
+                  )}
                 </div>
               </div>
             )}
@@ -932,6 +1015,24 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
                       : 'Save & reload to activate GLANCEvault sync.'}
                   </p>
                 )}
+                {vaultKeyMismatch && (
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700/40">
+                    <AlertTriangle size={14} className="text-red-500 shrink-0 mt-0.5" />
+                    <div className="space-y-2">
+                      <p className="text-xs text-red-700 dark:text-red-300">
+                        The vault key saved on this device doesn’t match this account, so GLANCEvault sync is paused here. Nothing was uploaded with the wrong key. This happens when the saved key came from a different passphrase or account. Re-enter the passphrase your other devices use to fix it.
+                      </p>
+                      <button
+                        onClick={handleReenterVaultPassphrase}
+                        disabled={vaultKeyResetting}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border border-red-300 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/40 disabled:opacity-40 transition-colors"
+                      >
+                        {vaultKeyResetting && <Loader size={12} className="animate-spin" />}
+                        Re-enter passphrase
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {vaultBackoff && (
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/40">
                     <AlertTriangle size={14} className="text-amber-500 shrink-0 mt-0.5" />
@@ -951,6 +1052,11 @@ function ConfigurableSyncSettingsView({ engine, dbEngine, syncError, syncErrorCo
               </div>
             )}
           </div>
+
+          {/* The desktop's allowed private-network servers; nothing elsewhere. */}
+          {privateGrants.supported && (
+            <AllowedAddresses grants={privateGrants.grants} onRemove={origin => { void privateGrants.revoke(origin) }} />
+          )}
 
         </div>
 

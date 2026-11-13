@@ -17,8 +17,9 @@ export function validatePeopleBackup(raw: unknown): asserts raw is PeoplePayload
   KEYS.forEach((key, index) => {
     if (!Array.isArray(data[key])) throw new Error('invalid People backup tables')
     for (const entity of data[key]) {
-      if (invalidReason(entity) || entity.kind !== kinds[index] || ids.has(entity.id)) {
-        throw new Error('invalid People backup entity')
+      const reason = invalidReason(entity)
+      if (reason || entity.kind !== kinds[index] || ids.has(entity.id)) {
+        throw new Error(`invalid ${kinds[index]}: ${reason ?? 'unexpected kind or duplicate ID'}`)
       }
       ids.add(entity.id)
     }

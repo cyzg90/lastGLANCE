@@ -8,11 +8,16 @@ vi.mock('@capacitor/core', () => ({
 import { runDirectAccessCycle } from './directAccessCycle'
 import { runPeopleDirectAccessCycle } from '@/people/sync/directAccessCycle'
 import { mergePayloads } from './engine'
-import { createICloudTransport, choresHaveRealData, getICloudSyncPref } from './icloud'
+import { createICloudTransport, choresHaveRealData, getICloudSyncPref, ICLOUD_FIRST_SYNC_GRACE_MS } from './icloud'
 import { LOCAL_EDIT_KEY } from './localEditStamp'
 import { SEED_TIMESTAMP, SEED_CHORE_SYNC_IDS } from '@/db/client'
 import { emptyPeoplePayload } from '@/people/sync/types'
-import type { ICloudBridge } from '@/native/icloud'
+import { createICloudBridge, desktopICloudPlugin, type ICloudBridge } from '@/native/icloud'
+import type { DesktopICloud } from '@/native/desktop'
+import { createICloudStore } from '../../electron/icloud'
+import fs from 'node:fs'
+import os from 'node:os'
+import nodePath from 'node:path'
 import type { DirectAccessRead } from '@/native/directAccess'
 import type { SyncChore, SyncPayload } from './types'
 import type { PeoplePayload, SyncPerson } from '@/people/sync/types'
@@ -23,6 +28,10 @@ import type { PeoplePayload, SyncPerson } from '@/people/sync/types'
 // being asked; a fresh install (sample chores only) facing iCloud data is asked
 // before anything is restored or written; the answer is kept, and "start fresh"
 // leaves iCloud alone.
+//
+// Every scenario runs twice: over an in-memory container, and over the desktop
+// app's iCloud store (electron/icloud.ts) writing real files in a temp
+// ~/Library/Mobile Documents, so the Mac's file handling meets the same cycles.
 
 const empty = (): SyncPayload => ({ chores: [], categories: [], completionEvents: [], users: [], settings: { multiUserEnabled: false }, tombstones: {} })
 const chore = (id: string, name: string, updatedAt: string): SyncChore => ({ id, name, categorySyncId: 'c', sortOrder: 0, targetCadenceDays: 7, notifyWhenOverdue: false, autoScheduleToDayglance: false, preferredScheduleBehavior: null, seasonalStart: null, seasonalEnd: null, details: null, icon: undefined, assignedUserSyncIds: [], createdAt: updatedAt, updatedAt })
@@ -38,7 +47,9 @@ const memStorage = () => {
   return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => { m.set(k, v) }, removeItem: (k: string) => { m.delete(k) } }
 }
 
-function container() {
+type Container = { readonly files: Map<string, string>; bridge: ICloudBridge }
+
+function memoryContainer(): Container {
   const files = new Map<string, string>()
   const bridge: ICloudBridge = {
     available: async () => true,
@@ -52,14 +63,48 @@ function container() {
   return { files, bridge }
 }
 
-function device(name: string, icloud: ReturnType<typeof container>, start: SyncPayload, people: PeoplePayload = emptyPeoplePayload()) {
+const homes: string[] = []
+afterEach(() => { for (const h of homes.splice(0)) fs.rmSync(h, { recursive: true, force: true }) })
+
+// The desktop store over a temp home, through the same plugin adapter and
+// bridge the app builds on a Mac. `files` reads the container back from disk.
+function desktopContainer(): Container & { docs: string; macBridge: ICloudBridge } {
+  const home = fs.mkdtempSync(nodePath.join(os.tmpdir(), 'lastglance-icloud-scenario-'))
+  homes.push(home)
+  const docs = nodePath.join(home, 'Library', 'Mobile Documents', 'iCloud~com~lastglance', 'Documents')
+  fs.mkdirSync(docs, { recursive: true })
+  const store = createICloudStore({ home })
+  const desktop: DesktopICloud = {
+    available: async () => store.available(),
+    readFile: async (o) => store.readFile(o.path, o.container),
+    writeFile: async (o) => store.writeFile(o.path, o.text, o.container),
+    listFiles: async (o) => store.listFiles(o.path, o.container),
+    deleteFile: async (o) => store.deleteFile(o.path, o.container),
+    makeDir: async (o) => store.makeDir(o.path, o.container),
+    onChanged: () => () => {},
+  }
+  return {
+    get files() {
+      return new Map(fs.readdirSync(docs).map((name) => [name, fs.readFileSync(nodePath.join(docs, name), 'utf-8')] as [string, string]))
+    },
+    // As an iPhone sees the container: a missing file is missing. The
+    // scenarios' devices stand in for iPhones and iPads writing through iCloud.
+    bridge: createICloudBridge(desktopICloudPlugin(desktop)),
+    // As the Mac app builds it (icloudBridge): a missing file may be one
+    // iCloud has not listed on this Mac yet.
+    docs,
+    macBridge: createICloudBridge(desktopICloudPlugin(desktop), { absentMayBePending: true }),
+  }
+}
+
+function device(name: string, icloud: Container, start: SyncPayload, people: PeoplePayload = emptyPeoplePayload(), bridge: ICloudBridge = icloud.bridge) {
   const storage = memStorage()
-  const transport = createICloudTransport({ bridge: () => icloud.bridge, storage: () => storage })
+  let now = Date.parse('2026-10-25T12:00:00.000Z')
+  const transport = createICloudTransport({ bridge: () => bridge, storage: () => storage, now: () => now, log: { warn: () => {} } })
   let store = start
   let peopleStore = people
   let chores = { missingSince: 0, lastWriteAt: 0 } as Parameters<typeof runDirectAccessCycle>[1]
   let peopleState = { missingSince: 0, lastWriteAt: 0 } as Parameters<typeof runDirectAccessCycle>[1]
-  let now = Date.parse('2026-10-25T12:00:00.000Z')
   const common = { storage, deviceId: () => name, now: () => now, log: { warn: () => {}, error: () => {} } }
   return {
     storage, transport,
@@ -92,7 +137,10 @@ function device(name: string, icloud: ReturnType<typeof container>, start: SyncP
 
 afterEach(() => { vi.unstubAllGlobals() })
 
-describe('zero-config iCloud between two devices', () => {
+describe.each([
+  ['in memory', memoryContainer],
+  ['the desktop store over real files', desktopContainer],
+] as const)('zero-config iCloud between two devices (%s)', (_label, container) => {
   it('a device with its own data syncs without being asked, and a second such device merges', async () => {
     const icloud = container()
     const phone = device('phone', icloud, { ...empty(), chores: [chore('a', 'Water plants', '2026-10-24T09:00:00.000Z')] })
@@ -166,5 +214,57 @@ describe('zero-config iCloud between two devices', () => {
     phone.tick(180_000)
     await phone.sync()
     expect(phone.store.chores.map((c) => c.name).sort()).toEqual(['Mow lawn', 'Vacuum', 'Water plants'])
+  })
+})
+
+// A Mac's first launch (2026-11-09): the iCloud Drive folder exists, but iCloud
+// has not listed the iPhone's files on this Mac yet, so it looks empty. Seeding
+// then wrote sample data under the sync file's name, and iCloud kept the
+// iPhone's file as a "lastglance-sync 2.json" conflict copy.
+describe("a Mac's first launch, over real files", () => {
+  const macDevice = (icloud: ReturnType<typeof desktopContainer>) => device('mac', icloud, sample(), emptyPeoplePayload(), icloud.macBridge)
+
+  it('writes nothing while the folder looks empty, then asks once the files arrive', async () => {
+    const icloud = desktopContainer()
+    const mac = macDevice(icloud)
+    const waiting = await mac.sync()
+    expect(waiting.chores).toMatchObject({ kind: 'skipped', reason: 'downloading' })
+    expect(waiting.people).toMatchObject({ kind: 'skipped', reason: 'downloading' })
+    mac.tick(ICLOUD_FIRST_SYNC_GRACE_MS - 60_000)
+    await mac.sync()
+    expect(icloud.files.size).toBe(0)                    // no file of its own under the iPhone's names
+
+    // iCloud lists the iPhone's files on this Mac.
+    const phone = device('phone', icloud, { ...empty(), chores: [chore('a', 'Water plants', '2026-10-24T09:00:00.000Z')] }, { ...emptyPeoplePayload(), people: [person(1, 'Maya Chen')] })
+    await phone.sync()
+    const arrived = new Map(icloud.files)
+    expect([...arrived.keys()].sort()).toEqual(['lastglance-people.json', 'lastglance-sync.json'])
+
+    mac.tick(15_000)
+    expect((await mac.sync()).chores).toMatchObject({ kind: 'prompted' })
+    expect(icloud.files).toEqual(arrived)
+    mac.transport.setEnabled(true)                       // "Restore from iCloud"
+    await mac.sync()
+    expect(mac.store.chores.map((c) => c.name)).toContain('Water plants')
+    expect(mac.people.people.map((p) => p.name)).toEqual(['Maya Chen'])
+  })
+
+  it('seeds the file once it is still missing after the wait', async () => {
+    const icloud = desktopContainer()
+    const mac = device('mac', icloud, { ...empty(), chores: [chore('m', 'Dust shelves', '2026-10-25T09:00:00.000Z')] }, emptyPeoplePayload(), icloud.macBridge)
+    expect((await mac.sync()).chores).toMatchObject({ kind: 'skipped', reason: 'downloading' })
+    mac.tick(ICLOUD_FIRST_SYNC_GRACE_MS)
+    expect((await mac.sync()).chores).toMatchObject({ kind: 'seeded', wrote: true })
+    expect(icloud.files.has('lastglance-sync.json')).toBe(true)
+  })
+
+  it('once it has synced, a missing file is the shared eviction rule, not this wait', async () => {
+    const icloud = desktopContainer()
+    const phone = device('phone', icloud, { ...empty(), chores: [chore('a', 'Water plants', '2026-10-24T09:00:00.000Z')] })
+    await phone.sync()
+    const mac = device('mac', icloud, { ...empty(), chores: [chore('m', 'Dust shelves', '2026-10-25T09:00:00.000Z')] }, emptyPeoplePayload(), icloud.macBridge)
+    expect((await mac.sync()).chores).toMatchObject({ kind: 'merged' })
+    fs.rmSync(nodePath.join(icloud.docs, 'lastglance-sync.json'))
+    expect((await mac.sync()).chores).toMatchObject({ kind: 'skipped', reason: 'missing-grace' })
   })
 })

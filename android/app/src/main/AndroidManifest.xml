@@ -207,12 +207,21 @@
         </service>
     </application>
 
+    <!-- Package visibility (Android 11+): lets LauncherBridgePlugin.promoInfo
+         see whether GLANCElauncher is installed, so Settings stops offering it
+         to someone who already has it (src/native/launcherPromo.ts). Without
+         this entry the lookup always reads "not installed". One named package,
+         not QUERY_ALL_PACKAGES. -->
+    <queries>
+        <package android:name="app.glance.launcher" />
+    </queries>
+
     <!-- Permissions -->
 
     <!-- The GLANCElauncher's permission to read the launcher snapshot and send
          writes. signature|knownSigner: lastGLANCE's own signature, or one of the
-         LAUNCHER's certificates in res/values/launcher_certs.xml (release,
-         debug until public release, Play once it ships there). knownSigner
+         LAUNCHER's certificates in res/values/launcher_certs.xml (one key signs
+         its GitHub and Play builds). knownSigner
          exists from Android 12; below that only the signature half applies and
          the launcher stays in demo mode. -->
     <permission

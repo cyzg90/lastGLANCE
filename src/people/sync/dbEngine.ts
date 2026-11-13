@@ -22,13 +22,16 @@ import { db } from '@/db/client'
 import { getVaultConfig, isVaultEnabled } from '@/sync/vaultConfig'
 import { getDeviceId } from '@/sync/deviceId'
 import { DB_ROOT_KEY_HOOKS } from '@/sync/nativeKeyHooks'
-import { headlessFetchImpl } from '@/headless/headlessHttp'
+import { shellFetchImpl } from '@/sync/shellFetch'
 import { isPeopleVaultSyncEnabled } from '../vaultSync'
 import { deletePeopleRow, getLocalPeopleEntity, notifyPeopleApplied, upsertPeopleEntity } from './apply'
 import type { SyncPeopleEntity } from './types'
+import { cycleWithLauncherRepair, markChangedSince } from '@/sync/launcherWritesRepair'
 
 export const PEOPLE_VAULT_APP = 'lastglance-people'
 const SEEDED_FLAG = `${PEOPLE_VAULT_APP}-db-sync-snapshot-seeded`
+// The re-push of rows headless refreshes saved unmarked (src/sync/launcherWritesRepair.ts).
+const LAUNCHER_REPAIR_FLAG = `${PEOPLE_VAULT_APP}-db-sync-launcher-writes-repaired`
 
 export function peopleDeviceId(): string {
   return `${getDeviceId()}-people`
@@ -81,6 +84,13 @@ async function markAllPeopleDirty(engine: DbSyncEngine): Promise<void> {
   for (const row of [...people, ...interactions, ...dates, ...circles]) engine.markDirty(row.sync_id)
 }
 
+export async function markPeopleLauncherRepairDirty(engine: DbSyncEngine): Promise<number> {
+  const [people, interactions, dates, circles] = await Promise.all([
+    db.people.toArray(), db.interactions.toArray(), db.personDates.toArray(), db.personCircles.toArray(),
+  ])
+  return markChangedSince(engine, [...people, ...interactions, ...dates, ...circles])
+}
+
 // Returns null when the vault is off or the user keeps People off the vault.
 export function createPeopleDbEngine(callbacks: PeopleDbEngineCallbacks = {}): DbSyncEngine | null {
   if (!isVaultEnabled() || !isPeopleVaultSyncEnabled()) return null
@@ -96,7 +106,7 @@ export function createPeopleDbEngine(callbacks: PeopleDbEngineCallbacks = {}): D
     vaultUrl: cfg.vaultUrl,
     vaultToken: cfg.vaultToken,
     // A headless refresh has no CapacitorHttp; the shell's HTTP stands in.
-    fetchImpl: headlessFetchImpl(),
+    fetchImpl: shellFetchImpl(),
     accountId: cfg.accountId,
     deviceId: peopleDeviceId(),
     getLocalEntity: getLocalPeopleEntity,
@@ -136,7 +146,7 @@ export function createPeopleDbEngine(callbacks: PeopleDbEngineCallbacks = {}): D
         }
       }
     }
-    return runCycle()
+    return cycleWithLauncherRepair(engine, runCycle, LAUNCHER_REPAIR_FLAG, () => markPeopleLauncherRepairDirty(engine))
   }
 
   return { ...engine, dbSyncCycle, sync: dbSyncCycle }

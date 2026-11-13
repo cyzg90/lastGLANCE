@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi, afterEach } from 'vitest'
 import { db } from '@/db/client'
 import { createCategory, createChore, exportBackup, restoreFromBackup } from '@/db/queries'
 import { createPerson, logInteraction, deletePerson } from './queries'
-import { buildFullBackupPayload, buildPayload } from '@/sync/engine'
+import { buildBackupPayload, buildPayload } from '@/sync/engine'
 import { registerPeopleFileSyncRunner } from './sync/dirtyTracker'
 import { lastPeopleLocalEditAt } from '@/sync/localEditStamp'
 
@@ -34,9 +34,9 @@ describe('People in full backups', () => {
     })
     await createPerson({ name: 'Sam' })
     const backup = await exportBackup()
-    const remote = await buildFullBackupPayload()
+    const remote = await buildBackupPayload()
     expect(remote.chores[0].pinned).toBe(true)
-    expect(remote.peopleData.people).toHaveLength(1)
+    expect(remote.people.people).toHaveLength(1)
     await db.chores.clear()
     await db.people.clear()
     await restoreFromBackup(backup)
@@ -63,7 +63,7 @@ describe('People in full backups', () => {
   it('keeps People when restoring a legacy backup', async () => {
     await createCategory('Home')
     const legacy = await exportBackup()
-    delete legacy.peopleData
+    delete legacy.people
     await createPerson({ name: 'Sam' })
     await restoreFromBackup(legacy)
     expect(await db.people.count()).toBe(1)
@@ -71,15 +71,25 @@ describe('People in full backups', () => {
 
   it('backs up People remotely without putting them in the task sync file', async () => {
     await createPerson({ name: 'Sam' })
-    expect((await buildFullBackupPayload()).peopleData.people).toHaveLength(1)
-    expect(await buildPayload()).not.toHaveProperty('peopleData')
+    expect((await buildBackupPayload()).people.people).toHaveLength(1)
+    expect(await buildPayload()).not.toHaveProperty('people')
   })
 
   it('rejects malformed People before replacing any task data', async () => {
     await createCategory('Home')
     const backup = await exportBackup()
-    await expect(restoreFromBackup({ ...backup, peopleData: { people: [] } })).rejects.toThrow()
+    await expect(restoreFromBackup({ ...backup, people: { people: [] } })).rejects.toThrow()
     expect(await db.categories.count()).toBe(1)
+  })
+
+  it('rejects a peopleData backup before replacing local data', async () => {
+    await createCategory('Home')
+    await createPerson({ name: 'Sam' })
+    const { people, ...backup } = await exportBackup()
+    await expect(restoreFromBackup({ ...backup, categories: [], peopleData: people }))
+      .rejects.toThrow('unsupported People backup format')
+    expect(await db.categories.count()).toBe(1)
+    expect(await db.people.count()).toBe(1)
   })
 
   it('restores an explicitly empty People snapshot and retains its deletions', async () => {

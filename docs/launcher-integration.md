@@ -135,14 +135,18 @@ refresh"):
   `failed` with `file: …`, `vault: …` in the reason. The snapshot is pushed
   either way: another road may have applied, and `checkedAt` records the look.
 
-The app registers its PWA service worker in the native build too, and it
-controls `https://localhost`, so a headless page is served from the worker's
-cache. Right after an update that can be the previous bundle, which has no
-headless root and would render App instead. The worker routes the service
-worker's own requests to the installed files (as Capacitor does), so its update
-check sees the new version, and tears down any page that has not called the
-bridge within 20 seconds (`failed`: "the page did not start a headless run").
-The next run gets the new bundle.
+No service worker in either WebView. The PWA worker is for the browser
+(`src/native/serviceWorker.ts`): the app and the headless page both count as a
+native shell, so neither registers it, and both remove one an earlier build
+left. Until 3.0.1 the headless page, having no Capacitor bridge, took the
+browser branch and registered it; after the next Play update that worker
+served the app its previous bundle, which deleted the worker's caches while
+its own chunks were still loading from them, and the first launch was blank. A
+page a leftover worker served now unregisters it and reloads once from the
+installed files, keeping those caches until then. LauncherRefreshWorker still
+routes a worker's requests to the installed files (as Capacitor does), and
+tears down any page that has not called the bridge within 20 seconds
+(`failed`: "the page did not start a headless run").
 
 The launcher measures staleness per app from `syncedAt` when sync is
 configured and from `checkedAt` otherwise, and shows the log in its
@@ -215,20 +219,45 @@ circles, dates and a cadence that a one-line write would leave unset.
 Both the provider and the receiver sit behind `com.lastglance.permission.LAUNCHER`,
 `protectionLevel="signature|knownSigner"`, with `knownCerts` naming the
 **launcher's** signing certificates (`res/values/launcher_certs.xml`): its
-release certificate, its debug certificate (removed before any public release)
-and its Play app signing certificate once it ships there. lastGLANCE's own
+release certificate, which also signs its Google Play build (the launcher's key
+was uploaded to Play App Signing). lastGLANCE's own
 signature satisfies the `signature` half, so the app can always reach its own
 provider. `knownSigner` exists from Android 12; on older devices the permission
 is signature-only and the launcher stays in demo mode. The launcher declares
 `<uses-permission android:name="com.lastglance.permission.LAUNCHER" />`.
 
-The digests in `launcher_certs.xml` are placeholders until read from the
-launcher's keystores (`keytool -list -v`, SHA-256, lowercase, no colons). They
-are the same three digests dayGLANCE lists.
+A digest is read from the launcher's keystore (`keytool -list -v`, SHA-256,
+lowercase, no colons). Play's App signing key certificate shows the same digest,
+so no separate Play entry is needed. There is no debug entry: where the launcher's release key is present, its
+debug builds carry that key too. They are the same digests dayGLANCE lists.
+
+## Telling users about the launcher
+
+Settings tells Android users about GLANCElauncher in two places, never as a
+popup: a one-time card at the top of the panel ("Not now" hides it for good on
+this device), and a permanent entry under Integrations with the same words and
+link. The rules are in `src/native/launcherPromo.ts`; `useLauncherPromo` feeds
+`SettingsPanel`. Both show only when all of these hold:
+
+- the Android app, not a headless run (never web, PWA or iOS);
+- a link for the build channel: `github` opens the launcher's latest release;
+  `play` opens its Google Play listing (`LAUNCHER_PLAY_URL`); any other
+  channel shows nothing;
+- Android 12 or later, the `knownSigner` minimum above;
+- the launcher not installed. `LauncherBridge.promoInfo` answers
+  `{ sdk, installed }`, looking the package up through the manifest's
+  `<queries>` entry; any failure but "not found" reads as installed, and no
+  answer hides both.
+
+The card also waits until the app has been used on this device for three days:
+`main.tsx` stamps the first start on Android (never in a headless run). The
+stamp and the dismissal are device-local localStorage keys, named nowhere else,
+so neither sync nor backups carry them. `promoInfo` is not in the headless
+allowlist.
 
 ## Verifying on a device
 
-With the launcher's real digests in `launcher_certs.xml` and both apps installed:
+With a launcher signed by the release key and both apps installed:
 
 1. Open lastGLANCE once so the web layer pushes. Then from a shell:
    `adb shell content query --uri content://com.lastglance.app.launcher/meta`

@@ -99,8 +99,11 @@ function webdavProxyPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  base: './',
+// `--mode electron` is the desktop app's renderer (docs/desktop-app.md,
+// section 3): the same bundle with no PWA, because a desktop shell must never
+// register the service worker (src/native/serviceWorker.ts).
+export default defineConfig(({ mode }) => ({
+  base: mode === 'electron' ? '/' : './',
   define: {
     __APP_VERSION__: JSON.stringify(version),
     __BUILD_TIME__: JSON.stringify(buildTime),
@@ -108,7 +111,7 @@ export default defineConfig({
   plugins: [
     webdavProxyPlugin(),
     react(),
-    VitePWA({
+    mode !== 'electron' && VitePWA({
       registerType: 'autoUpdate',
       // Registered from main.tsx, web only (see registerServiceWorker there).
       injectRegister: false,
@@ -142,4 +145,4 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
-})
+}))

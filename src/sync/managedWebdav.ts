@@ -1,8 +1,10 @@
 import type { SyncEngine } from '@glance-apps/sync'
 import { registerFileSyncRunner } from './fileSyncScheduler'
+import { hasNativeHttp } from './nativeHttp'
 import { appPath } from '@/utils/appPath'
 
-export const MANAGED_WEBDAV = true
+// The managed proxy runs on the same origin as the Docker-hosted web app.
+export const MANAGED_WEBDAV = !hasNativeHttp
 export const MANAGED_WEBDAV_URL = 'https://internal.lastglance.invalid'
 export const MANAGED_WEBDAV_USERNAME = 'managed'
 export const MANAGED_WEBDAV_PASSWORD = 'managed'

@@ -13,10 +13,9 @@
 // sync passphrase is still required (end-to-end encryption): after the reload
 // the app asks for it, as it does for any new vault connection.
 
-import { clearDbRootKey } from '@glance-apps/sync'
-import { isNativePlatform, nativeHttpFetch } from './nativeHttp'
+import { hasNativeHttp, nativeHttpFetch } from './nativeHttp'
 import { getDeviceId } from './deviceId'
-import { DB_CRYPTO_CONFIG } from './engine'
+import { clearCachedVaultKeys } from './vaultKeys'
 import {
   PRO_VAULT_URL,
   clearCredentialHalt,
@@ -27,7 +26,6 @@ import {
   type VaultConfig,
 } from './vaultConfig'
 import { getDbIntentsConfig, saveDbIntentsConfig } from '@/intents/dbConfig'
-import { clearVaultIntentsRootKey } from '@/intents/vaultIntentsKeyStore'
 
 export type VaultProEnrollErrorCode =
   | 'KEY_REJECTED'  // the server does not recognise the key (401/403), or none was entered
@@ -54,7 +52,7 @@ const ENROLL_TIMEOUT_MS = 20_000
 
 const defaultPost: EnrollPost = async (url, body) => {
   const headers = { 'Content-Type': 'application/json' }
-  if (isNativePlatform) {
+  if (hasNativeHttp) {
     const r = await nativeHttpFetch('POST', url, headers, body)
     return { status: r.status, body: r.body }
   }
@@ -122,11 +120,6 @@ export interface ConnectDeps extends EnrollOptions {
   clearVaultKeys?: () => Promise<void>
 }
 
-async function defaultClearVaultKeys(): Promise<void> {
-  await clearDbRootKey(DB_CRYPTO_CONFIG).catch(() => { /* nothing cached */ })
-  await clearVaultIntentsRootKey().catch(() => { /* nothing cached */ })
-}
-
 /**
  * Enrolls with the account key, then stores the Pro connection and turns on
  * GLANCEvault sync and intents. On failure nothing is stored. The caller
@@ -156,7 +149,7 @@ export async function connectVaultPro(accountKey: string, deps: ConnectDeps = {}
     clearCredentialHalt()
   } else {
     resetVaultSyncState()
-    await (deps.clearVaultKeys ?? defaultClearVaultKeys)()
+    await (deps.clearVaultKeys ?? clearCachedVaultKeys)()
   }
   return next
 }

@@ -56,6 +56,10 @@ WebView with no Activity and no Capacitor bridge; main.tsx runs
 - **Same origin, same storage.** The WebView loads `assets/public` at
   `https://localhost`, Capacitor's origin, which is what shares IndexedDB and
   localStorage with the app. Do not move either side off it.
+- **No service worker.** The headless page has no Capacitor bridge, so
+  `Capacitor.isNativePlatform()` is false there; `src/native/serviceWorker.ts`
+  treats it as a native shell anyway. A worker it registered served the app a
+  stale bundle after the next Play update (a blank first launch, 2.14.0).
 - **Signal-abort.** `MainActivity.onCreate` destroys a run in flight before the
   bridge loads; the root checks `headlessShouldAbort` between phases.
 - **Launcher writes are applied, then pushed.** After its roads the run applies
@@ -64,3 +68,9 @@ WebView with no Activity and no Capacitor bridge; main.tsx runs
   once handled, and runs the roads again when any changed something. The
   receiver schedules a run when a write reaches a dead app, outside the floor
   and with no run in flight (`HeadlessRefreshPolicy.runForWrite`).
+- **The run registers its vault engines while it applies the writes.** The
+  data layer marks what it saves through the dirty trackers, and the vault
+  pushes only marked rows; with no engine registered the writes were saved here
+  and never pushed (2.13.0 until the fix, re-pushed once by
+  `src/sync/launcherWritesRepair.ts`). The file roads diff whole payloads and
+  cannot show this, so the scenario that checks it fakes the vault engines.

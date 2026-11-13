@@ -4,7 +4,7 @@
 
 Part of the **GLANCE family**: focused, standalone apps connected through a shared intent protocol. See also [dayGLANCE](https://github.com/krelltunez/dayGLANCE) (today), lastGLANCE (recent upkeep), and [lifeGLANCE](https://github.com/krelltunez/lifeGLANCE) (your whole timeline).
 
-[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="75">](https://play.google.com/store/apps/details?id=com.lastglance.app)
+[<img src="docs/badges/google-play.png" alt="Get it on Google Play" height="60">](https://play.google.com/store/apps/details?id=com.lastglance.app) [<img src="docs/badges/app-store.svg" alt="Download on the App Store" height="60">](https://apps.apple.com/us/app/lastglance-chores-people/id6781293640)
 
 [![Version](https://img.shields.io/github/package-json/v/krelltunez/lastGLANCE?color=green&label=version)](../../releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -21,11 +21,32 @@ It has two workspaces, switched under the wordmark:
 
 ---
 
+## iPhone & iPad App
+
+lastGLANCE is available on the **App Store** for iPhone and iPad. Like the Android app, it wraps the full lastGLANCE experience with native integrations, and one purchase covers your iPhone and iPad.
+
+[<img src="docs/badges/app-store.svg" alt="Download on the App Store" height="50">](https://apps.apple.com/us/app/lastglance-chores-people/id6781293640)
+
+The iOS app adds what only makes sense on an iPhone or iPad:
+
+| Feature | Details |
+|---|---|
+| ☁️ **iCloud sync** | On by default with nothing to set up: chores and People stay in step on every device signed in to your Apple ID, with an off switch on each |
+| 🏠 **Home Screen widgets** | Activity heatmap (up to a full year on iPad), Soon, Pinned, a single chore and Add chore, each with one-tap done. For People, Reach out and Coming up |
+| 🔒 **Lock Screen and Control Center** | Lock Screen widgets for what's overdue and the next birthday, and an Add chore control in Control Center (iOS 18) |
+| 🗣️ **Siri, Spotlight and Shortcuts** | Mark a chore done, ask when you last did one, add a chore, or open what's due. Marking done and asking run without opening the app (iOS 17) |
+| 🔔 **Actionable reminders** | Overdue chores, birthdays and dates, and a daily catch-up digest. "Mark done" right from the notification, without opening the app |
+| 📤 **Share sheet and quick actions** | Share text or a link from any app to save it as a chore, and long-press the app icon for shortcuts |
+| 📇 **Phone contacts** | Optional and read-only: import people with their birthdays, link a person to a contact, and call, text or email them in one tap |
+| 🔑 **Keychain** | Sync credentials and your encryption key live in the device Keychain, not in web storage |
+
+---
+
 ## Android App
 
 A native Android app is available on Google Play and as a direct APK download. The Google Play build is a commercial binary that supports continued development.
 
-[<img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" height="60">](https://play.google.com/store/apps/details?id=com.lastglance.app)
+[<img src="docs/badges/google-play.png" alt="Get it on Google Play" height="50">](https://play.google.com/store/apps/details?id=com.lastglance.app)
 
 [**Download APK from Releases →**](../../releases)
 
@@ -97,6 +118,37 @@ The Android app ships the full web app in a WebView with native enhancements tha
 | People | Person detail |
 |:-:|:-:|
 | ![lastGLANCE People on Android](docs/screenshots/screenshot_phone_people.png) | ![lastGLANCE person detail and timeline](docs/screenshots/screenshot_phone_person.png) |
+
+---
+
+## Desktop App (macOS, Windows, Linux)
+
+lastGLANCE runs as a desktop app on macOS, Windows and Linux. The direct
+downloads are free, with every feature on.
+
+[**Download for macOS, Windows or Linux from Releases →**](../../releases)
+
+| Platform | Download | Notes |
+|---|---|---|
+| macOS | `.dmg` (or `.zip`), Apple silicon and Intel | |
+| Windows | `Setup .exe` | Not code-signed yet, so SmartScreen may warn at first launch: **More info → Run anyway** |
+| Linux | `AppImage` or `.deb`, x64 and arm64 | `lastglance://` links work once the app is installed from the `.deb`, or the AppImage is integrated (appimaged, Gear Lever) |
+
+The desktop app adds what makes sense on a computer:
+
+| Feature | Details |
+|---|---|
+| ☁️ **iCloud sync on the Mac** | With your iPhone and iPad, through iCloud Drive, once the iOS app has turned it on for your Apple ID |
+| 📌 **Menu bar and tray** | What's due and who to reach out to, one click away, with **Done** right there (macOS menu bar, Windows tray; a menu on Linux) |
+| 🔔 **Reminders** | Overdue chores, birthdays and dates, and the daily catch-up, as system notifications; on macOS, **Mark done** from the notification |
+| 🌙 **Runs in the background** | Closing the window keeps reminders coming; optional **Open at login** |
+| 🔗 **`lastglance://` links** | Open a chore, People, search or the new-chore form from anywhere |
+| 📁 **Direct Access** | Sync through a folder Syncthing, Nextcloud or Dropbox keeps in step |
+| 🔑 **Secure storage** | Sync credentials in the macOS Keychain, the Windows credential store or the Linux keyring |
+
+The desktop app does not update itself: when a newer release is out, it says so
+and links to the download. Releasing is described in
+[docs/releasing-desktop.md](docs/releasing-desktop.md).
 
 ---
 
@@ -219,7 +271,22 @@ npm run cap:ios        # build + sync, then open Xcode (requires macOS)
 ```
 
 WebDAV/Nextcloud sync works without a CORS proxy in the apps thanks to the
-CapacitorHttp plugin. See [docs/mobile.md](docs/mobile.md) for details.
+CapacitorHttp plugin. The native features are described in
+[docs/android-native-features-plan.md](docs/android-native-features-plan.md) and
+[docs/ios-native-features-plan.md](docs/ios-native-features-plan.md).
+
+### Desktop app (Electron)
+
+The desktop app is the same web build in an [Electron](https://www.electronjs.org/)
+shell. Its design is [docs/desktop-app.md](docs/desktop-app.md).
+
+```bash
+npm install
+npm run dev:electron            # the app with hot reload
+npm run build:electron          # installers for this OS -> dist-app/
+npm run build:electron:dir      # the unpacked app only
+npm run test:electron-smoke     # the packaged app's smoke test
+```
 
 ---
 
