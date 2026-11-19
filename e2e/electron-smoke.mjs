@@ -13,6 +13,17 @@
 //     refused until granted, then reached, and the grant can be revoked;
 //   - background settings, reminders through main, the command queue and the
 //     tray popup's page (Phase 4);
+//   - the MCP server: the Claude Desktop entry's command (this build's binary
+//     as Node on the bridge, --app lastglance) finds it through the discovery
+//     file and lists its tools over stdio; turned on through the bridge, it answers the official
+//     client from the page's database; with "Allow changes" a write lands in
+//     the database and the journal, and Settings' undo takes it back out;
+//     Settings opens at Integrations (the tray indicator's route) with the
+//     section mounted, and the indicator follows the server and the journal;
+//     turning it off frees the port;
+//   - Stream Deck: turned on, the listener hands the plugin a token and the
+//     state; a press marks the chore done in the page's database, once, and a
+//     second press is answered too_soon; turning it off frees the port;
 //   - the page's log lines reach the log file;
 //   - no uncaught page error.
 //
@@ -24,6 +35,9 @@ import os from 'node:os'
 import http from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { Client, StreamableHTTPClientTransport } from '@modelcontextprotocol/client'
+import { spawn } from 'node:child_process'
+import { WebSocket } from 'ws'
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..')
 const { version } = JSON.parse(readFileSync(path.join(root, 'package.json'), 'utf-8'))
@@ -80,7 +94,14 @@ try {
     check(info?.secureStorage === false, `secure storage reported unavailable here (${info?.secureStorage})`)
   }
 
-  const dbs = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name))
+  // The header can render before Dexie's first open on a fresh profile has
+  // committed, and indexedDB.databases() lists a database only once it has:
+  // wait for it (CI starts from an empty profile every run) rather than read once.
+  let dbs = []
+  for (let i = 0; i < 100 && !dbs.includes('lastglance'); i++) {
+    if (i) await new Promise((r) => setTimeout(r, 100))
+    dbs = await page.evaluate(async () => (await indexedDB.databases()).map((d) => d.name))
+  }
   check(dbs.includes('lastglance'), `Dexie opened the lastglance database (${dbs.join(', ')})`)
 
   // app:// is not registered with allowServiceWorkers, so Chromium refuses the
@@ -254,6 +275,180 @@ try {
     return text
   })
   check(trayRendered.includes('lastGLANCE'), `the tray popup page renders (${JSON.stringify(trayRendered.slice(0, 60))})`)
+
+  // The MCP server (docs/mcp-and-stream-deck.md, section 4): on through the
+  // same transition Settings sends, then the real client over real HTTP. The
+  // page answers from its database, so the tools see the chores the app has.
+  const mcpOn = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.transition({
+    type: 'set-mcp-read-tier', tier: 'chores_people', consentConfirmed: true, peopleConsentConfirmed: true,
+  }))
+  check(mcpOn?.ok === true && typeof mcpOn.view?.mcp?.token === 'string', 'MCP turns on through the bridge, with a token')
+  let mcpView = mcpOn?.view
+  for (let i = 0; i < 50 && !mcpView?.mcp?.status?.running && !mcpView?.mcp?.status?.error; i++) {
+    await new Promise((r) => setTimeout(r, 100))
+    mcpView = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.get())
+  }
+  check(mcpView?.mcp?.status?.running === true, `the MCP listener runs (${JSON.stringify(mcpView?.mcp?.status)})`)
+  check(mcpView?.assistant === 'on', `the assistant indicator is green (${mcpView?.assistant})`)
+  // Settings, as the tray popup's indicator opens it: at Integrations, with
+  // the section mounted and showing the same indicator.
+  await page.evaluate(() => window.dispatchEvent(new CustomEvent('lg:open-settings', { detail: 'integrations' })))
+  const settingsDot = await page.waitForSelector('[data-local-integrations] [data-assistant-indicator]', { state: 'attached', timeout: 10_000 }).catch(() => null)
+  check((await settingsDot?.getAttribute('data-assistant-indicator')) === 'on', 'Settings opens at Integrations, with the MCP section and its indicator')
+  // The discovery file the bridge reads: in the app's data folder (userData on
+  // every desktop platform), the port and token, while the server runs.
+  const discoveryFile = path.join(await app.evaluate(({ app }) => app.getPath('userData')), 'mcp.json')
+  const discovered = existsSync(discoveryFile) ? JSON.parse(readFileSync(discoveryFile, 'utf-8')) : null
+  check(discovered?.token === mcpView?.mcp?.token && discovered?.port === mcpView?.mcp?.port, 'the discovery file holds the port and token while the server runs')
+
+  // What "Set up Claude Desktop" writes: this build's own binary run as Node on
+  // the bridge, --app lastglance, with nothing else (mcpDesktopConfig.ts,
+  // bridgeEntry). Linux does not bundle the bridge, so the same package comes
+  // from node_modules; the runtime, the profile and the discovery are the real ones.
+  if (mcpView?.mcp?.status?.running) {
+    const bridgeScript = path.join(root, 'node_modules/@glance-apps/mcp-bridge/bridge.js')
+    const replies = await new Promise((resolve) => {
+      const child = spawn(executablePath, [bridgeScript, '--app', 'lastglance'], { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' } })
+      let out = ''
+      child.stdout.on('data', (d) => { out += d })
+      child.on('close', () => resolve(out.split('\n').filter(Boolean).map((l) => { try { return JSON.parse(l) } catch { return null } })))
+      setTimeout(() => child.kill(), 15_000)
+      child.stdin.write(JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'lastglance-smoke', version: '0' } } }) + '\n')
+      child.stdin.end(JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' }) + '\n')
+    })
+    const listed = replies.find((r) => r?.id === 2)?.result?.tools?.map((t) => t.name) ?? []
+    check(listed.includes('lastglance_get_overview'), `the Claude Desktop entry's command reaches the server over stdio (${listed.length} tools)`)
+  }
+  if (mcpView?.mcp?.status?.running) {
+    const client = new Client({ name: 'lastglance-smoke', version: '0.0.0' })
+    await client.connect(new StreamableHTTPClientTransport(new URL(mcpView.mcp.endpoint), {
+      requestInit: { headers: { Authorization: `Bearer ${mcpView.mcp.token}` } },
+    }))
+    const tools = (await client.listTools()).tools.map((t) => t.name)
+    check(tools.includes('lastglance_get_overview') && tools.includes('lastglance_list_people'), `MCP lists the chore and People tools (${tools.length})`)
+    const overview = await client.callTool({ name: 'lastglance_get_overview', arguments: {} })
+    check(!overview.isError && typeof overview.structuredContent?.counts?.chores === 'number',
+      `the overview is answered by the page (${overview.isError ? overview.content?.[0]?.text : `${overview.structuredContent?.counts?.chores} chores`})`)
+    const pageChores = await page.evaluate(() => new Promise((resolve) => {
+      const req = indexedDB.open('lastglance')
+      req.onsuccess = () => {
+        const tx = req.result.transaction('chores', 'readonly')
+        const count = tx.objectStore('chores').count()
+        count.onsuccess = () => { resolve(count.result); req.result.close() }
+      }
+      req.onerror = () => resolve(-1)
+    }))
+    check(overview.structuredContent?.counts?.chores === pageChores, `MCP sees the page's chores (${overview.structuredContent?.counts?.chores} vs ${pageChores})`)
+    const people = await client.callTool({ name: 'lastglance_list_people', arguments: {} })
+    check(!people.isError && Array.isArray(people.structuredContent?.items), 'MCP lists People')
+
+    // Writes: refused until "Allow changes", then a create lands in the page's
+    // database and the journal, and the undo Settings offers takes it out.
+    const readOnly = await client.callTool({ name: 'lastglance_create_chore', arguments: { name: 'Smoke chore' } })
+    check(readOnly.isError && readOnly.content?.[0]?.text?.includes('read_only_mode'), 'a write is refused until changes are allowed')
+    const writesOn = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.transition({ type: 'set-mcp-writes', enabled: true, writesConsentConfirmed: true }))
+    check(writesOn?.ok === true && writesOn.view?.mcp?.writesEnabled === true, 'changes are allowed through the bridge')
+    const created = await client.callTool({ name: 'lastglance_create_chore', arguments: { name: 'Smoke chore', cadence_days: 3, idempotency_key: 'smoke-1' } })
+    check(!created.isError && created.structuredContent?.chore?.name === 'Smoke chore', `MCP creates a chore (${created.isError ? created.content?.[0]?.text : created.structuredContent?.chore?.category_path})`)
+    const choreCount = () => page.evaluate(() => new Promise((resolve) => {
+      const req = indexedDB.open('lastglance')
+      req.onsuccess = () => {
+        const count = req.result.transaction('chores', 'readonly').objectStore('chores').count()
+        count.onsuccess = () => { resolve(count.result); req.result.close() }
+      }
+      req.onerror = () => resolve(-1)
+    }))
+    check(await choreCount() === pageChores + 1, 'the new chore is in the page\'s database')
+    const journal = await page.evaluate(() => window.lastGlanceDesktop.mcpJournal.get())
+    check(journal?.total === 1 && journal.entries[0]?.summary === 'Created “Smoke chore”', `the change is in the journal (${journal?.total})`)
+    const withChange = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.get())
+    check(withChange?.assistant === 'undo', `the indicator turns blue while there is a change to undo (${withChange?.assistant})`)
+    const undone = await page.evaluate(() => window.lastGlanceDesktop.mcpJournal.undo(null))
+    check(undone?.ok === true && undone.undone === 1, `Settings' undo takes it back (${JSON.stringify(undone)})`)
+    check(await choreCount() === pageChores, 'the chore is gone from the database again')
+    const afterUndo = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.get())
+    check(afterUndo?.assistant === 'on', `and green again once undone (${afterUndo?.assistant})`)
+
+    // A People write the same way: a person added, then Settings' undo.
+    const added = await client.callTool({ name: 'lastglance_create_person', arguments: { name: 'Smoke Person', dates: [{ month: 2, day: 29 }] } })
+    check(!added.isError && added.structuredContent?.person?.name === 'Smoke Person', `MCP adds a person (${added.isError ? added.content?.[0]?.text : 'ok'})`)
+    const peopleUndone = await page.evaluate(() => window.lastGlanceDesktop.mcpJournal.undo(null))
+    check(peopleUndone?.ok === true && peopleUndone.undone === 1, `Settings' undo takes the person back (${JSON.stringify(peopleUndone)})`)
+    await client.close()
+  }
+  const mcpOff = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.transition({ type: 'set-mcp-read-tier', tier: 'off' }))
+  check(mcpOff?.ok === true && mcpOff.view?.mcp?.status?.running === false, 'MCP turns off')
+  check(!existsSync(discoveryFile), 'turning MCP off removes the discovery file')
+  if (mcpView?.mcp?.endpoint) {
+    const refused = await fetch(mcpView.mcp.endpoint, { method: 'POST' }).then(() => false, () => true)
+    check(refused, 'turning MCP off frees the port')
+  }
+
+  // Stream Deck (docs/mcp-and-stream-deck.md, section 6): on through the same
+  // transition Settings sends, then a client exactly as the plugin's backend
+  // connects (no Origin), a press, and the page's database.
+  const deckOn = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.transition({ type: 'set-stream-deck', enabled: true }))
+  let deckView = deckOn?.view
+  for (let i = 0; i < 50 && !deckView?.streamDeck?.status?.running && !deckView?.streamDeck?.status?.error; i++) {
+    await new Promise((r) => setTimeout(r, 100))
+    deckView = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.get())
+  }
+  check(deckView?.streamDeck?.status?.running === true, `the Stream Deck listener runs (${JSON.stringify(deckView?.streamDeck?.status)})`)
+  if (deckView?.streamDeck?.status?.running) {
+    const deck = new WebSocket(`ws://127.0.0.1:${deckView.streamDeck.port}`)
+    const messages = []
+    deck.on('message', (d) => messages.push(JSON.parse(String(d))))
+    const waitFor = async (pred, ms = 10_000) => {
+      for (let t = 0; t < ms; t += 50) {
+        const found = messages.find(pred)
+        if (found) return found
+        await new Promise((r) => setTimeout(r, 50))
+      }
+      return null
+    }
+    const token = await waitFor((m) => m.type === 'lg:token')
+    check(/^[0-9a-f]{32}$/.test(token?.token ?? ''), 'the deck is handed a session token')
+    // The snapshot arrives from the page; until it has, the state says not ready.
+    page.evaluate(() => window.dispatchEvent(new Event('lg:chore-logged')))
+    const state = await waitFor((m) => m.type === 'lg:state' && m.ready && m.chores.length > 0)
+    check(!!state, `the deck gets the chores (${state?.chores?.length ?? 0})`)
+    // A chore nobody did in the last minute: a rerun on the same profile must not press one the last run did.
+    const target = state?.chores.find((c) => !c.justDone && (!c.lastCompletedAt || Date.now() - Date.parse(c.lastCompletedAt) > 61_000))
+    if (target) {
+      const completions = () => page.evaluate(() => new Promise((resolve) => {
+        const req = indexedDB.open('lastglance')
+        req.onsuccess = () => {
+          const count = req.result.transaction('completionEvents', 'readonly').objectStore('completionEvents').count()
+          count.onsuccess = () => { resolve(count.result); req.result.close() }
+        }
+        req.onerror = () => resolve(-1)
+      }))
+      const before = await completions()
+      deck.send(JSON.stringify({ type: 'lg:chore:complete', choreId: target.id, clientId: 'smoke-press-1' }))
+      const first = await waitFor((m) => m.type === 'lg:result' && m.clientId === 'smoke-press-1')
+      check(first?.ok === true, `a press marks the chore done (${JSON.stringify(first)})`)
+      deck.send(JSON.stringify({ type: 'lg:chore:complete', choreId: target.id, clientId: 'smoke-press-2' }))
+      const second = await waitFor((m) => m.type === 'lg:result' && m.clientId === 'smoke-press-2')
+      check(second?.ok === false && second.reason === 'too_soon', `a second press within the minute is refused (${JSON.stringify(second)})`)
+      const justDone = await waitFor((m) => m.type === 'lg:state' && m.chores.some((c) => c.id === target.id && c.justDone))
+      check(!!justDone, 'the deck shows it done at once')
+      let after = before
+      for (let i = 0; i < 50 && after === before; i++) { await new Promise((r) => setTimeout(r, 100)); after = await completions() }
+      check(after === before + 1, `the page records exactly one completion (${before} then ${after})`)
+    }
+    deck.close()
+  }
+  const deckOff = await page.evaluate(() => window.lastGlanceDesktop.localIntegrations.transition({ type: 'set-stream-deck', enabled: false }))
+  check(deckOff?.ok === true && deckOff.view?.streamDeck?.status?.running === false, 'Stream Deck turns off')
+  if (deckView?.streamDeck?.port) {
+    await new Promise((r) => setTimeout(r, 200))
+    const refused = await new Promise((resolve) => {
+      const probe = new WebSocket(`ws://127.0.0.1:${deckView.streamDeck.port}`)
+      probe.once('open', () => { probe.close(); resolve(false) })
+      probe.once('error', () => resolve(true))
+    })
+    check(refused, 'turning Stream Deck off frees the port')
+  }
 
   // The page's lines reach the log file in userData (shell.log).
   const logLine = `smoke-log-${Date.now()}`

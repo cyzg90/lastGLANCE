@@ -36,6 +36,16 @@ const hasCert = Boolean(process.env.CSC_LINK);
 // inherit the ad-hoc `identity: null` below, which would skip signing.
 const isMasBuild = process.env.LASTGLANCE_APP_ID === 'com.lastglance';
 
+// The MCP bridge (docs/mcp-and-stream-deck.md, section 5) rides along into
+// Resources/mcp-bridge on direct macOS and Windows builds, where "Set up
+// Claude Desktop" points Claude at it (mcpDesktopConfig.ts, bridgeScriptPath).
+// Never on the Mac App Store build (the app must not install or run code
+// there), never on Linux (no Claude Desktop; an AppImage's path changes every
+// launch). extraResources is per platform, so each declares it: a platform
+// that forgets ships a button pointing at nothing (dayGLANCE's Windows build
+// once did; the handler now refuses with bridge_missing).
+const MCP_BRIDGE_RESOURCE = { from: 'node_modules/@glance-apps/mcp-bridge', to: 'mcp-bridge' };
+
 // CFBundleVersion for App Store uploads, which must strictly increase:
 // YYYYMMDD.HHMM from the build time (BUILD_NUMBER overrides). The marketing
 // version stays package.json's. Set on MAS builds only.
@@ -47,6 +57,22 @@ function masBuildVersion() {
 }
 
 /** @type {import('electron-builder').Configuration} */
+// Packages main imports at run time, with everything they import in turn: the
+// MCP host kit and the SDK it serves (docs/mcp-and-stream-deck.md, 4.1), and
+// the Stream Deck listener's WebSocket server (6.1).
+const MAIN_RUNTIME_PACKAGES = [
+  '@glance-apps/mcp-host',
+  '@modelcontextprotocol/server',
+  '@modelcontextprotocol/node',
+  '@modelcontextprotocol/core',
+  '@hono/node-server',
+  'hono',
+  'zod',
+  // The Stream Deck listener (streamDeckServer.ts). Its two optional native
+  // peers (bufferutil, utf-8-validate) are not installed and not needed.
+  'ws',
+];
+
 module.exports = {
   // com.lastglance.app matches Android. The MAS build switches to
   // com.lastglance, the iOS bundle id, for Universal Purchase. appId is global
@@ -65,9 +91,12 @@ module.exports = {
     buildResources: 'electron/resources',
     output: 'dist-app',
   },
-  // The renderer is one Vite bundle and main needs only electron and node
-  // builtins, so no node_modules ship: every runtime dependency is already
-  // inside dist/. Sourcemaps stay out of the package.
+  // The renderer is one Vite bundle, so its dependencies are already inside
+  // dist/ and node_modules is left out. Main is compiled by tsc, not bundled,
+  // so what main imports ships beside it: MAIN_RUNTIME_PACKAGES, the MCP
+  // server's closure (docs/mcp-and-stream-deck.md, 4.1). builderConfig.test.ts
+  // computes that closure from main's imports and holds this list to it.
+  // Sourcemaps stay out of the package.
   // lastglance:// (docs/desktop-app.md, section 8): CFBundleURLTypes on macOS,
   // the registry on Windows (NSIS), and the .desktop MimeType on Linux, which
   // the deb registers on install and an AppImage only once integrated.
@@ -82,11 +111,20 @@ module.exports = {
     '!node_modules/**/*',
     'node_modules/@glance-apps/billing/package.json',
     'node_modules/@glance-apps/billing/dist/electron-main/**/*',
+    ...MAIN_RUNTIME_PACKAGES.map((name) => `node_modules/${name}/**/*`),
+    // The Claude Desktop setup is left out of the Mac App Store build
+    // (docs/mcp-and-stream-deck.md, section 7: the app must not install or run
+    // code there). Top-level negations: a per-target files array is a separate
+    // matcher whose negations do not compose (dayGLANCE's finding).
+    ...(isMasBuild ? ['!dist-electron/mcpDesktopSetup*', '!dist-electron/mcpDesktopConfig*'] : []),
   ],
   // The tray icons (section 7), outside the asar so nativeImage reads them
   // from process.resourcesPath/tray.
   extraResources: [{ from: 'electron/resources/tray', to: 'tray' }],
   mac: {
+    // mas options merge over these and arrays concatenate, so a mas section
+    // could not take the bridge back out: it is left out here instead.
+    extraResources: isMasBuild ? [] : [MCP_BRIDGE_RESOURCE],
     // null: ad-hoc (no certificate); undefined: electron-builder picks the
     // Developer ID identity when CSC_LINK is set.
     identity: hasCert || isMasBuild ? undefined : null,
@@ -119,6 +157,7 @@ module.exports = {
     category: 'public.app-category.productivity',
   },
   win: {
+    extraResources: [MCP_BRIDGE_RESOURCE],
     icon: 'electron/resources/icon.png',
     target: [{ target: 'nsis' }],
   },

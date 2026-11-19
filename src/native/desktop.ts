@@ -219,13 +219,15 @@ export interface DesktopTrayState {
   reachOut: DesktopTrayPerson[]
   comingUp: DesktopTrayDate[]
   ready: boolean
+  /** The assistant indicator, as in Settings. */
+  assistant?: DesktopAssistantIndicator
 }
 
 /** The tray popup's calls (src/tray/); main answers them only from the popup window. */
 export interface DesktopTray {
   state(): Promise<DesktopTrayState | null>
   complete(syncId: string): void
-  /** Show the app, at `chore:<id>`, `person:<id>`, `log:<id>` or `people` when given one it shows. */
+  /** Show the app, at `chore:<id>`, `person:<id>`, `log:<id>` or `people` when given one it shows, or at `settings:integrations`. */
   open(token: string | null): void
   hide(): void
   onState(listener: (state: unknown) => void): () => void
@@ -238,7 +240,7 @@ export interface DesktopCommand {
   clientId: string
   action: string
   payload: Record<string, unknown>
-  source: 'tray' | 'notification'
+  source: 'tray' | 'notification' | 'streamdeck'
   at: string
 }
 
@@ -264,6 +266,100 @@ export interface DesktopBilling {
   onSubscriptionPricesReady(listener: (prices: never) => void): () => void
 }
 
+/** MCP's read tiers (docs/mcp-and-stream-deck.md, 4.4). */
+export type DesktopMcpReadTier = 'off' | 'chores' | 'chores_people'
+
+export interface DesktopListenerStatus {
+  running: boolean
+  /** A bind failure to show (the port is taken), else null. */
+  error: string | null
+}
+
+/** The Settings view of the local integrations (electron/localIntegrations.ts, integrationsView). */
+export interface DesktopLocalIntegrationsView {
+  streamDeck: { enabled: boolean; port: number; status: DesktopListenerStatus }
+  mcp: {
+    readTier: DesktopMcpReadTier
+    writesEnabled: boolean
+    token: string | null
+    port: number
+    portOverride: number | null
+    endpoint: string
+    status: DesktopListenerStatus
+    /** Repeated overruns of the write rate limit turned changes off until restart. */
+    writesPaused: boolean
+  }
+  /** The assistant indicator (electron/localIntegrations.ts, assistantIndicator). */
+  assistant: DesktopAssistantIndicator
+}
+
+/** Red, blue, green, or none: changes paused, changes to undo, server running, off. */
+export type DesktopAssistantIndicator = 'off' | 'on' | 'undo' | 'paused'
+
+/** A Settings change; the consent flags are set only by a consent dialog's Accept. */
+export type DesktopIntegrationsAction =
+  | { type: 'set-mcp-read-tier'; tier: DesktopMcpReadTier; consentConfirmed?: boolean; peopleConsentConfirmed?: boolean }
+  | { type: 'set-mcp-writes'; enabled: boolean; writesConsentConfirmed?: boolean }
+  | { type: 'rotate-token' }
+  | { type: 'set-mcp-port'; port: number | null }
+  | { type: 'set-stream-deck'; enabled: boolean }
+
+export type DesktopIntegrationsResult =
+  | { ok: true; view: DesktopLocalIntegrationsView }
+  | { ok: false; error: string; view: DesktopLocalIntegrationsView | null }
+
+/** The MCP server and Stream Deck switches (docs/mcp-and-stream-deck.md, section 3); main answers only the main window. */
+export interface DesktopLocalIntegrations {
+  get(): Promise<DesktopLocalIntegrationsView | null>
+  transition(action: DesktopIntegrationsAction): Promise<DesktopIntegrationsResult>
+  /** The view changed (a transition, a listener started or failed); returns the unsubscribe. */
+  onStatus(listener: (view: unknown) => void): () => void
+}
+
+/**
+ * The page's half of the MCP request bridge (electron/mcpRendererBridge.ts):
+ * main asks {id, method, params}, the page answers {id, ok, data | error}.
+ * Main takes answers from the main window only.
+ */
+export interface DesktopMcp {
+  /** Returns the unsubscribe. */
+  onRequest(listener: (request: unknown) => void): () => void
+  respond(response: Record<string, unknown>): void
+}
+
+/** What assistants changed this session (electron/mcpJournal.ts): one group per item. */
+export interface DesktopMcpJournalSnapshot {
+  total: number
+  groups: { key: string; label: string; count: number; latestSeq: number }[]
+  entries: { seq: number; at: string; tool: string; summary: string; groupKey: string }[]
+}
+
+export interface DesktopMcpUndoResult {
+  ok: boolean
+  undone?: number
+  skipped?: { kind: string; reason: string }[]
+  error?: string
+}
+
+/** The MCP write journal, and undo (docs/mcp-and-stream-deck.md, 4.5). Main answers the main window only. */
+export interface DesktopMcpJournal {
+  get(): Promise<DesktopMcpJournalSnapshot | null>
+  /** Undo one item's changes (a group key), or every change with null. */
+  undo(groupKey: string | null): Promise<DesktopMcpUndoResult>
+  /** Returns the unsubscribe. */
+  onChanged(listener: (snapshot: unknown) => void): () => void
+}
+
+/** What "Set up Claude Desktop" did (electron/mcpDesktopSetup.ts). */
+export type DesktopClaudeSetupResult =
+  | { ok: true; action: 'created' | 'merged'; path: string; backupPath: string | null }
+  | { ok: false; reason: 'unsupported_platform' | 'bridge_missing' | 'unreadable' | 'unparseable' | 'write_failed' | 'invalid_sender'; path?: string; manualEntry?: string; error?: string }
+
+/** The Claude Desktop setup (docs/mcp-and-stream-deck.md, section 5). Not on the Mac App Store build. */
+export interface DesktopMcpSetup {
+  claudeDesktop(): Promise<DesktopClaudeSetupResult>
+}
+
 export interface DesktopBridge {
   info: DesktopInfo
   shell: DesktopShell
@@ -278,6 +374,10 @@ export interface DesktopBridge {
   widget: DesktopWidget
   tray: DesktopTray
   billing: DesktopBilling
+  localIntegrations: DesktopLocalIntegrations
+  mcp: DesktopMcp
+  mcpJournal: DesktopMcpJournal
+  mcpSetup: DesktopMcpSetup
 }
 
 /**
@@ -351,6 +451,15 @@ export const DESKTOP_BRIDGE_METHODS = [
   'billing.subscriptionPrices',
   'billing.onSubscriptionEvent',
   'billing.onSubscriptionPricesReady',
+  'localIntegrations.get',
+  'localIntegrations.transition',
+  'localIntegrations.onStatus',
+  'mcp.onRequest',
+  'mcp.respond',
+  'mcpJournal.get',
+  'mcpJournal.undo',
+  'mcpJournal.onChanged',
+  'mcpSetup.claudeDesktop',
 ] as const
 
 declare global {

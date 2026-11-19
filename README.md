@@ -145,6 +145,8 @@ The desktop app adds what makes sense on a computer:
 | 🔗 **`lastglance://` links** | Open a chore, People, search or the new-chore form from anywhere |
 | 📁 **Direct Access** | Sync through a folder Syncthing, Nextcloud or Dropbox keeps in step |
 | 🔑 **Secure storage** | Sync credentials in the macOS Keychain, the Windows credential store or the Linux keyring |
+| 🤖 **AI assistants (MCP)** | Let Claude or another MCP assistant read your chores, and People if you allow it, and with your say-so mark chores done, add and edit; off by default ([below](#ai-assistants-and-stream-deck-desktop)) |
+| 🎛️ **Stream Deck** | Keys and dials for a chore, what's due, your pinned chores, how many are due soon, Reach out, Coming up and Add chore, with the plugin from Releases |
 
 The desktop app does not update itself: when a newer release is out, it says so
 and links to the download. Releasing is described in
@@ -361,6 +363,33 @@ People can use it too, both off by default:
 
 Per person, **"Add contacts to lifeGLANCE"** adds each contact you log with them to your [lifeGLANCE](https://github.com/krelltunez/lifeGLANCE) timeline as a milestone.
 
+### AI assistants and Stream Deck (desktop)
+
+In the desktop app, **Settings > Integrations > On this computer**. Both are
+off by default and listen on this computer only (127.0.0.1), never on the
+network.
+
+- **AI assistants (MCP).** Choose what an assistant may read: **Chores**, or
+  **Chores and People** (People asks again, since it holds information about
+  other people). **Allow changes** lets it mark chores done, add and edit chores
+  and People, log contacts, and send a chore to dayGLANCE at a time it picks. It can never delete anything, makes at most 30
+  changes a minute, and every change it made this session can be undone from
+  Settings or the tray menu. A dot in Settings and the tray popup shows green
+  while it is on, blue while there are changes to undo, and red if changes were
+  paused. On macOS and Windows, **Set up Claude Desktop** adds lastGLANCE to
+  Claude Desktop in one click; for Claude Code, Settings gives the command to
+  copy. The tools are listed in
+  [docs/mcp-tools-reference.md](docs/mcp-tools-reference.md).
+- **Stream Deck.** Turn it on, then install
+  `com.lastglance.streamdeck.streamDeckPlugin` from
+  [Releases](../../releases) (Stream Deck 6.5 or later). Seven actions: a chosen
+  **Chore** (how long since and when it's due, in turn; press to mark done),
+  **Due** and **Pinned** (one chore at a time; tap for the next, hold to mark
+  done), **Soon** (how many are due), **Reach out**, **Coming up** and **Add
+  chore**. On a Stream Deck + dial, turn Due, Pinned, Reach out or Coming up to
+  move through them and push to act. Keys draw each chore with the icon and
+  colour the app shows, and say how long ago in the app's words.
+
 ### Automation
 
 **Android.** Other apps can drive lastGLANCE through `app.lastglance.*` intents: create, complete or open a chore, query counts, and log a contact with a person (`LOG_INTERACTION`). See [docs/tasker-integration.md](docs/tasker-integration.md).
@@ -380,7 +409,7 @@ Per person, **"Add contacts to lifeGLANCE"** adds each contact you log with them
 
 ## Privacy
 
-lastGLANCE has no backend, no analytics, and no accounts. All data is stored locally on your device. Cloud sync goes only to your own iCloud account (on iPhone and iPad, on by default, with an off switch on each device), or to a server or folder you control, where it can be end-to-end encrypted so the server never sees plaintext. Phone contacts are read only when you turn them on, and never leave your phone except as people you imported, through your own sync. See the [privacy policy](https://www.glance-apps.com/lastglance/privacy).
+lastGLANCE has no backend, no analytics, and no accounts. All data is stored locally on your device. Cloud sync goes only to your own iCloud account (on iPhone and iPad, on by default, with an off switch on each device), or to a server or folder you control, where it can be end-to-end encrypted so the server never sees plaintext. Phone contacts are read only when you turn them on, and never leave your phone except as people you imported, through your own sync. On the desktop, an AI assistant you connect (off by default) sends what it reads to the company that runs it, under that company's terms; you choose whether that includes People. See the [privacy policy](https://www.glance-apps.com/lastglance/privacy).
 
 ---
 

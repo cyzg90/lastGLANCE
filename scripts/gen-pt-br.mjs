@@ -233,6 +233,41 @@ const RULES = [
 const OVERRIDES = {
   "backup.peopleIncluded": "Pessoas neste backup: {{count}}. A restauração também substitui as pessoas e o histórico de interações.",
   "backup.peoplePreserved": "Este backup não contém pessoas. As pessoas e o histórico de interações atuais serão mantidos.",
+  // The desktop app's MCP and Stream Deck settings: conectar (ligar is
+  // European), excluir (eliminar), desfazer, no terminal, seus without the
+  // article, proclisis (os desconecta), você.
+  'localIntegrations.intro':
+    "Permite que outros programas deste computador usem o lastGLANCE. Ambos escutam apenas neste computador (127.0.0.1) e nunca podem ser acessados pela rede.",
+  'localIntegrations.streamDeckHint':
+    "Permite que o plugin do lastGLANCE para Stream Deck mostre suas tarefas e as marque como feitas (porta {{port}}).",
+  'localIntegrations.mcpHint':
+    "Permite que um assistente de IA compatível com MCP, como o Claude, leia seus dados do lastGLANCE.",
+  'localIntegrations.writesHint':
+    "O assistente poderá marcar tarefas como feitas, adicionar e editar tarefas e Pessoas, e registrar contatos. Ele nunca poderá excluir nada, e você pode desfazer as alterações dele.",
+  'localIntegrations.tokenHint':
+    "Os assistentes conectados precisam deste token. Um novo token os desconecta até que eles o recebam.",
+  'localIntegrations.portHint':
+    "Mude a porta apenas se outro programa já a usar. Deixe em branco para usar a porta padrão.",
+  'localIntegrations.writesPaused':
+    "As alterações foram pausadas depois de muitas seguidas. Reinicie o lastGLANCE para permiti-las de novo.",
+  'localIntegrations.changesHint': "Só nesta sessão. Desfazer mantém o que você alterou desde então.",
+  'localIntegrations.assistantUndo': "Alterações feitas por assistentes que você pode desfazer",
+  'localIntegrations.undoResult': "Desfeitas: {{undone}}. Mantidas porque mudaram desde então: {{kept}}.",
+  'menu.trayMcpOff': "Desativar o acesso de assistentes",
+  'localIntegrations.claudeDesktopDone': "Adicionado. Reinicie o Claude Desktop para conectar.",
+  'localIntegrations.claudeDesktopDoneBackup':
+    "Adicionado, e as configurações anteriores do Claude Desktop foram salvas ao lado. Reinicie o Claude Desktop para conectar.",
+  'localIntegrations.claudeDesktopBridgeMissing':
+    "Esta versão do lastGLANCE está sem o conector do Claude Desktop. Em vez disso, use a extensão do lastGLANCE do guia de configuração.",
+  'localIntegrations.claudeDesktopGuide': "Conecte o Claude Desktop com a extensão do lastGLANCE e cole o token nela.",
+  'localIntegrations.errorPortInUse': "A porta {{port}} já está sendo usada por outro programa.",
+  'localIntegrations.claudeCodeHint': "Execute isto no terminal para conectar o Claude Code.",
+  'localIntegrations.consentBase':
+    "O que o assistente lê é enviado à empresa que o opera (no caso do Claude, a Anthropic) e tratado segundo os termos dela, não os do lastGLANCE. Ative isto apenas para um assistente a quem você confia suas tarefas e sua casa.",
+  'localIntegrations.consentPeople':
+    "Pessoas contém informações sobre outras pessoas: nomes, aniversários, as anotações que você guarda sobre elas e quando vocês se falaram pela última vez. Elas não concordaram em compartilhar isso com um assistente de IA. Inclua Pessoas apenas se você estiver à vontade com isso.",
+  'localIntegrations.consentWrites':
+    "O assistente poderá alterar seus dados sem perguntar a você a cada vez. Ele pode fazer no máximo 30 alterações por minuto, nunca pode excluir nada, e você pode desfazer as alterações dele aqui.",
   // The tray search and global shortcuts: buscar, registrar, de qualquer
   // lugar, pressione, digitação, o app (masculine in Brazil).
   'tray.searchPlaceholder': "Buscar tarefas",

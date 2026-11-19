@@ -123,6 +123,23 @@ contextBridge.exposeInMainWorld('lastGlanceDesktop', {
     ack: (ids: string[]) => ipcRenderer.invoke('commands:ack', ids),
     onQueued: (listener: (payload: unknown) => void) => subscribe('commands:queued', listener),
   },
+  localIntegrations: {
+    get: () => ipcRenderer.invoke('local-integrations:get'),
+    transition: (action: Record<string, unknown>) => ipcRenderer.invoke('local-integrations:transition', action),
+    onStatus: (listener: (payload: unknown) => void) => subscribe('local-integrations:status', listener),
+  },
+  mcp: {
+    onRequest: (listener: (payload: unknown) => void) => subscribe('mcp:request', listener),
+    respond: (response: Record<string, unknown>) => ipcRenderer.send('mcp:response', response),
+  },
+  mcpJournal: {
+    get: () => ipcRenderer.invoke('mcp-journal:get'),
+    undo: (groupKey: string | null) => ipcRenderer.invoke('mcp-journal:undo', groupKey),
+    onChanged: (listener: (payload: unknown) => void) => subscribe('mcp-journal:changed', listener),
+  },
+  mcpSetup: {
+    claudeDesktop: () => ipcRenderer.invoke('mcp-setup:claude-desktop'),
+  },
   icloud: {
     available: () => ipcRenderer.invoke('icloud:available'),
     readFile: (options: { path: string; container?: string; allowStale?: boolean }) => ipcRenderer.invoke('icloud:read-file', options),

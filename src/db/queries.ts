@@ -2,6 +2,8 @@ import { validatePeopleBackup, restorePeopleBackup, notifyPeopleRestored } from 
 import { db, SEED_CAT_SYNC_IDS, SEED_CHORE_SYNC_IDS } from './client'
 import type { Category, Chore, ChoreWithLastCompletion, CompletionEvent, User } from '@/types'
 import { markDirty, markDeleted } from '@/sync/dirtyTracker'
+import { unknownChoreFields } from '@/sync/choreFields'
+import { isDurationMinutes } from '@/utils/choreDuration'
 import { markRosterDirty } from '@/multiuser/rosterDirtyTracker'
 import { getMultiUserEnabled, setMultiUserEnabled } from '@/multiuser/settings'
 import dayjs from 'dayjs'
@@ -31,6 +33,8 @@ export async function createCategory(
   icon?: string,
   parent_category_id?: number,
   assigned_user_sync_ids: string[] = [],
+  // A given sync id, for a caller that must find its own row on a retry (an MCP create).
+  givenSyncId?: string,
 ): Promise<number> {
   const order = sort_order ?? (await db.categories.count())
   let parent_sync_id: string | null = null
@@ -38,7 +42,7 @@ export async function createCategory(
     const parent = await db.categories.get(parent_category_id)
     parent_sync_id = parent?.sync_id ?? null
   }
-  const sync_id = crypto.randomUUID()
+  const sync_id = givenSyncId ?? crypto.randomUUID()
   const id = await db.categories.add({
     name,
     sort_order: order,
@@ -213,14 +217,17 @@ export async function getChoresForCategory(categoryId: number): Promise<ChoreWit
   )
 }
 
+// `sync_id` is for a caller that must find its own row again on a retry (an
+// MCP create, keyed on its idempotency key); everyone else gets a fresh one.
 export async function createChore(
-  data: Omit<Chore, 'id' | 'sort_order' | 'created_at' | 'updated_at' | 'sync_id' | 'category_sync_id' | 'pinned'> & { pinned?: boolean }
+  input: Omit<Chore, 'id' | 'sort_order' | 'created_at' | 'updated_at' | 'sync_id' | 'category_sync_id' | 'pinned'> & { pinned?: boolean; sync_id?: string }
 ): Promise<number> {
+  const { sync_id: givenSyncId, ...data } = input
   const now = dayjs().toISOString()
   const count = await db.chores.where('category_id').equals(data.category_id).count()
   const cat = await db.categories.get(data.category_id)
   const category_sync_id = cat?.sync_id ?? null
-  const sync_id = crypto.randomUUID()
+  const sync_id = givenSyncId ?? crypto.randomUUID()
   const id = await db.chores.add({
     pinned: false,
     ...data,
@@ -558,6 +565,7 @@ interface NormalizedCategory { sync_id: string; name: string; sort_order: number
 interface NormalizedChore {
   sync_id: string; name: string; category_sync_id: string | null; sort_order: number
   target_cadence_days: number | null; notify_when_overdue: boolean; auto_schedule_to_dayglance: boolean
+  duration_minutes: number | null; sync_extra?: Chore['sync_extra']
   preferred_schedule_behavior: Chore['preferred_schedule_behavior']
   seasonal_start: string | null; seasonal_end: string | null; details: string | null; pinned: boolean; icon?: string
   assigned_user_sync_ids: string[]; created_at: string
@@ -632,23 +640,33 @@ function normalizeBackup(raw: unknown, now: string): NormalizedBackup {
     assigned_user_sync_ids: asArr(c.assigned_user_sync_ids ?? c.assignedUserSyncIds),
   }))
 
-  const chores = rawChores.map((c, i): NormalizedChore => ({
-    sync_id: choreSyncIds[i],
-    name: asStr(c.name),
-    category_sync_id: choreCatOf(c),
-    sort_order: asNum(c.sort_order ?? c.sortOrder, i),
-    target_cadence_days: typeof (c.target_cadence_days ?? c.targetCadenceDays) === 'number' ? (c.target_cadence_days ?? c.targetCadenceDays) as number : null,
-    notify_when_overdue: Boolean(c.notify_when_overdue ?? c.notifyWhenOverdue ?? false),
-    auto_schedule_to_dayglance: Boolean(c.auto_schedule_to_dayglance ?? c.autoScheduleToDayglance ?? false),
-    preferred_schedule_behavior: (c.preferred_schedule_behavior ?? c.preferredScheduleBehavior ?? null) as Chore['preferred_schedule_behavior'],
-    seasonal_start: typeof (c.seasonal_start ?? c.seasonalStart) === 'string' ? (c.seasonal_start ?? c.seasonalStart) as string : null,
-    seasonal_end: typeof (c.seasonal_end ?? c.seasonalEnd) === 'string' ? (c.seasonal_end ?? c.seasonalEnd) as string : null,
-    details: typeof c.details === 'string' ? c.details : null,
-    pinned: c.pinned === true,
-    icon: typeof c.icon === 'string' ? c.icon : undefined,
-    assigned_user_sync_ids: asArr(c.assigned_user_sync_ids ?? c.assignedUserSyncIds),
-    created_at: asStr(c.created_at ?? c.createdAt, now),
-  }))
+  const chores = rawChores.map((c, i): NormalizedChore => {
+    const duration = c.duration_minutes ?? c.durationMinutes ?? null
+    if (duration !== null && !isDurationMinutes(duration)) throw new Error('invalid chore duration')
+    const wireRow = typeof c.id === 'string' && typeof c.sync_id !== 'string'
+    const extra = c.sync_extra
+    const syncExtra = wireRow ? unknownChoreFields(c) :
+      extra && typeof extra === 'object' && !Array.isArray(extra) ? extra as Raw : undefined
+    return {
+      sync_id: choreSyncIds[i],
+      name: asStr(c.name),
+      category_sync_id: choreCatOf(c),
+      sort_order: asNum(c.sort_order ?? c.sortOrder, i),
+      target_cadence_days: typeof (c.target_cadence_days ?? c.targetCadenceDays) === 'number' ? (c.target_cadence_days ?? c.targetCadenceDays) as number : null,
+      duration_minutes: duration,
+      sync_extra: syncExtra,
+      notify_when_overdue: Boolean(c.notify_when_overdue ?? c.notifyWhenOverdue ?? false),
+      auto_schedule_to_dayglance: Boolean(c.auto_schedule_to_dayglance ?? c.autoScheduleToDayglance ?? false),
+      preferred_schedule_behavior: (c.preferred_schedule_behavior ?? c.preferredScheduleBehavior ?? null) as Chore['preferred_schedule_behavior'],
+      seasonal_start: typeof (c.seasonal_start ?? c.seasonalStart) === 'string' ? (c.seasonal_start ?? c.seasonalStart) as string : null,
+      seasonal_end: typeof (c.seasonal_end ?? c.seasonalEnd) === 'string' ? (c.seasonal_end ?? c.seasonalEnd) as string : null,
+      details: typeof c.details === 'string' ? c.details : null,
+      pinned: c.pinned === true,
+      icon: typeof c.icon === 'string' ? c.icon : undefined,
+      assigned_user_sync_ids: asArr(c.assigned_user_sync_ids ?? c.assignedUserSyncIds),
+      created_at: asStr(c.created_at ?? c.createdAt, now),
+    }
+  })
 
   const completionEvents = rawEvents
     .map((e): NormalizedEvent => ({
@@ -783,6 +801,8 @@ export async function restoreFromBackup(raw: unknown): Promise<{ categories: num
         return {
           sync_id: ch.sync_id, name: ch.name, category_id: cat.id!, category_sync_id: ch.category_sync_id,
           sort_order: ch.sort_order, target_cadence_days: ch.target_cadence_days,
+          duration_minutes: ch.duration_minutes,
+          ...(ch.sync_extra && { sync_extra: ch.sync_extra }),
           notify_when_overdue: ch.notify_when_overdue, auto_schedule_to_dayglance: ch.auto_schedule_to_dayglance,
           preferred_schedule_behavior: ch.preferred_schedule_behavior,
           seasonal_start: ch.seasonal_start, seasonal_end: ch.seasonal_end, details: ch.details, pinned: ch.pinned, icon: ch.icon,

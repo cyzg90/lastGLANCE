@@ -1,6 +1,6 @@
 # MCP and Stream Deck for the desktop app
 
-Status: plan, reviewed 2026-11-12 (section 9). Follows `docs/desktop-app.md`, section 10 ("Commands
+Status: built, phases 1 to 7 (section 8); the plan was reviewed 2026-11-12 (section 9). Follows `docs/desktop-app.md`, section 10 ("Commands
 from outside the window, and the road to MCP and Stream Deck"), which reserved
 the ports and built the seams this plan uses. dayGLANCE is the reference
 (`docs/mcp-server-spec.md`, `docs/mcp-tools-reference.md`, `electron/ws-server.ts`
@@ -28,7 +28,7 @@ releasable throughout:
 
 - The Settings section that turns either feature on is not mounted until the
   phase that ships it (a single `LOCAL_INTEGRATIONS_UI` constant in
-  `src/native/desktop.ts`, flipped in the last PR). With the section unmounted,
+  `src/native/localIntegrations.ts`, flipped in the last PR). With the section unmounted,
   nothing can enable a listener, so an in-between `main` behaves like 3.1.0.
 - A fix for 3.1.x lands on `main` and ships as 3.1.1. If `main` ever holds
   something not ready to ship, a `release/3.1.x` branch is cut from the `v3.1.0`
@@ -123,11 +123,14 @@ request bridge (`electron/mcpRendererBridge.ts`):
 | `lastglance_get_chore` | one chore with its cadence, assignees and recent completions (with notes) |
 | `lastglance_list_categories` | the category tree with assignees |
 | `lastglance_get_activity` | completions between two local dates, by day |
-| `lastglance_list_users` | household members (only when there is more than one) |
+| `lastglance_list_users` | household members, whether multi-user mode is on, and who this device is |
 | `lastglance_list_people` | People with circle, cadence and last interaction (People tier) |
 | `lastglance_get_person` | one person: dates, recent interactions with notes, details (People tier) |
 | `lastglance_list_upcoming_dates` | birthdays and dates in a window (People tier) |
-| `lastglance_list_mcp_writes` | what MCP changed this session, for undo context |
+| `lastglance_list_circles` | the circles People are grouped in (People tier) |
+| `lastglance_list_mcp_writes` | what MCP changed this session, for undo context (phase 3, with the writes) |
+
+Also `lastglance_ping`, a connectivity check that reads nothing.
 
 Resources: `lastglance://chores/due` and `lastglance://people/coming-up`.
 
@@ -182,18 +185,19 @@ the SDK's generic one.
 
 **How a write reaches the data.** Not through `commands.json`. The queue exists
 for presses that must survive a crash and need no reply; an MCP write needs its
-result (the chore it created, the completion it added) and has its own retry
-story in the idempotency key. So writes ride the request bridge, and the page
-applies them **with the same handlers and ledger as the launcher's writes**
-(`drainLauncherQueue` over `handleIntent`) wherever `handleIntent` has the verb
-(complete, create, log interaction), the idempotency key becoming the
-ledger's `clientId`. That keeps one write path into the data, keeps a replay
-after a store reset harmless, and gets the vault push for free: the main window
-has its engines registered (CLAUDE.md, "Launcher writes are applied, then
-pushed"). The edits (`update_*`) and `create_person` have no intent verb; they
-call the same query functions the forms call (`src/db/queries.ts`,
-`src/people/queries.ts`), which mark the dirty trackers as a form's save does,
-behind a ledger keyed the same way.
+result and has its own retry story in the idempotency key. So writes ride the
+request bridge, and the page applies them in `src/mcp/writeModel.ts` through
+the same data-layer calls the app's forms make (`createChore`, `updateChore`,
+`logCompletion`, ...), with the forms' rules (the category's icon and assignees
+on a new chore, the device's Me as the completer, no future completions). That
+marks each change dirty and gets it pushed as a form's save is, and fires the
+same `lg:chore-logged` the intents path fires, so the screens, widgets and
+reminders refresh. A create's id is derived from its idempotency key, so a
+retry finds its own row even after the replay store has forgotten it; a chore
+with the same name in the same category is returned rather than duplicated, as
+the intents path does. (Decided while building 3a: the launcher's ledger
+answers "was this delivered" with an id, but a write here needs the entity and
+an undo record, which the data layer gives directly.)
 
 **Undo.** Each write returns an undo op from the page (it alone has the
 before-state): `remove_completion`, `remove_created` (a chore, category or person, removed
@@ -205,10 +209,18 @@ from Settings and from the tray popup's menu, which also carries the kill switch
 
 ### 4.6 Visible state
 
-A small indicator in the tray popup's header and in Settings: green while the
-server is on, blue while there are undoable MCP writes, red when writes were
-auto-disabled. No per-write modal (dayGLANCE spec, 4.3): read-only by default, no
-deletes, a rate limit and undo instead.
+The changes list with Undo and Undo all in Settings, a notice there when the
+rate gate has paused writes, and the tray menu's "Undo assistant changes (N)"
+and "Turn off assistant access" (phase 3a). With the Settings mount (phase 7),
+the indicator: a dot in the tray popup's header and beside the MCP setting,
+green while the server is running, blue while there are changes from this
+session to undo (also after the server is turned off), red while writes are
+paused. Main decides it (`assistantIndicator` in
+`electron/localIntegrations.ts`) and sends it with the Settings view and the
+tray state, so the two cannot disagree; the popup's dot opens Settings at
+Integrations (the `settings:integrations` token, accepted from the popup only,
+not from `lastglance://` links). No per-write modal (dayGLANCE spec, 4.3):
+read-only by default, no deletes, a rate limit and undo instead.
 
 ## 5. Connecting Claude
 
@@ -289,42 +301,79 @@ rollup imports it, as dayGLANCE's does), version 1:
 
 ### 6.3 The plugin
 
-`stream-deck-plugin/` in this repo, `@elgato/streamdeck` v2, UUID
-`com.lastglance.streamdeck`, keys drawn as SVG (144×144; 200×100 on the dials'
-touch strip). Proposed actions:
+`stream-deck-plugin/` in this repo, `@elgato/streamdeck` v2 (SDK 2, Node 20),
+UUID `com.lastglance.streamdeck`, its own `package.json` and lockfile. Keys are
+drawn as SVG, 144×144 on a key and 200×100 on the Stream Deck + touch strip
+(`src/render.ts`); what each key shows is a pure function of the app's
+`lg:state` and the clock (`src/keys.ts`), so it is tested without Stream Deck.
 
-| Action | Shows | Press |
-|---|---|---|
-| Chore | one chosen chore: icon, fill ring in its state colour, "3d ago" | marks it done |
-| Due | the due chores, one at a time (dial or tap to move) | hold marks the shown chore done |
-| Overview | overdue and soon counts | opens lastGLANCE |
-| Reach out | the person most overdue for contact | opens their log in the app |
-| Coming up | the next birthday or date | opens the person |
-| Add chore | a plus | opens Add chore |
+| Action | Shows | Press | Dial (Stream Deck +) |
+|---|---|---|---|
+| Chore | one chosen chore: its icon in its cadence colour, the fill bar, and a line that turns every 4 seconds between "3d ago" and "due now" | marks it done | |
+| Due | the due chores, most overdue first, its place ("2/5") in the corner | tap shows the next; hold (half a second) marks the shown one done | turn to move; push or tap the strip to mark done |
+| Pinned | the pinned chores in season, in the app's Pinned order | as Due | as Due |
+| Soon | the overdue count (or the soon count), big | opens the app filtered to due soon | |
+| Reach out | the people in Reach out, in its order (the first on a key) | opens the shown person's contact log | turn to move; push or tap to open the log |
+| Coming up | the birthdays and dates ahead, soonest first: rose within a week, slate further off, with a bar that fills as the date nears across the app's 30-day window | opens the shown person | turn to move; push or tap to open the person |
+| Add chore | a plus | opens Add chore | |
 
-Chore icons are lucide names; the plugin bundles lucide's icon nodes so a key
-draws the same icon the app shows.
+- **The words for time are the app's.** Main works out "since" and "next due"
+  for each chore with the app's rules (`sinceOf` and `nextDueOf` in
+  `electron/deckModel.ts`, following `formatElapsed` and `formatNextDue`):
+  calendar days in the user's zone, so a chore done on Thursday evening is "2d
+  ago" on Saturday morning, as the chore list says, not the 1d of 24-hour
+  periods the first version counted. `deckModel.test.ts` runs both over the same
+  instants, DST included. The plugin only shortens them. The state also carries
+  the pinned chores in the app's order. Both are optional fields of protocol
+  version 1: a plugin keeps working against an app from before them.
+- **Soon** was called Overview, and keeps its action id
+  (`com.lastglance.streamdeck.overview`), so a key already placed keeps working.
+- **Lists on a dial:** Due, Pinned, Reach out and Coming up share one list
+  action (`src/actions/list-action.ts`): each key and dial keeps its own place,
+  and a key shows where it is ("2/5") in its top corner.
 
-**Build and release:** unlike dayGLANCE's hand-packed plugin, CI builds it,
-packs it with `@elgato/cli` and attaches `com.lastglance.streamdeck.streamDeckPlugin`
-to the GitHub release (`release-desktop.yml`); the Elgato Marketplace submission
-is a manual step in `docs/releasing-desktop.md`.
+- **The connection** (`src/connection.ts`): one socket to 127.0.0.1:7901 with
+  no Origin, so the app trusts it as a native client; reconnects with backoff
+  from 1 to 30 seconds; every command carries a `clientId` and waits up to five
+  seconds for its `lg:result`. Not connected reads as "Not running" on every
+  key, and connected before the first snapshot as "Open the app", never as
+  "nothing due". A press shows the app's answer: a tick for done (and for a
+  second press the guard refused, since the chore is done), an alert otherwise.
+- **The Chore key's picker** asks the plugin backend for the chore list over
+  Stream Deck's own property inspector channel (`sendToPlugin`), not over a
+  second socket, so the session token (`lg:token`) is unused by this plugin.
+- **Icons:** `scripts/gen-assets.mjs` generates the icon table from the app's
+  own `lucide-react` with the widgets' name rules (`scripts/lucide-names.mjs`),
+  so every name a chore can store (Sprout, LucideSprout, SproutIcon, an old
+  alias) draws the icon the app shows. It runs from the root install, so the
+  plugin always draws the app's version. The plugin and action icons are made
+  by the same script from the app icon and Lucide glyphs.
+- **Words on the keys are English only.** Stream Deck gives the plugin no
+  language of the app's, and the keys carry little text (a name, "3d").
+- **Tests** run with the app's (`npx vitest run stream-deck-plugin`), including
+  one that drives the real connection against the app's real listener and deck
+  model over a socket.
+- **Build and release:** unlike dayGLANCE's hand-packed plugin, CI builds,
+  typechecks, validates and packs it (`ci.yml`), and `release-desktop.yml`
+  attaches `com.lastglance.streamdeck.streamDeckPlugin` to the tag's release.
+  The Elgato Marketplace submission is a manual step in
+  `docs/releasing-desktop.md`. The manifest has no `URL`: `streamdeck validate`
+  fetches it, which would tie CI to the website being up.
 
 ## 7. Mac App Store
 
-The MAS build has not shipped yet. When it does:
-
-- Both listeners need `com.apple.security.network.server`.
-  `electron/builderConfig.test.ts` currently asserts it is absent; that test
-  changes with the entitlement. dayGLANCE passed review with both (Guideline
-  2.4.5(i), answered with a demo video).
+- Both listeners need `com.apple.security.network.server`, in
+  `entitlements.mas.plist` since phase 4a (`electron/builderConfig.test.ts`
+  holds it). dayGLANCE passed review with both (Guideline 2.4.5(i), answered
+  with a demo video); expect to need the same for the first MAS build with the
+  section mounted.
 - The Claude Desktop setup and the bundled bridge are compiled out (Guideline
   2.5.2: the app must not install or run code), with dayGLANCE's two mechanisms:
   a vite define (`__MAS_BUILD__`) that removes the button, and top-level `files`
   negations that keep `mcpDesktopSetup*` and `mcpDesktopConfig*` out of the
-  asar. A `scripts/verify-mas-compileout.mjs` checks the built app. MAS users
+  asar. `scripts/verify-mas-compileout.mjs` checks the built app. MAS users
   connect Claude Desktop through the bridge's own install with the token pasted
-  in.
+  in; Settings shows them the setup guide instead of the button.
 
 ## 8. Phases
 
@@ -336,19 +385,54 @@ until phase 7.
 2. **MCP reads.** The request bridge, the read model, the read tools and
    resources, `docs/mcp-tools-reference.md`, and the transport suite over a real
    loopback listener and the official client.
-3. **MCP writes.** The write tools and planners, the page's write path through
-   the launcher handlers and ledger, the undo ops, the journal, undo from
-   Settings and the tray, the kill switch, the indicator.
-4. **Connecting Claude.** The Claude Code line, the discovery file, the Claude
-   Desktop setup (needs the generalised bridge), the MAS compile-out and its
-   verify script.
-5. **Stream Deck, desktop side.** The WebSocket server, the protocol, the deck
-   model from the snapshot, `streamdeck` commands and the double-completion
-   guard.
-6. **Stream Deck plugin.** The actions, the property inspectors, the renderer,
-   CI packing.
-7. **Ship.** Mount the Settings section, strings in all 10 languages (pt-BR
-   through `scripts/gen-pt-br.mjs`), README, `docs/releasing-desktop.md`.
+3. **MCP writes**, in two PRs.
+   - **3a, chores (done):** the write pipeline (consent, replay, rate gate),
+     the page's write model through the data layer the forms use, the field
+     audit in `docs/mcp-tools-reference.md`, chores, completions and
+     categories, the session journal with undo from Settings and the tray
+     menu, and the tray menu's off switch.
+   - **3b, People (done):** people (with archive and snooze), dates,
+     contacts and circles on the same pipeline, under the People tier, for
+     this user's People only; the audit rows and tools in
+     `docs/mcp-tools-reference.md`.
+   The indicator (4.6) comes with the Settings mount in phase 7.
+4. **Connecting Claude**, in two steps.
+   - **The bridge:** app profiles in `glance-apps/mcp-bridge` (0.2.0): one
+     bridge, a profile per app, `--app lastglance`, its own `.mcpb`; dayGLANCE
+     unchanged with no `--app`.
+   - **4a (done):** the discovery file, the Claude Desktop config writer and
+     its button (`mcpDesktopConfig.ts`, `mcpDesktopSetup.ts`), the MAS
+     compile-out (`__MAS_BUILD__`, the package exclusions,
+     `scripts/verify-mas-compileout.mjs`, run on direct builds in CI) and the
+     MAS `network.server` entitlement. The Claude Code line was built in
+     phase 1.
+   - **4b (done):** `@glance-apps/mcp-bridge` 0.2.0 shipped in
+     `extraResources` on macOS and Windows direct builds (never MAS, never
+     Linux), so the button's entry points at a file that exists; the verify
+     script checks it, and the smoke test runs the entry's exact command (the
+     build's binary as Node on the bridge, `--app lastglance`) against the live
+     server over stdio.
+5. **Stream Deck, desktop side (done).** `electron/streamDeckServer.ts` on
+   127.0.0.1:7901 (dayGLANCE's trust model, plus a loopback Host check, a
+   16 KB frame limit, every frame parsed by `electron/deckProtocol.ts`, and an
+   `lg:result` answer per command); `electron/deckModel.ts` (the tray's
+   snapshot aged by the clock, with the app's thresholds and colours);
+   presses through the command queue as `streamdeck`. The double-completion
+   guard keeps the deck's own presses for the full minute and also reads the
+   snapshot's last completion: the smoke test showed that relying on the
+   tray's "done here" record alone forgot a press as soon as a snapshot
+   settled it. The widget snapshot is now stamped before its data is read,
+   which also stops the tray from briefly showing a chore it just completed.
+6. **Stream Deck plugin (done).** `stream-deck-plugin/`: the six actions,
+   the Chore key's picker over Stream Deck's channel, the key renderer with the
+   app's own Lucide icons, the connection with backoff, CI building and packing
+   it and the release attaching it (6.3).
+7. **Ship (done).** `LOCAL_INTEGRATIONS_UI` on, so Settings → Integrations
+   shows "On this computer"; the indicator (4.6) in Settings and the tray
+   popup, its strings in all 10 languages (the section's own were written in
+   phase 1); the README; the release checks in `docs/releasing-desktop.md`.
+   The smoke test opens Settings the way the popup's dot does and follows the
+   indicator through a write and its undo.
 
 ## 9. Decisions (review, 2026-11-12)
 
@@ -357,8 +441,9 @@ until phase 7.
 2. **Writes:** complete, create and edit chores, and the same for People (log a
    contact, add a person, edit a person). Every field the app's screens can
    change is exposed (4.5). No deletes.
-3. **The bridge:** generalise `glance-apps/mcp-bridge` with app profiles (5),
-   pending your go-ahead. A user of one app must never see the other.
+3. **The bridge:** generalise `glance-apps/mcp-bridge` with app profiles (5).
+   A user of one app must never see the other. Done: app profiles in 0.2.0
+   (phase 4).
 4. **Stream Deck trust:** dayGLANCE's model (6.1). Agreed.
 5. **Stream Deck actions:** the six in 6.3, to start.
 6. **Order:** MCP first, then Stream Deck.

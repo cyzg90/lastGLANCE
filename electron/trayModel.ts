@@ -23,6 +23,8 @@ export interface TrayChore {
   targetCadenceDays: number | null;
   ratio: number | null;
   color: string | null;
+  /** Pinned and in season, as the snapshot says (src/native/snapshot.ts). */
+  pinned: boolean;
 }
 
 /** The snapshot's Reach out row (src/native/peopleSnapshot.ts), text already in the app's language. */
@@ -116,6 +118,7 @@ export function parseTraySnapshot(json: unknown): TraySnapshot | null {
       targetCadenceDays: num(c.targetCadenceDays),
       ratio: num(c.ratio),
       color: COLOR.test(String(c.color)) ? String(c.color) : null,
+      pinned: c.pinned === true,
     });
   }
   return { generatedAt, chores: chores.slice(0, TRAY_CHORE_LIMIT), ...parsePeople(s.people) };
@@ -140,9 +143,11 @@ export function trayState(snapshot: TraySnapshot | null, doneHere: ReadonlyMap<s
 
 /**
  * The deep-link token the popup may open: a chore or person it shows, the
- * quick-log sheet for a person it shows, People, or (null) just the app.
+ * quick-log sheet for a person it shows, People, Settings at Integrations (the
+ * assistant indicator), or (null) just the app.
  */
 export function trayOpenToken(token: unknown, snapshot: TraySnapshot | null): string | null {
+  if (token === 'settings:integrations') return token;
   if (typeof token !== 'string' || !snapshot) return null;
   if (token === 'people') return token;
   const colon = token.indexOf(':');

@@ -16,6 +16,7 @@ import {
 } from './queries'
 import dayjs from 'dayjs'
 import type { Chore, CompletionEvent } from '@/types'
+import { buildPayload } from '@/sync/engine'
 
 // markDirty/markDeleted are no-ops without a registered DB engine (see
 // dirtyTracker), and window is guarded, so these run cleanly under node.
@@ -112,7 +113,8 @@ describe('#192 — restoreFromBackup', () => {
   }
 
   it('restores a snake_case (exportBackup) file and re-stamps updated_at so it wins the sync merge', async () => {
-    await seed()
+    const { choreId } = await seed()
+    await db.chores.update(choreId, { duration_minutes: 25, sync_extra: { futureSetting: { enabled: true } } })
     const backup = await exportBackup()
     const before = backup.chores[0].updated_at
 
@@ -124,6 +126,8 @@ describe('#192 — restoreFromBackup', () => {
     const chores = await db.chores.toArray()
     expect(chores).toHaveLength(1)
     expect(chores[0].name).toBe('Mop') // backup value won
+    expect(chores[0].duration_minutes).toBe(25)
+    expect(chores[0].sync_extra).toEqual({ futureSetting: { enabled: true } })
     // updated_at was bumped to "now" (newer than the backup's own timestamp) so a
     // last-writer-wins merge keeps the restored copy rather than the server's.
     expect(chores[0].updated_at > before).toBe(true)
@@ -141,8 +145,10 @@ describe('#192 — restoreFromBackup', () => {
       settings: { multiUserEnabled: false },
       tombstones: {},
     }
+    const [choreRecord] = syncPayload.chores
+    const backup = { ...syncPayload, chores: [{ ...choreRecord, durationMinutes: 40, futureSetting: { enabled: true } }] }
 
-    const counts = await restoreFromBackup(syncPayload)
+    const counts = await restoreFromBackup(backup)
     expect(counts).toEqual({ categories: 1, chores: 1, completionEvents: 1, people: 0, interactions: 0 })
 
     const cat = (await db.categories.toArray())[0]
@@ -152,6 +158,9 @@ describe('#192 — restoreFromBackup', () => {
     // Foreign keys were rebuilt from sync_ids.
     expect(chore.category_id).toBe(cat.id)
     expect(chore.category_sync_id).toBe(catSync)
+    expect(chore.duration_minutes).toBe(40)
+    expect(chore.sync_extra).toEqual({ futureSetting: { enabled: true } })
+    expect((await buildPayload()).chores[0]).toMatchObject({ durationMinutes: 40, futureSetting: { enabled: true } })
     expect(evt.chore_id).toBe(chore.id)
     // Real history keeps its own timestamp.
     expect(evt.completed_at).toBe('2024-02-01T00:00:00.000Z')

@@ -1,0 +1,106 @@
+import type { DesktopAssistantIndicator, DesktopClaudeSetupResult, DesktopIntegrationsAction, DesktopMcpReadTier } from './desktop'
+
+// The Settings panel's decisions for the local integrations
+// (docs/mcp-and-stream-deck.md, section 3), pure so they are tested without a
+// DOM: which consent a change needs, the action it sends once accepted, the
+// port field, and which message a failure shows. Main decides again
+// (electron/localIntegrations.ts, applyTransition): this only keeps the panel
+// from sending what main would refuse, and says why.
+
+/** Whether the panel is mounted (on since phase 7, section 8). */
+export const LOCAL_INTEGRATIONS_UI = true
+
+/** The words for the assistant indicator (4.6), or null when it shows nothing. */
+export function assistantLabelKey(indicator: DesktopAssistantIndicator | undefined): string | null {
+  switch (indicator) {
+    case 'on': return 'localIntegrations.assistantOn'
+    case 'undo': return 'localIntegrations.assistantUndo'
+    case 'paused': return 'localIntegrations.assistantPaused'
+    default: return null
+  }
+}
+
+export type ConsentKind = 'base' | 'people' | 'writes'
+
+/** The consents a read-tier change needs, in the order the dialog shows them. */
+export function consentsForTier(current: DesktopMcpReadTier, target: DesktopMcpReadTier): ConsentKind[] {
+  if (target === 'off' || target === current) return []
+  const needed: ConsentKind[] = []
+  if (current === 'off') needed.push('base')
+  if (target === 'chores_people') needed.push('people')
+  return needed
+}
+
+/** The transition for a tier change, carrying exactly the consents accepted. */
+export function tierAction(target: DesktopMcpReadTier, accepted: readonly ConsentKind[]): DesktopIntegrationsAction {
+  return {
+    type: 'set-mcp-read-tier',
+    tier: target,
+    ...(accepted.includes('base') && { consentConfirmed: true }),
+    ...(accepted.includes('people') && { peopleConsentConfirmed: true }),
+  }
+}
+
+/** The transition for the "Allow changes" switch; turning it on needs its consent. */
+export function writesAction(enabled: boolean, accepted: readonly ConsentKind[]): DesktopIntegrationsAction {
+  return { type: 'set-mcp-writes', enabled, ...(enabled && accepted.includes('writes') && { writesConsentConfirmed: true }) }
+}
+
+/** The port field: empty is the default, a whole number in range is an override, anything else is refused. */
+export function parsePortInput(text: string): { ok: true; port: number | null } | { ok: false } {
+  const trimmed = text.trim()
+  if (trimmed === '') return { ok: true, port: null }
+  if (!/^\d{1,5}$/.test(trimmed)) return { ok: false }
+  const port = Number(trimmed)
+  return port >= 1 && port <= 65535 ? { ok: true, port } : { ok: false }
+}
+
+/** The token as shown until revealed: its first and last four characters. */
+export function maskToken(token: string): string {
+  return token.length <= 8 ? '•'.repeat(token.length) : `${token.slice(0, 4)}${'•'.repeat(8)}${token.slice(-4)}`
+}
+
+/** The Claude Code command that connects to this server. */
+export function claudeCodeCommand(endpoint: string, token: string): string {
+  return `claude mcp add --transport http lastglance ${endpoint} --header "Authorization: Bearer ${token}"`
+}
+
+/** The translation key for a listener that could not start (electron/mcpServer.ts, bindErrorCode). */
+export function statusErrorKey(code: string): string {
+  switch (code) {
+    case 'port_in_use': return 'localIntegrations.errorPortInUse'
+    case 'permission_denied': return 'localIntegrations.errorPortDenied'
+    default: return 'localIntegrations.errorBindFailed'
+  }
+}
+
+/** The translation key for a refused transition. */
+export function transitionErrorKey(error: string): string {
+  switch (error) {
+    case 'invalid_port': return 'localIntegrations.errorInvalidPort'
+    case 'port_reserved': return 'localIntegrations.errorPortReserved'
+    default: return 'localIntegrations.errorGeneric'
+  }
+}
+
+/** The page that explains connecting each kind of client (the bridge's README). */
+export const SETUP_GUIDE_URL = 'https://github.com/glance-apps/mcp-bridge#lastglance'
+
+/** Whether this build offers "Set up Claude Desktop": direct builds on the platforms Claude Desktop runs on. */
+export function offersClaudeDesktopSetup(platform: string, masBuild: boolean): boolean {
+  return !masBuild && (platform === 'darwin' || platform === 'win32')
+}
+
+/** What the panel says after "Set up Claude Desktop", and whether it shows the snippet to paste. */
+export function claudeSetupMessage(result: DesktopClaudeSetupResult): { key: string; manual: string | null; error: boolean } {
+  if (result.ok) return { key: result.backupPath ? 'localIntegrations.claudeDesktopDoneBackup' : 'localIntegrations.claudeDesktopDone', manual: null, error: false }
+  switch (result.reason) {
+    case 'bridge_missing': return { key: 'localIntegrations.claudeDesktopBridgeMissing', manual: null, error: true }
+    case 'unreadable':
+    case 'unparseable':
+    case 'write_failed':
+    case 'unsupported_platform':
+      return { key: 'localIntegrations.claudeDesktopManual', manual: result.manualEntry ?? null, error: true }
+    default: return { key: 'localIntegrations.errorGeneric', manual: null, error: true }
+  }
+}

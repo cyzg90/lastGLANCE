@@ -14,6 +14,37 @@ import { DEEP_LINK_SCHEME } from './deepLink';
 const require = createRequire(import.meta.url);
 const root = path.resolve(__dirname, '..');
 
+/** A bare specifier's package name: '@scope/name' or 'name'. */
+const packageOf = (spec: string) => spec.split('/').slice(0, spec.startsWith('@') ? 2 : 1).join('/');
+
+/**
+ * The packages main loads at run time: every value import (not `import type`)
+ * in electron/*.ts outside the tests, other than electron, node builtins and
+ * billing (shipped in part, checked on its own), with their dependencies and
+ * peer dependencies followed transitively (optional peers only when installed).
+ */
+function mainRuntimeClosure(): Set<string> {
+  const seeds = readdirSync(path.join(root, 'electron'))
+    .filter((f) => f.endsWith('.ts') && !f.endsWith('.test.ts'))
+    .flatMap((f) => [...readFileSync(path.join(root, 'electron', f), 'utf-8').matchAll(/^import (?!type )[^'"]*from '([^'.][^']*)'/gm)].map((m) => m[1]))
+    .filter((spec) => spec !== 'electron' && !spec.startsWith('node:'))
+    .map(packageOf)
+    .filter((name) => name !== '@glance-apps/billing');
+  const closure = new Set<string>();
+  const queue = [...seeds];
+  while (queue.length) {
+    const name = queue.shift()!;
+    if (closure.has(name)) continue;
+    closure.add(name);
+    const pkg = JSON.parse(readFileSync(path.join(root, 'node_modules', name, 'package.json'), 'utf-8'));
+    // An optional peer (ws's native accelerators) is loaded only if installed; one that is not is not a dependency.
+    const optional = new Set(Object.entries(pkg.peerDependenciesMeta ?? {}).filter(([, m]) => (m as { optional?: boolean }).optional).map(([n]) => n));
+    const peers = Object.keys(pkg.peerDependencies ?? {}).filter((n) => !optional.has(n) || existsSync(path.join(root, 'node_modules', n, 'package.json')));
+    queue.push(...Object.keys(pkg.dependencies ?? {}), ...peers);
+  }
+  return closure;
+}
+
 function loadConfig() {
   delete require.cache[require.resolve('../electron-builder.config.cjs')];
   return require('../electron-builder.config.cjs');
@@ -53,14 +84,35 @@ describe('electron-builder.config.cjs', () => {
     }
   });
 
-  it('ships the renderer bundle and main, and of node_modules only the billing main half', () => {
+  it('ships the renderer bundle and main, and of node_modules only what main imports at run time', () => {
     expect(config.files).toEqual(expect.arrayContaining(['dist/**/*', 'dist-electron/**/*', '!**/*.map', '!node_modules/**/*']));
     const shipped = config.files.filter((f: string) => f.startsWith('node_modules/'));
-    expect(shipped).toEqual(['node_modules/@glance-apps/billing/package.json', 'node_modules/@glance-apps/billing/dist/electron-main/**/*']);
-    // That half may import nothing that would then be missing from the package.
+    // @glance-apps/billing ships only its main half, which may import nothing
+    // that would then be missing from the package.
+    expect(shipped).toEqual(expect.arrayContaining(['node_modules/@glance-apps/billing/package.json', 'node_modules/@glance-apps/billing/dist/electron-main/**/*']));
     const src = readFileSync(path.join(root, 'node_modules/@glance-apps/billing/dist/electron-main/index.js'), 'utf-8');
     const imports = [...src.matchAll(/^import .* from '([^']+)'/gm)].map((m) => m[1]);
     expect(imports.every((m) => m === 'electron' || m.startsWith('node:'))).toBe(true);
+
+    // Every other package main imports ships whole, with everything it imports
+    // in turn (dependencies, and peer dependencies, which npm installs): a
+    // package left out is a crash at run time that no test before packaging sees.
+    const whole = shipped
+      .filter((f: string) => !f.startsWith('node_modules/@glance-apps/billing/'))
+      .map((f: string) => /^node_modules\/((?:@[^/]+\/)?[^/]+)\/\*\*\/\*$/.exec(f)?.[1] ?? f);
+    expect([...whole].sort()).toEqual([...mainRuntimeClosure()].sort());
+  });
+
+  it('ships the MCP bridge on direct macOS and Windows builds, where the setup points Claude at it', () => {
+    const bridge = { from: 'node_modules/@glance-apps/mcp-bridge', to: 'mcp-bridge' };
+    expect(config.mac.extraResources).toEqual([bridge]);
+    expect(config.win.extraResources).toEqual([bridge]);
+    expect(config.linux.extraResources).toBeUndefined();
+    // The version shipped knows lastGLANCE: --app lastglance, which the entry passes.
+    const pkg = JSON.parse(readFileSync(path.join(root, bridge.from, 'package.json'), 'utf-8'));
+    expect(pkg.version).toBe('0.2.0');
+    expect(readFileSync(path.join(root, bridge.from, 'src/apps.js'), 'utf-8')).toContain("id: 'lastglance'");
+    expect(existsSync(path.join(root, bridge.from, 'bridge.js'))).toBe(true);
   });
 
   it('points at icons that exist', () => {
@@ -118,22 +170,28 @@ describe('electron-builder.config.cjs', () => {
       expect(mas.buildVersion).toMatch(/^\d{8}\.\d{4}$/);
       expect(mas.mas.hardenedRuntime).toBe(false);
       expect(mas.mas.provisioningProfile).toBe('electron/lastglance.mas.provisionprofile');
+      // No bridge on MAS: the mac options it merges over carry none.
+      expect(mas.mac.extraResources).toEqual([]);
+      expect(mas.mas.extraResources).toBeUndefined();
+      // The Claude Desktop setup stays out of the MAS package, at the top level where negations compose.
+      expect(mas.files).toEqual(expect.arrayContaining(['!dist-electron/mcpDesktopSetup*', '!dist-electron/mcpDesktopConfig*']));
+      expect(mas.mas.files).toBeUndefined();
     } finally {
       delete process.env.LASTGLANCE_APP_ID;
     }
     expect(config.buildVersion).toBeUndefined();
+    expect(config.files.some((f: string) => f.includes('mcpDesktop'))).toBe(false);   // direct builds carry it
   });
 
   it('gives the MAS app the sandbox, both iCloud containers, and nothing it does not use', () => {
     const plist = readFileSync(path.join(root, 'electron/entitlements.mas.plist'), 'utf-8');
     for (const key of [
-      'com.apple.security.app-sandbox', 'com.apple.security.network.client',
+      'com.apple.security.app-sandbox', 'com.apple.security.network.client', 'com.apple.security.network.server',
       'com.apple.security.files.user-selected.read-write', 'com.apple.security.files.bookmarks.app-scope',
       'iCloud.com.lastglance', 'iCloud.com.dayglance', 'CloudDocuments',
     ]) expect(plist, key).toContain(key);
-    // No listener yet (MCP and Stream Deck come later), and Apple Pay's
-    // entitlement fails App Store validation on macOS.
-    expect(plist).not.toContain('<key>com.apple.security.network.server</key>');
+    // Apple Pay's entitlement fails App Store validation on macOS. The server
+    // entitlement is the MCP and Stream Deck listeners', on 127.0.0.1 only.
     expect(plist).not.toContain('<key>com.apple.security.in-app-payments</key>');
     const inherit = readFileSync(path.join(root, 'electron/entitlements.mas.inherit.plist'), 'utf-8');
     expect(inherit).toContain('com.apple.security.inherit');

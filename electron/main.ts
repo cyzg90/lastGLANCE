@@ -29,6 +29,13 @@ import { shouldQuitOnAllWindowsClosed } from './startupQuit.js';
 import { DESKTOP_INFO_ARG, encodeDesktopInfo } from './desktopInfo.js';
 import { loadWindowState, onScreen, saveWindowState, saveWindowTheme, windowBackgroundColor } from './windowState.js';
 import { createCommandQueue, type CommandSource } from './commandQueue.js';
+import { bindErrorCode, startMcpServer } from './mcpServer.js';
+import { createRendererBridge } from './mcpRendererBridge.js';
+import { createJournal } from './mcpJournal.js';
+import { discoveryFilePath, syncDiscoveryFile } from './mcpDiscovery.js';
+import { startStreamDeckServer, type StreamDeckServer } from './streamDeckServer.js';
+import { deckCompletion, deckOpenToken, deckState, prunePresses } from './deckModel.js';
+import { STREAM_DECK_PORT } from './deckProtocol.js';
 import { registerElectronBilling } from '@glance-apps/billing/electron-main';
 import { MAS_BILLING } from './billingConfig.js';
 import { availableUpdate, CHECK_CACHE_MS, RELEASES_API, type AvailableUpdate } from './updateCheck.js';
@@ -36,6 +43,12 @@ import { DEEP_LINK_SCHEME, deepLinkFromArgv, deepLinkToken } from './deepLink.js
 import { createReminderScheduler, type ScheduledReminder } from './reminderScheduler.js';
 import { isClickAfterBlurHide, parseTraySnapshot, popupPosition, settledCompletions, trayMenuItems, trayOpenToken, trayState, type TraySnapshot } from './trayModel.js';
 import { linuxFormats, macFormats, windowsFormats, type SystemFormats } from './systemFormats.js';
+import type http from 'node:http';
+import { createIdempotencyStore, createWriteGate, type HostBridge } from '@glance-apps/mcp-host';
+import {
+  applyTransition, DEFAULT_LOCAL_INTEGRATIONS, integrationsView, listenerEffects, loadLocalIntegrations, mcpGates, mcpPort, saveLocalIntegrations,
+  type ListenerStatus, type LocalIntegrationsConfig, type McpEffect, type StreamDeckEffect,
+} from './localIntegrations.js';
 import { applyOpenAtLogin, closeAction, isAcceleratorText, launchedHidden, loadDesktopSettings, saveDesktopSettings, type DesktopSettings } from './backgroundMode.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -280,7 +293,7 @@ function isTrayWindowSender(sender: Electron.WebContents): boolean {
 }
 
 function currentTrayState() {
-  return trayState(traySnapshot, doneHere);
+  return { ...trayState(traySnapshot, doneHere), assistant: currentIntegrationsView().assistant };
 }
 
 function trayIconPath(name: string): string {
@@ -298,9 +311,25 @@ function trayMenuLabels() {
   };
 }
 
+/**
+ * The assistant's items, while the MCP server is on or there is something to
+ * undo: undo everything assistants changed this session, and turn the server
+ * off, without opening the window (docs/mcp-and-stream-deck.md, 4.5).
+ */
+function mcpTrayItems(): Electron.MenuItemConstructorOptions[] {
+  const changes = mcpJournal.entries().length;
+  const bound = mcpGates(integrationsConfig).bound;
+  if (!bound && changes === 0) return [];
+  return [
+    ...(changes > 0 ? [{ label: `${label('trayMcpUndo', 'Undo assistant changes')} (${changes})`, click: () => { void undoMcpWrites(); } }] : []),
+    ...(bound ? [{ label: label('trayMcpOff', 'Turn off assistant access'), click: () => { runIntegrationsTransition({ type: 'set-mcp-read-tier', tier: 'off' }); } }] : []),
+    { type: 'separator' },
+  ];
+}
+
 function trayMenu(withChores: boolean): Menu {
   const items = trayMenuItems(currentTrayState(), trayMenuLabels(), withChores);
-  return Menu.buildFromTemplate(items.map((item): Electron.MenuItemConstructorOptions => {
+  return Menu.buildFromTemplate([...mcpTrayItems(), ...items.map((item): Electron.MenuItemConstructorOptions => {
     switch (item.kind) {
       case 'open': return { label: item.label, click: () => showMainWindow() };
       case 'quit': return { label: item.label, click: () => app.quit() };
@@ -314,7 +343,7 @@ function trayMenu(withChores: boolean): Menu {
       };
       default: return { type: 'separator' };
     }
-  }));
+  })]);
 }
 
 function refreshTray(): void {
@@ -323,6 +352,8 @@ function refreshTray(): void {
   tray.setToolTip(counts.overdue > 0 ? `lastGLANCE · ${counts.overdue}` : 'lastGLANCE');
   if (!USE_TRAY_POPUP) tray.setContextMenu(trayMenu(true));
   live(trayWindow)?.webContents.send('tray:state', currentTrayState());
+  // The deck draws the same snapshot: a new one, or a completion from the tray, reaches its keys too.
+  streamDeckServer?.broadcast();
 }
 
 function completeFromTray(syncId: unknown): void {
@@ -445,6 +476,239 @@ ipcMain.handle('shell:set-shortcut', (event, kind: unknown, accelerator: unknown
     saveDesktopSettings(app.getPath('userData'), desktopSettings);
   }
   return { ok, ...shortcutsView() };
+});
+
+// ── Local integrations (docs/mcp-and-stream-deck.md, section 3) ────────────
+// The MCP server and the Stream Deck listener, both off until turned on in
+// Settings. localIntegrations.ts decides; this applies. The Stream Deck
+// listener arrives in phase 5: until then its effect is only logged.
+let integrationsConfig: LocalIntegrationsConfig = DEFAULT_LOCAL_INTEGRATIONS;
+const integrationsStatus: { mcp: ListenerStatus; streamDeck: ListenerStatus } = {
+  mcp: { running: false, error: null },
+  streamDeck: { running: false, error: null },
+};
+
+function currentIntegrationsView() {
+  return integrationsView(integrationsConfig, integrationsStatus, { writesPaused: mcpGate.writesDisabled(), undoable: mcpJournal.entries().length });
+}
+
+function pushIntegrationsStatus(): void {
+  live(mainWindow)?.webContents.send('local-integrations:status', currentIntegrationsView());
+  // The tray popup's indicator and the menu's assistant items follow it.
+  refreshTray();
+}
+
+// The MCP listener (mcpServer.ts). The bridge to the page is made once and
+// kept across stops and starts; the token and the People tier are read on
+// every request, so neither needs a restart.
+let mcpServerHandle: http.Server | null = null;
+let mcpBridge: HostBridge | null = null;
+// Writes (4.5): made once and kept across stops and starts, so turning the
+// server off and on cannot reset the rate limit or the replay window. The
+// journal is the session's: a restart clears it.
+const mcpGate = createWriteGate();
+const mcpStore = createIdempotencyStore<Record<string, unknown>>();
+const mcpJournal = createJournal();
+
+function pushJournal(): void {
+  live(mainWindow)?.webContents.send('mcp-journal:changed', mcpJournal.snapshot());
+  pushIntegrationsStatus();
+}
+
+/** Undo one item's changes, or all of them, newest first, through the page. */
+async function undoMcpWrites(groupKey?: string): Promise<{ ok: boolean; undone?: number; skipped?: unknown[]; error?: string }> {
+  const { ops, seqs } = mcpJournal.plan(groupKey);
+  if (ops.length === 0) return { ok: true, undone: 0, skipped: [] };
+  mcpBridge ??= createRendererBridge(() => live(mainWindow));
+  const r = await mcpBridge.request('undo_mcp_writes', { ops }, 10_000);
+  if (!r.ok) return { ok: false, error: r.error.code };
+  mcpJournal.remove(seqs);
+  pushJournal();
+  const data = (r.data ?? {}) as { undone?: number; skipped?: unknown[] };
+  logStartup(`mcp undo: ${data.undone ?? 0} undone, ${data.skipped?.length ?? 0} kept`);
+  return { ok: true, undone: data.undone ?? 0, skipped: data.skipped ?? [] };
+}
+
+// The discovery file (mcpDiscovery.ts): where the bridge finds the port and
+// token. Written while the server runs, kept current, removed when it stops;
+// never on the Mac App Store build.
+const MCP_DISCOVERY_FILE = discoveryFilePath(process.platform, process.env, app.getPath('home'), process.mas === true);
+
+function updateDiscoveryFile(): void {
+  const running = integrationsStatus.mcp.running && mcpGates(integrationsConfig).bound;
+  const failure = syncDiscoveryFile(MCP_DISCOVERY_FILE, running ? { port: mcpPort(integrationsConfig), token: integrationsConfig.mcp.token ?? '' } : null);
+  if (failure) logStartup(`mcp discovery file not updated: ${failure}`);
+}
+
+function setMcpStatus(status: ListenerStatus): void {
+  integrationsStatus.mcp = status;
+  updateDiscoveryFile();
+  pushIntegrationsStatus();
+}
+
+function startMcpListener(): void {
+  if (mcpServerHandle || !mcpGates(integrationsConfig).bound) return;
+  mcpBridge ??= createRendererBridge(() => live(mainWindow));
+  const srv = startMcpServer({
+    token: () => integrationsConfig.mcp.token ?? '',
+    portOverride: integrationsConfig.mcp.portOverride,
+    version: app.getVersion(),
+    readDeps: {
+      bridge: mcpBridge,
+      now: () => Date.now(),
+      timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+      includePeople: () => mcpGates(integrationsConfig).includePeople,
+    },
+    writeDeps: {
+      bridge: mcpBridge,
+      gate: mcpGate,
+      store: mcpStore,
+      token: () => integrationsConfig.mcp.token ?? '',
+      includeWrites: () => mcpGates(integrationsConfig).includeWrites,
+      includePeople: () => mcpGates(integrationsConfig).includePeople,
+      onWritesDisabled: () => {
+        logStartup('mcp: writes turned off after repeated rate-limit overruns, until restart');
+        pushIntegrationsStatus();
+      },
+      journal: mcpJournal,
+      onWrite: pushJournal,
+      timeZone: () => Intl.DateTimeFormat().resolvedOptions().timeZone,
+    },
+    log: logStartup,
+    logError: logStartup,
+  });
+  if (!srv) { setMcpStatus({ running: false, error: 'bind_failed' }); return; }
+  mcpServerHandle = srv;
+  srv.on('listening', () => { if (mcpServerHandle === srv) setMcpStatus({ running: true, error: null }); });
+  srv.on('error', (err) => {
+    if (mcpServerHandle !== srv) return;
+    mcpServerHandle = null;
+    try { srv.close(); } catch { /* never bound */ }
+    setMcpStatus({ running: false, error: bindErrorCode(err) });
+  });
+}
+
+/** Stop and free the port at once, so a restart on the same port does not race its own rebind. */
+function stopMcpListener(onClosed?: () => void): void {
+  const srv = mcpServerHandle;
+  mcpServerHandle = null;
+  integrationsStatus.mcp = { running: false, error: null };
+  updateDiscoveryFile();
+  if (!srv) { onClosed?.(); return; }
+  srv.close(() => onClosed?.());
+  srv.closeAllConnections();
+}
+
+function applyMcpEffect(effect: McpEffect): void {
+  if (effect === 'start') startMcpListener();
+  else if (effect === 'stop') stopMcpListener();
+  else if (effect === 'restart') stopMcpListener(() => startMcpListener());
+}
+
+// The Stream Deck listener (streamDeckServer.ts, docs/mcp-and-stream-deck.md,
+// 6.1). The keys draw the snapshot the tray holds (deckModel.ts), aged by a
+// one-minute tick; a press goes through the command queue as the tray's does,
+// marked done here at once so the deck and the tray agree before the page
+// catches up.
+let streamDeckServer: StreamDeckServer | null = null;
+let streamDeckTick: ReturnType<typeof setInterval> | null = null;
+// The deck's own presses, kept the full minute (deckModel.ts, deckCompletion).
+const deckPressed = new Map<string, number>();
+
+function setStreamDeckStatus(status: ListenerStatus): void {
+  integrationsStatus.streamDeck = status;
+  pushIntegrationsStatus();
+}
+
+function startStreamDeckListener(): void {
+  if (streamDeckServer || !integrationsConfig.streamDeck.enabled) return;
+  const srv = startStreamDeckServer({
+    port: STREAM_DECK_PORT,
+    getState: () => deckState(traySnapshot, doneHere, Date.now()),
+    onCommand: (command) => {
+      if (command.type === 'lg:chore:complete') {
+        const now = Date.now();
+        prunePresses(deckPressed, now);
+        const verdict = deckCompletion(command.choreId, traySnapshot, doneHere, now, deckPressed);
+        if (verdict !== 'ok') return { ok: false, reason: verdict };
+        deckPressed.set(command.choreId, now);
+        doneHere.set(command.choreId, now);
+        queueCommand('complete', { chore_id: command.choreId }, 'streamdeck');
+        refreshTray();
+        return { ok: true };
+      }
+      const token = deckOpenToken(command.target, traySnapshot);
+      if (token === false) return { ok: false, reason: 'refused' };
+      openToken(token);
+      return { ok: true };
+    },
+    log: logStartup,
+  });
+  streamDeckServer = srv;
+  srv.wss.on('listening', () => { if (streamDeckServer === srv) setStreamDeckStatus({ running: true, error: null }); });
+  srv.wss.on('error', (err) => {
+    if (streamDeckServer !== srv) return;
+    logStartup(`stream deck listener failed: ${(err as NodeJS.ErrnoException).code ?? err.message}`);
+    stopStreamDeckListener();
+    setStreamDeckStatus({ running: false, error: bindErrorCode(err) });
+  });
+  // The keys age with the clock while nothing else changes.
+  streamDeckTick = setInterval(() => streamDeckServer?.broadcast(), 60_000);
+}
+
+function stopStreamDeckListener(): void {
+  if (streamDeckTick) { clearInterval(streamDeckTick); streamDeckTick = null; }
+  const srv = streamDeckServer;
+  streamDeckServer = null;
+  integrationsStatus.streamDeck = { running: false, error: null };
+  srv?.close();
+}
+
+function applyStreamDeckEffect(effect: StreamDeckEffect): void {
+  if (effect === 'start') startStreamDeckListener();
+  else if (effect === 'stop') { stopStreamDeckListener(); pushIntegrationsStatus(); }
+}
+
+function applyListenerEffects(effects: { mcp: McpEffect; streamDeck: StreamDeckEffect }): void {
+  applyMcpEffect(effects.mcp);
+  applyStreamDeckEffect(effects.streamDeck);
+}
+
+/** Read the file and start whatever it turns on. Once, at ready. */
+function startLocalIntegrations(): void {
+  const { config, recovered } = loadLocalIntegrations(app.getPath('userData'));
+  if (recovered) logStartup('local-integrations.json was unreadable: set aside as .corrupt, everything off');
+  integrationsConfig = config;
+  applyListenerEffects(listenerEffects(DEFAULT_LOCAL_INTEGRATIONS, config));
+}
+
+/** Apply one Settings change: save it, start or stop what it says, and tell the page. */
+function runIntegrationsTransition(action: unknown) {
+  const result = applyTransition(integrationsConfig, action, {
+    now: () => new Date().toISOString(),
+    newToken: () => crypto.randomBytes(32).toString('hex'),
+  });
+  if (!result.ok) return { ok: false, error: result.error, view: currentIntegrationsView() };
+  const before = integrationsConfig;
+  integrationsConfig = result.config;
+  if (!saveLocalIntegrations(app.getPath('userData'), integrationsConfig)) logStartup('local-integrations.json could not be written; this session follows the change');
+  applyListenerEffects(listenerEffects(before, integrationsConfig));
+  // A new token reaches the file at once; a start or a port change does when the listener binds.
+  updateDiscoveryFile();
+  pushIntegrationsStatus();
+  refreshTray();
+  return { ok: true, view: currentIntegrationsView() };
+}
+
+ipcMain.handle('local-integrations:get', (event) => (isMainWindowSender(event.sender) ? currentIntegrationsView() : null));
+ipcMain.handle('local-integrations:transition', (event, action: unknown) =>
+  (isMainWindowSender(event.sender) ? runIntegrationsTransition(action) : { ok: false, error: 'invalid_action', view: null }));
+
+// The MCP write journal, for Settings: what assistants changed, and undo.
+ipcMain.handle('mcp-journal:get', (event) => (isMainWindowSender(event.sender) ? mcpJournal.snapshot() : null));
+ipcMain.handle('mcp-journal:undo', (event, groupKey: unknown) => {
+  if (!isMainWindowSender(event.sender)) return { ok: false, error: 'invalid_sender' };
+  return undoMcpWrites(typeof groupKey === 'string' ? groupKey : undefined);
 });
 
 // The main window's widget snapshot (src/native/widgetBridge.ts).
@@ -970,6 +1234,21 @@ app.whenReady().then(() => {
   // globalShortcut throws before ready, and will-quit can fire then (dayGLANCE
   // issue #1352); before ready nothing is registered, so there is nothing to free.
   app.on('will-quit', () => { if (app.isReady()) globalShortcut.unregisterAll(); });
+
+  // The MCP server and Stream Deck listener, when Settings turned them on.
+  startLocalIntegrations();
+  // The "Set up Claude Desktop" button's handler. Direct builds only: the Mac
+  // App Store package does not carry the module (electron-builder.config.cjs),
+  // so it is loaded dynamically and its absence there is a no-op.
+  if (!process.mas) {
+    import('./mcpDesktopSetup.js')
+      .then(({ registerMcpDesktopSetup }) => registerMcpDesktopSetup(
+        () => (mcpGates(integrationsConfig).bound ? { port: mcpPort(integrationsConfig), token: integrationsConfig.mcp.token ?? '' } : null),
+        isMainWindowSender,
+      ))
+      .catch((err) => logStartup(`claude desktop setup not available: ${err instanceof Error ? err.message : err}`));
+  }
+  app.on('will-quit', () => { stopMcpListener(); stopStreamDeckListener(); });
 
   // Reminders due while the app was not running: within 12 hours fire once.
   reminders.rearm();

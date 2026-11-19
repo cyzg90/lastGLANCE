@@ -89,6 +89,21 @@ within a few hours: the app checks for the latest published release that has a
 download for their OS. A release without desktop files is never announced to
 them.
 
+### The Stream Deck plugin
+
+The same workflow packs the Stream Deck plugin and adds
+`com.lastglance.streamdeck.streamDeckPlugin` to the release. Its version is its
+own, not the app's: when the plugin changed, bump `Version` in
+`stream-deck-plugin/com.lastglance.streamdeck.sdPlugin/manifest.json` (four
+parts, `1.0.1.0`) and `version` in `stream-deck-plugin/package.json` before
+tagging. To publish it on the Elgato Marketplace, a manual step:
+
+1. Download the `.streamDeckPlugin` from the release and install it on a Mac or
+   PC with Stream Deck 6.5 or later; check a Chore key against the running app.
+2. Submit it at the Elgato Marketplace's maker portal as a new version of
+   lastGLANCE, with the release notes (no em dashes) and, for a new action,
+   screenshots of its keys.
+
 ## 4. Mac App Store build
 
 On a Mac with the certificates and the provisioning profile from section 1:
@@ -104,7 +119,15 @@ npm run build:electron:mas
 This builds the universal `.pkg` in `dist-app/mas-universal/`, as
 `com.lastglance`, sandboxed, with both iCloud containers and in-app purchases.
 Its build number is `YYYYMMDD.HHMM`, so every upload is higher than the last
-(`BUILD_NUMBER` overrides). Then:
+(`BUILD_NUMBER` overrides). Before uploading, check it carries nothing the
+store build must not (the Claude Desktop setup, docs/mcp-and-stream-deck.md,
+section 7):
+
+```bash
+node scripts/verify-mas-compileout.mjs --mas dist-app/mas-universal/lastGLANCE.app
+```
+
+Then:
 
 1. Upload the `.pkg` with **Transporter**.
 2. In App Store Connect, add the build to the macOS version, with the release
@@ -118,6 +141,12 @@ Its build number is `YYYYMMDD.HHMM`, so every upload is higher than the last
 - Download the macOS `dmg` on a Mac that has never run the app. It should open
   without a Gatekeeper warning (signed builds only).
 - On an install of the previous version, check that the update notice appears.
+- In Settings → Integrations → On this computer, turn on AI assistants and
+  use **Set up Claude Desktop** (macOS or Windows direct build): Claude Desktop,
+  restarted, should list the lastGLANCE tools. The tray popup's dot turns
+  green, and blue after an assistant change.
+- With Stream Deck on, install the release's `.streamDeckPlugin`: a Chore key
+  should show the chore and mark it done.
 - On the Mac App Store build, check that the paywall shows App Store prices,
   that a purchase or restore unlocks, and that iCloud reaches both containers
   (desktop-app.md, section 6).
