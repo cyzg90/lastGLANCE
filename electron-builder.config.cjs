@@ -140,6 +140,13 @@ module.exports = {
     electronLanguages: SHIPPED_LANGUAGES,
     extendInfo: {
       CFBundleLocalizations: SHIPPED_LANGUAGES.map((l) => APPLE_LANGUAGE_IDS[l] || l),
+      // Export compliance, as the iOS app declares it (ios/App/App/Info.plist).
+      // Without it every Mac App Store upload waits in App Store Connect for
+      // the encryption question to be answered by hand. The MAS build's
+      // Info.plist takes these keys too: electron-builder lays mas's options
+      // over mac's, so an extendInfo under mas would add to this one, and win
+      // on a key they share (seen in a mas build's Info.plist, 26.18).
+      ITSAppUsesNonExemptEncryption: false,
     },
     target: [
       { target: 'dmg', arch: ['x64', 'arm64'] },

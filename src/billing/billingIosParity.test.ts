@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
+import { createHash } from 'node:crypto'
+import { BILLING_CODE_PENDING, BILLING_CODE_UNCONFIRMED } from '@glance-apps/billing'
 import { resolve } from 'node:path'
 
 // The iOS shell is not compiled in CI, so this holds BillingBridgePlugin.swift
@@ -119,19 +121,19 @@ describe('iOS BillingBridge plugin parity', () => {
     }
   })
 
-  it('fakes nothing but the initial status read under -GlanceBillingStartLocked', () => {
+  it('under -GlanceBillingStartLocked, holds back only the initial reads and the pushes before a person acts', () => {
     // The whole point of that override: the app opens locked, and then every
-    // real path runs. A branch on it inside any other method would mean a
-    // Restore that "worked" without RevenueCat having said so.
-    // Comments stripped first: the section comment above getStatus names the
-    // override, and it trails the body of whichever method precedes it.
-    const code = swift.replace(/\/\/.*$/gm, '')
-    const touching = code
-      .split(/@objc func /)
-      .slice(1)
-      .filter((b) => b.includes('GlanceBillingStartLocked'))
-      .map((b) => b.slice(0, b.indexOf('(')))
-    expect(touching).toEqual(['getStatus'])
+    // real path runs. A branch on it inside purchase, refresh, prices or
+    // eligibility would mean a Restore that "worked" without RevenueCat having
+    // said so. Since 0.2.4 it reaches exactly one more place, by design: the
+    // 'billingStatus' push (RevenueCat's delegate) is held until the first read
+    // a person caused, or the delegate reporting the device's entitlement at
+    // launch would unlock the app with no Restore tap and the test would pass
+    // proving nothing.
+    const touching = functionsOf(swift)
+      .filter((f) => /\bstartLocked\b|GlanceBillingStartLocked/.test(f.body))
+      .map((f) => f.name)
+    expect(touching.sort()).toEqual(['getStatus', 'pushActiveEntitlement'])
 
     // And the suppression is bounded: a counter the reads run out of, not a
     // flag that holds the app locked for the life of the process.
@@ -139,6 +141,134 @@ describe('iOS BillingBridge plugin parity', () => {
     expect(debug).toContain('startLockedReads < Self.startLockedSuppressedReads')
     expect(debug).toContain('startLockedReads += 1')
     expect(swift).toMatch(/startLockedSuppressedReads = 2\b/)
+  })
+
+  it('holds the push until the first read a person caused, and only then', () => {
+    const push = functionsOf(swift).find((f) => f.name === 'pushActiveEntitlement')!
+    // The hold is DEBUG-only and sits ahead of the send.
+    const { debugOnly, inRelease } = partition(push.body)
+    expect(debugOnly).toContain('if startLocked, !startLockedPersonRead { return }')
+    expect(inRelease).not.toMatch(/startLocked/)
+    expect(push.body.indexOf('!startLockedPersonRead')).toBeLessThan(push.body.indexOf('notifyListeners'))
+    // Released by the real read, the third, and by nothing else.
+    const getStatus = functionsOf(swift).find((f) => f.name === 'getStatus')!.body
+    const realBranch = getStatus.slice(getStatus.indexOf('} else if startLocked ||'))
+    expect(realBranch).toContain('if startLocked { startLockedPersonRead = true }')
+    expect(swift.replace(/\/\/.*$/gm, '').match(/startLockedPersonRead = true/g)?.length).toBe(1)
+  })
+})
+
+/**
+ * Top-level functions of a Swift source, by name with their bodies (comments
+ * stripped, braces matched). Enough for these sources: no braces in strings.
+ */
+function functionsOf(src: string): { name: string; body: string }[] {
+  const code = src.replace(/\/\/.*$/gm, '')
+  const out: { name: string; body: string }[] = []
+  const re = /\bfunc (\w+)\s*\(/g
+  let m: RegExpExecArray | null
+  while ((m = re.exec(code))) {
+    const open = code.indexOf('{', m.index)
+    let depth = 0
+    let i = open
+    for (; i < code.length; i++) {
+      if (code[i] === '{') depth++
+      else if (code[i] === '}' && --depth === 0) break
+    }
+    out.push({ name: m[1], body: code.slice(open, i + 1) })
+  }
+  return out
+}
+
+// @glance-apps/billing 0.2.4's opt-in native contract, as the iOS plugin keeps
+// it. The Swift is not compiled in CI, so these read the source; the package's
+// own tests cover what the adapter does with each half.
+describe('iOS billing: the 0.2.4 native contract', () => {
+  const fn = (src: string, name: string) => {
+    const f = functionsOf(src).find((x) => x.name === name)
+    if (!f) throw new Error(`no func ${name}`)
+    return f.body
+  }
+  const code = (src: string) => src.replace(/\/\/.*$/gm, '')
+
+  it('tells the adapter refresh() reports completion, and keeps that promise', () => {
+    expect(fn(swift, 'initialize')).toContain('call.resolve(["refreshReportsCompletion": true])')
+    // The plugin resolves only after the store work has been awaited.
+    const refresh = fn(swift, 'refresh')
+    expect(refresh).toMatch(/await billing\.refresh\(\)\s*\n\s*call\.resolve\(\)/)
+    expect(refresh.match(/call\.resolve/g)?.length).toBe(1)
+    // And the store's refresh returns only when the re-read and sync are done.
+    const coreRefresh = fn(core, 'refresh')
+    expect(coreRefresh).toMatch(/func refresh\(\) async|await inFlightRefresh\(\)\.value/)
+    expect(coreRefresh).toContain('await inFlightRefresh().value')
+  })
+
+  it('an overlapping refresh joins the one in flight instead of returning early', () => {
+    const inFlight = fn(core, 'inFlightRefresh')
+    expect(inFlight).toContain('if let task = refreshTask { return task }')
+    expect(inFlight).toContain('refreshTask = task')
+    // The old guard skipped the second sync and let its caller read too soon.
+    expect(code(core)).not.toMatch(/syncInFlight|beginSync|endSync/)
+  })
+
+  it("is RevenueCat's delegate, set when Purchases is configured, without touching the configure call", () => {
+    const configure = fn(core, 'configure')
+    expect(configure.indexOf('Purchases.shared.delegate = self'))
+      .toBeGreaterThan(configure.indexOf('Purchases.configure(withAPIKey: apiKey)'))
+    expect(core).toMatch(/final class RevenueCatBilling: NSObject, PurchasesDelegate\b/)
+    expect(read('ios/App/App/AppDelegate.swift')).toMatch(/RevenueCatBilling\.shared\.configure\(apiKey: "appl_\w+"\)/)
+  })
+
+  it('passes on ACTIVE entitlements only, and the push has no inactive form', () => {
+    const delegate = fn(core, 'purchases')
+    expect(delegate).toMatch(/guard let ent = customerInfo\.entitlements\[Self\.entitlementId\], ent\.isActive else \{ return \}/)
+    expect(delegate.indexOf('ent.isActive')).toBeLessThan(delegate.indexOf('onActiveEntitlement'))
+    // One send site, and `active` is the literal true there.
+    const sends = code(swift).match(/notifyListeners\("billingStatus"/g) ?? []
+    expect(sends.length).toBe(1)
+    const push = fn(swift, 'pushActiveEntitlement')
+    expect(push).toContain('"active": true,')
+    expect(push).not.toMatch(/"active":\s*(?!true\b)\w/)
+  })
+
+  it("emits 'success' only when the returned entitlement includes ours; otherwise pending/unconfirmed", () => {
+    const purchase = fn(core, 'purchase')
+    const success = purchase.indexOf('emit(status: "success"')
+    const check = purchase.indexOf('result.customerInfo.entitlements[Self.entitlementId]?.isActive == true')
+    expect(check).toBeGreaterThan(-1)
+    expect(check).toBeLessThan(success)
+    expect(purchase).toContain('emit(status: "pending", code: Self.codeUnconfirmed')
+    expect(purchase.match(/emit\(status: "success"/g)?.length).toBe(1)
+  })
+
+  it('reports a deferred payment as pending, not as an error', () => {
+    const emitError = fn(core, 'emitError')
+    const pending = emitError.indexOf('if rcError == .paymentPendingError')
+    expect(pending).toBeGreaterThan(-1)
+    expect(emitError.slice(pending)).toMatch(/emit\(status: "pending", code: Self\.codePending[^)]*\)\s*\n\s*return/)
+  })
+
+  it("status reads see everything the delegate has seen: the cache, else the delegate's copy (EntitlementRead)", () => {
+    expect(fn(core, 'status')).toContain('let ent = currentCustomerInfo()?.entitlements[Self.entitlementId]')
+    expect(fn(core, 'status')).not.toContain('cachedCustomerInfo')
+    const current = fn(core, 'currentCustomerInfo')
+    expect(current).toContain('let cached = Purchases.shared.cachedCustomerInfo')
+    expect(current).toContain('let reported = lastReported')
+    // The rule itself, and its behavioural tests, are the package's.
+    expect(current).toContain('return EntitlementRead.newest(cached: cached, reported: reported)')
+    expect(core).toMatch(/^import EntitlementRead$/m)
+    // No date comparison: the two copies' requestDates come from different clocks.
+    expect(code(core)).not.toContain('requestDate')
+    // The delegate records every report, whatever it says, before its active-only guard.
+    const delegate = fn(core, 'purchases')
+    const record = delegate.indexOf('lastReported = customerInfo')
+    expect(record).toBeGreaterThan(-1)
+    expect(record).toBeLessThan(delegate.indexOf('guard let ent'))
+  })
+
+  it("uses the package's pending codes", () => {
+    expect(core).toContain(`static let codePending = ${BILLING_CODE_PENDING}`)
+    expect(core).toContain(`static let codeUnconfirmed = ${BILLING_CODE_UNCONFIRMED}`)
   })
 })
 
@@ -154,12 +284,24 @@ vi.mock('@capacitor/core', () => ({
 }))
 vi.mock('@glance-apps/billing/capacitor', () => ({ createCapacitorAdapter }))
 // For rendering the real PaywallModal in this node environment: the portal
-// target is the document, and the strings are their own keys.
+// target is the document, and each string is its key plus en's text.
 vi.mock('react-dom', async (importOriginal) => ({
   ...(await importOriginal<typeof import('react-dom')>()),
   createPortal: (node: unknown) => node,
 }))
-vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }))
+vi.mock('react-i18next', async () => {
+  const { readFileSync } = await import('node:fs')
+  const { resolve } = await import('node:path')
+  const en = JSON.parse(readFileSync(resolve(__dirname, '../../public/locales/en/translation.json'), 'utf8'))
+  const text = (key: string) => key.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], en)
+  return {
+    useTranslation: () => ({
+      // The key, plus en's text when the bundle has it, so a test can read the
+      // copy the user sees.
+      t: (key: string) => (typeof text(key) === 'string' ? `${key}|${text(key)}` : key),
+    }),
+  }
+})
 vi.mock('@/native/backButton', () => ({ leaveApp: vi.fn() }))
 
 async function load(p: string, channel?: string) {
@@ -217,7 +359,7 @@ describe('billing gate by platform and channel', () => {
 describe('paywall close control by platform', () => {
   // Rendered from the real component, so removing the platform condition in
   // PaywallModal fails here, not just a change to the constant.
-  async function renderPaywall(p: string, channel?: string) {
+  async function renderPaywall(p: string, channel?: string, billingEvent: unknown = null) {
     const { GATE_DISMISSIBLE } = await load(p, channel)
     // createPortal is stubbed above; its target argument still reads document.body.
     vi.stubGlobal('document', { body: null })
@@ -231,7 +373,8 @@ describe('paywall close control by platform', () => {
       trialEligible: true,
       trialDays: null,
       isLoading: false,
-      billingEvent: null,
+      billingEvent,
+      billingErrorMessage: () => 'error text',
     } as unknown as Parameters<typeof PaywallModal>[0]['billing']
     return { GATE_DISMISSIBLE, html: renderToStaticMarkup(createElement(PaywallModal, { billing })) }
   }
@@ -250,9 +393,63 @@ describe('paywall close control by platform', () => {
     expect(html.match(/aria-label="Close"/g)?.length).toBe(1)
   })
 
+  it('says something for every pending outcome: approval awaited, or payment being confirmed', async () => {
+    const deferred = (await renderPaywall('ios', undefined,
+      { status: 'pending', code: BILLING_CODE_PENDING, message: 'deferred', productId: 'p', ts: 1 })).html
+    expect(deferred).toContain('paywall.purchasePendingApproval|Your purchase is waiting for approval.')
+
+    const unconfirmed = (await renderPaywall('ios', undefined,
+      { status: 'pending', code: BILLING_CODE_UNCONFIRMED, message: 'unconfirmed', productId: 'p', ts: 1 })).html
+    expect(unconfirmed).toContain('paywall.purchaseUnconfirmed|Your purchase went through')
+    // Unconfirmed points at waiting or support, never at Restore, which would
+    // find nothing yet and say so.
+    expect(unconfirmed).toContain('support@glance-apps.com')
+    for (const html of [deferred, unconfirmed]) {
+      const message = html.slice(html.indexOf('role="status"'))
+      expect(message.slice(0, message.indexOf('</p>'))).not.toMatch(/restore/i)
+    }
+
+    // Nothing extra for no event, or for an error (which has its own line).
+    expect((await renderPaywall('ios')).html).not.toContain('role="status"')
+    expect((await renderPaywall('ios', undefined,
+      { status: 'error', code: 6, message: 'x', productId: 'p', ts: 1 })).html).not.toContain('role="status"')
+  })
+
   it('keeps Reviewer access on both platforms, since App Review needs it past the gate', async () => {
     for (const [p, channel] of [['ios'], ['android', 'play']]) {
       expect((await renderPaywall(p, channel)).html).toContain('paywall.reviewerAccess')
     }
+  })
+})
+
+// EntitlementRead: the read rule, as a package (ios/App/Packages/EntitlementRead).
+describe('EntitlementRead', () => {
+  const PKG = 'ios/App/Packages/EntitlementRead'
+  const FILES = [
+    'Package.swift',
+    'Sources/EntitlementRead/EntitlementRead.swift',
+    'Tests/EntitlementReadTests/EntitlementReadTests.swift',
+  ]
+
+  // Three byte-identical copies: dayGLANCE, lastGLANCE and lifeGLANCE. Each
+  // repo holds its copy to this one fingerprint, the same value in all three,
+  // so a change to one copy fails here until the other two match. Change all
+  // three together, then the value in all three.
+  const FINGERPRINT = '2b8744180996179a24dfc2a46733acb97cdda7361c7fcc1e42202e05f019d93b'
+
+  it('is the shared copy, byte for byte', () => {
+    const hash = createHash('sha256')
+    for (const f of FILES) hash.update(readFileSync(resolve(root, PKG, f)))
+    expect(readdirSync(resolve(root, PKG, 'Sources/EntitlementRead'))).toEqual(['EntitlementRead.swift'])
+    expect(readdirSync(resolve(root, PKG, 'Tests/EntitlementReadTests'))).toEqual(['EntitlementReadTests.swift'])
+    expect(hash.digest('hex')).toBe(FINGERPRINT)
+  })
+
+  it('is linked into the App target, and CI runs its tests', () => {
+    const pbx = read('ios/App/App.xcodeproj/project.pbxproj')
+    expect(pbx).toMatch(/isa = XCLocalSwiftPackageReference;\s*relativePath = Packages\/EntitlementRead;/)
+    expect(pbx).toMatch(/isa = XCSwiftPackageProductDependency;\s*package = \w+ \/\* XCLocalSwiftPackageReference "Packages\/EntitlementRead" \*\/;\s*productName = EntitlementRead;/)
+    expect(pbx).toMatch(/EntitlementRead in Frameworks \*\/ = \{isa = PBXBuildFile; productRef = \w+ \/\* EntitlementRead \*\/; \};/)
+    expect(read('.github/workflows/ios.yml')).toContain(`run: swift test --package-path ${PKG}`)
   })
 })

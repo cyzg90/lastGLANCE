@@ -1,1 +1,2 @@
 *.xcstrings text eol=lf
+ios/App/Packages/EntitlementRead/**/*.swift text eol=lf

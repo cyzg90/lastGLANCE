@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from 'vitest'
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { readFileSync, readdirSync } from 'node:fs'
+import { join, relative } from 'node:path'
 import { languages, loaders, resolveLanguage } from './locales'
 
 // de/es/fr/it/pt sat 8 keys behind en — the backup restore confirmation and
@@ -8,7 +8,7 @@ import { languages, loaders, resolveLanguage } from './locales'
 // user. The backlog is translated, so this is a strict parity check: a key
 // added to en without translations fails here instead of silently falling back.
 describe('locale bundles', () => {
-  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'pl', 'pt-BR', 'pt-PT', 'uk', 'zh-CN']
+  const EXPECTED = ['de', 'en', 'es', 'fr', 'it', 'ja', 'pl', 'pt-BR', 'pt-PT', 'uk', 'zh-CN']
   const TRANSLATED = EXPECTED.filter((l) => l !== 'en')
 
   const bundles: Record<string, Record<string, unknown>> = {}
@@ -94,7 +94,7 @@ describe('locale bundles', () => {
     })
 
     it('falls back to en for a language that is not shipped', () => {
-      expect(resolveLanguage('ja')).toBe('en')
+      expect(resolveLanguage('ko')).toBe('en')
       expect(resolveLanguage('zz-ZZ')).toBe('en')
     })
 
@@ -309,6 +309,126 @@ describe('locale bundles', () => {
           'every locale (pt-BR via scripts/gen-pt-br.mjs), or add it to UNMAPPED here ' +
           'with the reason it cannot be surfaced.',
       ).toBeTypeOf('string')
+    })
+  })
+
+  /**
+   * Keys that ship in English in some languages until a translation lands, and
+   * which languages are waiting. The parity checks above are satisfied by the
+   * English text, so without this list nothing in the repo would say these are
+   * untranslated. The point of the list is that it shrinks: each entry must
+   * name exactly the languages that still carry en's text, so translating one
+   * fails here until the language is dropped, and an empty entry is removed.
+   * Same shape as dayGLANCE's UNTRANSLATED.
+   */
+  describe('UNTRANSLATED: English on the way to a translation', () => {
+    const UNTRANSLATED: Record<string, string[]> = {
+      // The paywall's two pending outcomes (billing Phase 2) shipped in English
+      // first, so no installable version reaches one with nothing to show; the
+      // localization pass translates them.
+      'paywall.purchasePendingApproval': ['de', 'es', 'fr', 'it', 'ja', 'pl', 'pt-BR', 'pt-PT', 'uk', 'zh-CN'],
+      'paywall.purchaseUnconfirmed': ['de', 'es', 'fr', 'it', 'ja', 'pl', 'pt-BR', 'pt-PT', 'uk', 'zh-CN'],
+    }
+    const get = (lng: string, key: string): unknown =>
+      key.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown> | undefined)?.[k], bundles[lng])
+
+    it.each(Object.keys(UNTRANSLATED))('%s names exactly the languages still in English', (key) => {
+      expect(get('en', key), `${key} is not in en; drop it from UNTRANSLATED`).toBeTypeOf('string')
+      const stillEnglish = TRANSLATED.filter((lng) => get(lng, key) === get('en', key)).sort()
+      expect(
+        stillEnglish,
+        `UNTRANSLATED['${key}'] must list exactly the languages that still carry en's text. ` +
+          'A language translated since is dropped from the list (and the key, once its list is empty); ' +
+          'a language listed that does not ship is a typo.',
+      ).toEqual([...UNTRANSLATED[key]].sort())
+      expect(UNTRANSLATED[key].length, `${key} is translated everywhere; drop it from UNTRANSLATED`).toBeGreaterThan(0)
+    })
+  })
+
+  /**
+   * Every t('literal') in the source must resolve in en. Before this, a key
+   * that existed only as a `defaultValue` in the code never reached a bundle,
+   * so every check in this file passed while every language rendered English
+   * (the paywall's pending strings, until #472). Ported from dayGLANCE's
+   * "defines every literal translation key used by source", with one
+   * difference: a key may resolve to an object as well as a string, since
+   * `t('menu', { returnObjects: true })` reads a whole block on purpose.
+   *
+   * KNOWN BLIND SPOT: a key built at run time, t(`people.dateKind.${kind}`),
+   * is not a literal and is not checked. There were 19 such calls when this
+   * was written (about 2% of t() calls), here and in dayGLANCE alike. This
+   * check is not total; a template-built key that misses falls back to the
+   * key itself on screen.
+   *
+   * NOT CHECKED, ON PURPOSE: whether a key that resolves to an object is
+   * called with `returnObjects: true`. This check's job is keys with no bundle
+   * entry, not misuse of keys that have one, and a plain t('menu') fails
+   * visibly (i18next puts its "returned an object" text on screen) rather
+   * than silently shipping English. Reading each call's options would also
+   * need a parser, not this regex.
+   */
+  describe('every literal t() key in the source resolves in en', () => {
+    const LITERAL_CALL = /\bt\(\s*['"]([^'"]+)['"]/g
+
+    // Every path en resolves: each string, and each object above them.
+    const resolvable = (obj: Record<string, unknown>, prefix = ''): string[] =>
+      Object.entries(obj).flatMap(([k, v]) => {
+        const key = prefix ? `${prefix}.${k}` : k
+        return v && typeof v === 'object' && !Array.isArray(v)
+          ? [key, ...resolvable(v as Record<string, unknown>, key)]
+          : [key]
+      })
+
+    // The literal keys in one file that en cannot resolve. A plural family is
+    // called by its base name (t('x', { count })), so x_one or x_other covers x.
+    const unresolvedIn = (source: string, keys: Set<string>) =>
+      [...source.matchAll(LITERAL_CALL)]
+        .map((m) => m[1])
+        .filter((key) => !keys.has(key) && !keys.has(`${key}_one`) && !keys.has(`${key}_other`))
+
+    const sourceFiles = (dir: string): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((d) => {
+        const path = join(dir, d.name)
+        if (d.isDirectory()) return sourceFiles(path)
+        return /\.(ts|tsx|js|jsx)$/.test(d.name) && !d.name.includes('.test.') && !d.name.endsWith('.d.ts') ? [path] : []
+      })
+
+    it('finds the source it scans', () => {
+      // Guards the walk: a broken one finds nothing and passes below.
+      const calls = sourceFiles(__dirname).reduce((n, f) => n + [...readFileSync(f, 'utf8').matchAll(LITERAL_CALL)].length, 0)
+      expect(calls).toBeGreaterThan(500)
+    })
+
+    it('has an en entry for every literal key', () => {
+      const keys = new Set(resolvable(bundles.en))
+      const missing = sourceFiles(__dirname).flatMap((f) =>
+        unresolvedIn(readFileSync(f, 'utf8'), keys).map((key) => `${key}: ${relative(join(__dirname, '..'), f)}`),
+      )
+      expect(
+        missing,
+        'Every literal t() key needs a bundle entry (in every language: the coverage checks above enforce that). ' +
+          'A defaultValue alone ships English to every language and no check here sees it.',
+      ).toEqual([])
+    })
+
+    describe('controls', () => {
+      const keys = new Set(resolvable({ menu: { file: 'File' }, done: 'Done', item_one: '1 item', item_other: 'items' }))
+
+      it('fails a key with no en entry, defaultValue or not', () => {
+        expect(unresolvedIn(`t('gone'); t("also.gone", { defaultValue: 'Gone' })`, keys)).toEqual(['gone', 'also.gone'])
+      })
+
+      it('accepts a string, a plural family by its base name, and a whole object', () => {
+        expect(unresolvedIn(`t('done'); t('item', { count }); i18n.t('menu', { returnObjects: true }); t('menu.file')`, keys)).toEqual([])
+      })
+
+      it('fails a path below a string, or a missing child of an object', () => {
+        expect(unresolvedIn(`t('done.more'); t('menu.edit')`, keys)).toEqual(['done.more', 'menu.edit'])
+      })
+
+      it('cannot see a key built at run time (the blind spot above)', () => {
+        expect(unresolvedIn('t(`menu.${name}`)', keys)).toEqual([])
+      })
     })
   })
 
